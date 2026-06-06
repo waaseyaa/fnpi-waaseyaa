@@ -31,6 +31,13 @@ final class PageController
         return $this->renderTemplate('how-it-works.html.twig');
     }
 
+    /**
+     * The proof / reference-build page is intentionally DISABLED pending SFN
+     * consent to be named publicly. The route is unregistered (404) and the
+     * template is parked at templates/proof.html.twig.disabled. To re-enable:
+     * rename that file back to proof.html.twig and restore the /proof route in
+     * SiteServiceProvider. This method is preserved so re-enabling is trivial.
+     */
     public function proof(): Response
     {
         return $this->renderTemplate('proof.html.twig');

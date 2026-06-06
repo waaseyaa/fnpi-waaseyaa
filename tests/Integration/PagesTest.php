@@ -34,8 +34,22 @@ final class PagesTest extends TestCase
         $this->assertSame('home', $router->match('/')['_route'] ?? null);
         $this->assertSame('technology', $router->match('/technology')['_route'] ?? null);
         $this->assertSame('how-it-works', $router->match('/how-it-works')['_route'] ?? null);
-        $this->assertSame('proof', $router->match('/proof')['_route'] ?? null);
         $this->assertSame('contact', $router->match('/contact')['_route'] ?? null);
+        // /proof is intentionally disabled pending SFN consent (see below).
+        $this->assertFalse($this->routeExists($router, '/proof'), '/proof must be unrouted (404).');
+    }
+
+    /**
+     * The router throws ResourceNotFoundException for an unrouted path; treat
+     * that as "route does not exist".
+     */
+    private function routeExists(WaaseyaaRouter $router, string $path): bool
+    {
+        try {
+            return isset($router->match($path)['_route']);
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     #[Test]
@@ -70,15 +84,29 @@ final class PagesTest extends TestCase
     }
 
     #[Test]
-    public function proof_page_is_anonymized_pending_consent(): void
+    public function proof_route_is_disabled_pending_consent(): void
     {
-        $html = (string) new PageController()->proof()->getContent();
-        $this->assertStringContainsString('already runs on our platform', $html);
-        $this->assertStringContainsString('Manitoulin First Nation', $html);
-        $this->assertStringContainsString('488', $html);
-        // Hard guardrail: the real Nation is NOT named until SFN consent.
-        $this->assertStringNotContainsString('Sheguiandah', $html);
-        $this->assertStringNotContainsString('{%', $html);
+        // The /proof route is unregistered (returns 404) until SFN consent to be
+        // named publicly. The template is parked at proof.html.twig.disabled so
+        // the SSR path resolver can no longer serve it by URL either.
+        $router = new WaaseyaaRouter();
+        new SiteServiceProvider()->routes($router);
+        $this->assertFalse($this->routeExists($router, '/proof'));
+
+        $root = dirname(__DIR__, 2);
+        $this->assertFileDoesNotExist($root . '/templates/proof.html.twig', 'Active proof template must be parked so /proof 404s.');
+        $parked = $root . '/templates/proof.html.twig.disabled';
+        $this->assertFileExists($parked, 'Proof template must be preserved (parked) for re-enable.');
+        // Defense-in-depth: the parked template still must never name the Nation.
+        $this->assertStringNotContainsString('Sheguiandah', (string) file_get_contents($parked));
+    }
+
+    #[Test]
+    #[DataProvider('pageHtmlProvider')]
+    public function no_page_links_to_proof(string $method): void
+    {
+        $html = (string) new PageController()->{$method}()->getContent();
+        $this->assertStringNotContainsString('href="/proof"', $html, sprintf('Page "%s" must not link to the disabled /proof.', $method));
     }
 
     #[Test]
@@ -96,11 +124,12 @@ final class PagesTest extends TestCase
      */
     public static function pageHtmlProvider(): array
     {
+        // Live, routed pages only. /proof is disabled (parked template), so it is
+        // not a public page and is excluded from the live-page guardrail sweep.
         return [
             ['home'],
             ['technology'],
             ['howItWorks'],
-            ['proof'],
             ['contact'],
         ];
     }

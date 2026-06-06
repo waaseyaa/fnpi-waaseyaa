@@ -74,14 +74,18 @@ final class SiteServiceProvider extends ServiceProvider
                 ->build(),
         );
 
-        $router->addRoute(
-            'proof',
-            RouteBuilder::create('/proof')
-                ->controller(fn () => $controller->proof())
-                ->allowAll()
-                ->methods('GET')
-                ->build(),
-        );
+        // /proof is intentionally DISABLED (unrouted -> 404) pending SFN consent
+        // to name the reference build publicly. The PageController::proof() method
+        // and templates/proof.html.twig are preserved; re-enable by restoring this
+        // route and the nav/footer/homepage links removed alongside it.
+        // $router->addRoute(
+        //     'proof',
+        //     RouteBuilder::create('/proof')
+        //         ->controller(fn () => $controller->proof())
+        //         ->allowAll()
+        //         ->methods('GET')
+        //         ->build(),
+        // );
 
         $router->addRoute(
             'contact',
