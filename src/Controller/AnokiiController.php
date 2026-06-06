@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Anokii\Modules;
 use App\Auth\SetupTokenRepository;
+use App\Support\AnokiiShell;
 use App\Support\Auth;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -37,10 +39,21 @@ final class AnokiiController
             return new RedirectResponse('/anokii/login');
         }
 
-        return $this->render('anokii/home.html.twig', [
-            'nav_active' => 'home',
-            'user_label' => Auth::label($user),
-        ]);
+        return $this->render('anokii/home.html.twig', AnokiiShell::context($user, 'home'));
+    }
+
+    public function comingSoon(Request $request, string $module): Response
+    {
+        $user = Auth::currentUser($this->entityTypeManager);
+        if ($user === null) {
+            return new RedirectResponse('/anokii/login');
+        }
+        $m = Modules::find($module);
+        if ($m === null || $m['live'] === true) {
+            return new RedirectResponse('/anokii');
+        }
+
+        return $this->render('anokii/coming-soon.html.twig', AnokiiShell::context($user, $module) + ['module' => $m]);
     }
 
     public function settings(Request $request): Response
@@ -50,9 +63,7 @@ final class AnokiiController
             return new RedirectResponse('/anokii/login');
         }
 
-        return $this->render('anokii/settings.html.twig', [
-            'nav_active' => 'settings',
-            'user_label' => Auth::label($user),
+        return $this->render('anokii/settings.html.twig', AnokiiShell::context($user, 'settings') + [
             'profile_name' => $user->getName(),
             'profile_email' => $user->getEmail(),
         ]);

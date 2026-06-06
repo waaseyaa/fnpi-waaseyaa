@@ -162,9 +162,7 @@ final class AnokiiTest extends TestCase
             $sections[(string) $p['section']]['pillars'][] = $p;
         }
 
-        $html = $twig->render('anokii/identity.html.twig', [
-            'nav_active' => 'identity',
-            'user_label' => 'Russell',
+        $html = $twig->render('anokii/identity.html.twig', $this->shell('identity') + [
             'sections' => array_values($sections),
             'counts' => $repo->statusCounts(),
             'statuses' => [
@@ -178,6 +176,60 @@ final class AnokiiTest extends TestCase
         $this->assertStringContainsString('Anishinaabe foundation', $html);
         $this->assertStringContainsString('data-pid="tagline"', $html);
         $this->assertStringContainsString('/anokii/logout', $html);
+        // Rendered inside the new shell (sidebar + topbar).
+        $this->assertStringContainsString('Sovereign workspace', $html);
+        $this->assertStringContainsString('Co-Intelligence', $html);
+        $this->assertStringContainsString('class="aavatar"', $html);
         $this->assertStringNotContainsString('{%', $html);
+    }
+
+    /** Minimal shell context for template render tests. */
+    private function shell(string $active): array
+    {
+        return [
+            'nav_active' => $active,
+            'modules' => \App\Anokii\Modules::all(),
+            'user_label' => 'Russell',
+            'user_role' => 'Editor',
+            'user_initials' => 'RU',
+        ];
+    }
+
+    #[Test]
+    public function modules_define_live_and_soon_set(): void
+    {
+        $ids = array_column(\App\Anokii\Modules::all(), 'id');
+        foreach (['home', 'identity', 'drive', 'ai', 'rooms', 'workspaces', 'portal', 'vault', 'governance', 'settings'] as $id) {
+            $this->assertContains($id, $ids);
+        }
+        $this->assertTrue(\App\Anokii\Modules::find('identity')['live']);
+        $this->assertTrue(\App\Anokii\Modules::find('home')['live']);
+        $this->assertFalse(\App\Anokii\Modules::find('drive')['live']);
+        $this->assertFalse(\App\Anokii\Modules::find('governance')['live']);
+        $this->assertNull(\App\Anokii\Modules::find('nope'));
+    }
+
+    #[Test]
+    public function dashboard_template_renders_hero_and_tiles(): void
+    {
+        $twig = SsrServiceProvider::getTwigEnvironment();
+        $html = $twig->render('anokii/home.html.twig', $this->shell('home'));
+
+        $this->assertStringContainsString('Aanii, Russell', $html);
+        $this->assertStringContainsString('Identity Workspace', $html);
+        $this->assertStringContainsString('Co-Intelligence', $html);
+        $this->assertStringContainsString('Coming soon', $html);
+        $this->assertStringContainsString('href="/anokii/identity"', $html);
+        $this->assertStringContainsString('href="/anokii/m/drive"', $html);
+        $this->assertStringNotContainsString('{%', $html);
+    }
+
+    #[Test]
+    public function coming_soon_redirects_to_login_when_signed_out(): void
+    {
+        $shell = new AnokiiController(null, new SetupTokenRepository($this->db()));
+        $r = $shell->comingSoon(new Request(), 'drive');
+        $this->assertInstanceOf(RedirectResponse::class, $r);
+        $this->assertSame('/anokii/login', $r->getTargetUrl());
     }
 }

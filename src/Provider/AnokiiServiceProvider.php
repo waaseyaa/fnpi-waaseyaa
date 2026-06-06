@@ -82,6 +82,8 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
         $post('anokii.setpw.post', '/anokii/set-password', fn(Request $r) => $shell->setPasswordSubmit($r));
         $get('anokii.identity', '/anokii/identity', fn(Request $r) => $identity->index($r));
         $post('anokii.identity.save', '/anokii/identity/save', fn(Request $r) => $identity->save($r));
+        // Coming-soon placeholder for not-yet-live modules (drive, ai, rooms, ...).
+        $get('anokii.module', '/anokii/m/{module}', fn(Request $r, string $module) => $shell->comingSoon($r, $module));
     }
 
     public function nativeCommands(): iterable

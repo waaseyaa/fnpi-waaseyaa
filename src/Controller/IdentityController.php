@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Identity\IdentitySeed;
 use App\Identity\PillarRepository;
+use App\Support\AnokiiShell;
 use App\Support\Auth;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -52,19 +53,19 @@ final class IdentityController
             return new Response('Anokii unavailable: Twig is not initialised.', 500);
         }
 
+        $context = AnokiiShell::context($user, 'identity') + [
+            'sections' => array_values($sections),
+            'counts' => $this->pillars->statusCounts(),
+            'statuses' => [
+                ['v' => 'defined', 't' => 'Defined'],
+                ['v' => 'draft', 't' => 'Draft / legacy'],
+                ['v' => 'work', 't' => 'Needs work'],
+                ['v' => 'gap', 't' => 'Gap'],
+            ],
+        ];
+
         return new Response(
-            $twig->render('anokii/identity.html.twig', [
-                'nav_active' => 'identity',
-                'user_label' => Auth::label($user),
-                'sections' => array_values($sections),
-                'counts' => $this->pillars->statusCounts(),
-                'statuses' => [
-                    ['v' => 'defined', 't' => 'Defined'],
-                    ['v' => 'draft', 't' => 'Draft / legacy'],
-                    ['v' => 'work', 't' => 'Needs work'],
-                    ['v' => 'gap', 't' => 'Gap'],
-                ],
-            ]),
+            $twig->render('anokii/identity.html.twig', $context),
             200,
             ['Content-Type' => 'text/html; charset=UTF-8'],
         );
