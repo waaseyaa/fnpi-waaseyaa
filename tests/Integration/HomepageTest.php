@@ -67,8 +67,10 @@ final class HomepageTest extends TestCase
         // Contact posts to mailto for now.
         $this->assertStringContainsString('mailto:info@fnprocure.ca', $html);
 
-        // Brand assets: the FNPI wolf logo.
-        $this->assertStringContainsString('img1.wsimg.com', $html);
+        // Brand assets: the FNPI logos are served locally, not from the wsimg CDN.
+        $this->assertStringContainsString('/img/fnpi-wolf.png', $html);
+        $this->assertStringContainsString('/img/fnpi-wordmark.jpg', $html);
+        $this->assertStringNotContainsString('wsimg.com', $html);
 
         // Brand typography from the concept.
         $this->assertStringContainsString('Anton', $html);

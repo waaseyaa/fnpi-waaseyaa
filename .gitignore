@@ -8,4 +8,5 @@
 .env
 composer.local.json
 /storage/*.log
+/storage/*.lock
 /.phpunit.cache/
