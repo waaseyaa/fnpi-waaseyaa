@@ -76,6 +76,9 @@ final class HomepageTest extends TestCase
         $this->assertStringContainsString('Anton', $html);
         $this->assertStringContainsString('Oswald', $html);
 
+        // First-party analytics beacon is loaded (cookieless, self-hosted).
+        $this->assertStringContainsString('/js/fnpi-analytics.js', $html);
+
         // Rendered through Twig; no raw template tags leaked.
         $this->assertStringNotContainsString('{%', $html);
     }
