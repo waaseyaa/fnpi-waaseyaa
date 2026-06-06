@@ -61,10 +61,11 @@ final class PagesTest extends TestCase
         $this->assertStringContainsString('Anokii', $html);
         $this->assertStringContainsString('Co-Intelligence', $html);
         $this->assertStringContainsString('Member Portal', $html);
-        $this->assertStringContainsString('CLOUD Act', $html);
+        // Sovereignty framing (ownership / data stays in Canada), no pricing.
+        $this->assertStringContainsString('Your data stays yours', $html);
         $this->assertStringContainsString('Web Networks', $html);
-        // Roadmap modules are labelled as roadmap, not shipping.
-        $this->assertStringContainsString('roadmap', strtolower($html));
+        // Honest staging: platform + first modules building now, the rest is grown into.
+        $this->assertStringContainsString('building now', strtolower($html));
         $this->assertStringNotContainsString('{%', $html);
     }
 
@@ -151,6 +152,11 @@ final class PagesTest extends TestCase
         $html = (string) new PageController()->{$method}()->getContent();
         // No dollar figures on public pages; pricing lives behind "request a quote".
         $this->assertDoesNotMatchRegularExpression('/\$\s*[0-9]/', $html, sprintf('Public page "%s" must not publish pricing.', $method));
+        // The pitch is ownership/sovereignty, not price: no pricing language at all.
+        $lower = strtolower($html);
+        foreach (['commercial rate', 'nonprofit', 'non-profit', 'discount', 'per-seat', 'per seat'] as $banned) {
+            $this->assertStringNotContainsString($banned, $lower, sprintf('Public page "%s" must not use pricing language ("%s").', $method, $banned));
+        }
     }
 
     #[Test]
