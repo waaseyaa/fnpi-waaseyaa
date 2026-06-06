@@ -21,6 +21,26 @@ final class PageController
         return $this->renderTemplate('home.html.twig');
     }
 
+    public function technology(): Response
+    {
+        return $this->renderTemplate('technology.html.twig');
+    }
+
+    public function howItWorks(): Response
+    {
+        return $this->renderTemplate('how-it-works.html.twig');
+    }
+
+    public function proof(): Response
+    {
+        return $this->renderTemplate('proof.html.twig');
+    }
+
+    public function contact(): Response
+    {
+        return $this->renderTemplate('contact.html.twig');
+    }
+
     private function renderTemplate(string $name): Response
     {
         $twig = SsrServiceProvider::getTwigEnvironment();

@@ -72,6 +72,13 @@
   .lane .tag{font-family:"Oswald",sans-serif;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;
     color:#0f7488;background:#e3f4f8;border-radius:2px;padding:4px 9px;width:fit-content}
   .lane .tag.soon{color:#7a4e1d;background:#f3e9da}
+  .lane--link{cursor:pointer}
+  .lane-go{font-family:"Oswald",sans-serif;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cyan2);margin-top:4px}
+  .lane--link:hover .lane-go{color:var(--cyan)}
+  /* proof teaser strip (dark) */
+  .proof-teaser{background:#0a0e12;color:#eef3f5;border-top:1px solid #1b2a30;border-bottom:1px solid #1b2a30}
+  .proof-teaser .wrap{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;padding:40px 26px}
+  .proof-teaser h2{font-size:28px;margin:0;line-height:1.1;color:#fff;max-width:24ch}
   /* band */
   .band{background:var(--bg);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
   .band .grid{display:grid;grid-template-columns:1.05fr 1fr;gap:46px;align-items:center}
@@ -104,8 +111,15 @@
   .info .cond{display:block;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);margin:16px 0 6px;font-weight:600}
   /* footer */
   footer.f{background:#0a0e12;color:#8b969c;padding:42px 0;font-size:13px}
-  footer.f .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center}
+  footer.f .wrap{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:center}
   footer.f img{height:40px}
+  footer.f .foot-links{display:flex;gap:20px;flex-wrap:wrap}
+  footer.f .foot-links a{font-family:"Oswald",sans-serif;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#c4ccd0}
+  footer.f .foot-links a:hover{color:var(--cyan)}
+  footer.f .foot-meta{display:flex;flex-direction:column;gap:4px;text-align:right;line-height:1.5}
+  footer.f .foot-meta a{color:#c4ccd0}
+  footer.f .foot-meta a:hover{color:var(--cyan)}
+  @media(max-width:760px){footer.f .foot-meta{text-align:left}}
   @media(max-width:880px){
     .lanes,.band .grid,.faraday .grid,.vm-wrap,.contact .grid{grid-template-columns:1fr}
     .hero h1{font-size:48px}.nav .links{display:none}.brand img.wm{display:none}
@@ -121,18 +135,27 @@
     <img class="wm" src="/img/fnpi-wordmark.jpg" alt="First Nations Procurement Inc.">
   </a>
   <nav class="links">
-    <a href="#what">Sourcing</a><a href="#what">Technology</a><a href="#what">Privacy</a>
-    <a href="#about">About</a><a href="#contact">Contact</a>
+    <a href="/technology">Technology</a><a href="/how-it-works">How it works</a><a href="/proof">Proof</a><a href="/contact">Contact</a>
   </nav>
   <span class="spacer"></span>
-  <a class="btn" href="#contact">Get a free quote</a>
+  <a class="btn" href="/contact">Get a free quote</a>
 </div></header>
 
 {% block content %}{% endblock %}
 
 <footer class="f"><div class="wrap">
-  <img src="/img/fnpi-wolf.png" alt="FNPI">
-  <span>Copyright 2026 First Nations Procurement Inc. All rights reserved. Sagamok Anishnawbek First Nation.</span>
+  <a class="brand" href="/"><img src="/img/fnpi-wolf.png" alt="FNPI"></a>
+  <nav class="foot-links">
+    <a href="/technology">Technology</a>
+    <a href="/how-it-works">How it works</a>
+    <a href="/proof">Proof</a>
+    <a href="/contact">Contact</a>
+  </nav>
+  <div class="foot-meta">
+    <span>First Nations Procurement Inc. &middot; 100% First Nations-owned since 2017</span>
+    <span>91 River Rd, Sagamok Anishnawbek First Nation &middot; <a href="mailto:info@fnprocure.ca">info@fnprocure.ca</a></span>
+    <span>Copyright 2026 First Nations Procurement Inc. All rights reserved.</span>
+  </div>
 </div></footer>
 
 </body>

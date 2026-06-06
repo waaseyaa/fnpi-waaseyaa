@@ -1,0 +1,92 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Proof — A real Nation's site already runs on our platform · FNPI{% endblock %}
+{% block description %}The reference build: a real First Nation's website migrated onto the Waaseyaa engine, a repaired member portal live in production, and a grounded AI assistant standing as a working reference.{% endblock %}
+
+{% block head_styles %}
+  .did{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;text-align:left}
+  .did .card{background:#fff;border:1px solid var(--line);border-radius:4px;padding:24px}
+  .did .card h3{margin:10px 0 8px;font-size:20px;color:var(--ink)}
+  .did .card p{margin:0;color:var(--muted);font-size:14.5px}
+  .badge{font-family:"Oswald",sans-serif;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;border-radius:2px;padding:3px 8px;display:inline-block}
+  .badge.live{color:#0f6b3f;background:#dcf3e6}
+  .badge.ref{color:#7a4e1d;background:#f3e9da}
+  .pp{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .pp .p{background:#fff;border:1px solid var(--line);border-radius:4px;padding:18px;text-align:center}
+  .pp .p b{display:block;font-family:"Anton",sans-serif;font-size:22px;color:var(--ink);line-height:1.1}
+  .pp .p span{font-size:12.5px;color:var(--muted);display:block;margin-top:6px}
+  @media(max-width:880px){.did,.pp{grid-template-columns:1fr}}
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="grid-bg"></div><div class="glow"></div>
+  <div class="wrap">
+    <p class="eyebrow">Proof, not a promise</p>
+    <h1 class="display">A real Nation's site already runs on our platform.</h1>
+    <p class="oneline">A First Nation on Manitoulin Island is the reference build: a real site, migrated end to end onto the engine that powers Anokii.</p>
+    <div class="cta">
+      <a class="btn cyan" href="/contact">Could be your Nation next</a>
+      <a class="btn ghost" href="/technology">See the platform</a>
+    </div>
+  </div>
+</section>
+
+<section class="center"><div class="wrap">
+  <p class="sec-h">What we did</p>
+  <h2 class="sec-t display">For a Manitoulin First Nation</h2>
+  <p class="sec-sub">We label honestly what is live in production versus what stands as a working reference.</p>
+  <div class="did">
+    <div class="card">
+      <span class="badge live">Live in production</span>
+      <h3 class="display">Repaired member portal</h3>
+      <p>We fixed and stood up the Nation's member portal. It is running in production, with the director trialing it in real use.</p>
+    </div>
+    <div class="card">
+      <span class="badge ref">Reference build</span>
+      <h3 class="display">Full site migrated</h3>
+      <p>We migrated the Nation's entire WordPress and Elementor site onto Waaseyaa: cleaner than the original, branded, with a real editable backend behind 488 content entities.</p>
+    </div>
+    <div class="card">
+      <span class="badge ref">Working reference</span>
+      <h3 class="display">Grounded AI assistant</h3>
+      <p>We stood up a Co-Intelligence assistant grounded on the Nation's own content, as a working reference for what the built-in AI does day to day.</p>
+    </div>
+  </div>
+</div></section>
+
+<section class="band"><div class="wrap"><div class="grid">
+  <div>
+    <p class="sec-h">Why it matters</p>
+    <h2 class="display">This retires the hardest claim in the pitch.</h2>
+    <p>It is one thing to describe a sovereign platform. It is another to point at a real Nation's site running on the engine, end to end. The reference build is the asset: it turns "we could" into "we did," and it is what every conversation with a new Nation now starts from.</p>
+  </div>
+  <div class="proof">
+    <div class="p"><b>488</b><span>Content entities in the migrated site</span></div>
+    <div class="p"><b>Live</b><span>Member portal running in production</span></div>
+    <div class="p"><b>End to end</b><span>A real Nation's site on the engine</span></div>
+    <div class="p"><b>Grounded</b><span>AI assistant on the Nation's own files</span></div>
+  </div>
+</div></div></section>
+
+<section class="center"><div class="wrap">
+  <p class="sec-h">The record behind us</p>
+  <h2 class="sec-t display">Qualified, operating, and shipping.</h2>
+  <div class="pp" style="margin-top:8px">
+    <div class="p"><b>100%</b><span>First Nations-owned and controlled</span></div>
+    <div class="p"><b>Since 2017</b><span>Operating and delivering</span></div>
+    <div class="p"><b>Sagamok</b><span>Anishnawbek First Nation</span></div>
+    <div class="p"><b>ISC + CCAB</b><span>Qualified on both registries</span></div>
+    <div class="p"><b>Reference build</b><span>A live Nation's site on the platform</span></div>
+    <div class="p"><b>Faraday</b><span>Protection inventory shipping now</span></div>
+  </div>
+</div></section>
+
+<section class="hero"><div class="grid-bg"></div><div class="wrap" style="text-align:center;padding:64px 26px">
+  <h2 class="display" style="font-size:44px;color:#fff;margin:0 0 22px">Could be your Nation next.</h2>
+  <div class="cta" style="justify-content:center">
+    <a class="btn cyan" href="/contact">Request a quote</a>
+    <a class="btn ghost" href="/how-it-works">See how it works</a>
+  </div>
+</div></section>
+{% endblock %}

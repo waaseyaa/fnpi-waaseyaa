@@ -56,6 +56,42 @@ final class SiteServiceProvider extends ServiceProvider
                 ->build(),
         );
 
+        $router->addRoute(
+            'technology',
+            RouteBuilder::create('/technology')
+                ->controller(fn () => $controller->technology())
+                ->allowAll()
+                ->methods('GET')
+                ->build(),
+        );
+
+        $router->addRoute(
+            'how-it-works',
+            RouteBuilder::create('/how-it-works')
+                ->controller(fn () => $controller->howItWorks())
+                ->allowAll()
+                ->methods('GET')
+                ->build(),
+        );
+
+        $router->addRoute(
+            'proof',
+            RouteBuilder::create('/proof')
+                ->controller(fn () => $controller->proof())
+                ->allowAll()
+                ->methods('GET')
+                ->build(),
+        );
+
+        $router->addRoute(
+            'contact',
+            RouteBuilder::create('/contact')
+                ->controller(fn () => $controller->contact())
+                ->allowAll()
+                ->methods('GET')
+                ->build(),
+        );
+
         // First-party analytics (cookieless, self-hosted). Pin the recorder +
         // report to the persistent SQLite file: resolve(DatabaseInterface) at
         // route-build time can hand back an ephemeral connection (the

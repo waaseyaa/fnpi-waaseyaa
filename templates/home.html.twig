@@ -11,8 +11,8 @@
     <h1 class="display">Service &amp; Sourcing Solutions</h1>
     <p class="oneline">Indigenous-owned sourcing, technology, and protection.</p>
     <div class="cta">
-      <a class="btn cyan" href="#contact">Get a free quote</a>
-      <a class="btn ghost" href="#what">Explore our solutions</a>
+      <a class="btn cyan" href="/contact">Get a free quote</a>
+      <a class="btn ghost" href="/technology">Explore our solutions</a>
     </div>
     <div class="trust">
       <span><b>100%</b> First Nations-owned</span>
@@ -33,12 +33,13 @@
       <h3 class="display">Sourcing &amp; Services</h3>
       <p>Indigenous-content sourcing, sampling, and trade missions. We find, vet, and deliver the goods and services your operation needs, backed by a Faraday data-protection product line in stock.</p>
     </div>
-    <div class="lane">
+    <a class="lane lane--link" href="/technology">
       <svg class="ic" viewBox="0 0 40 40" fill="none"><rect x="7" y="9" width="26" height="18" rx="1.5" stroke="currentColor" stroke-width="2"/><path d="M14 33 H26 M20 27 V33" stroke="#1fb6d6" stroke-width="2"/><circle cx="20" cy="18" r="4" stroke="currentColor" stroke-width="2"/></svg>
       <span class="tag">Building</span>
       <h3 class="display">Technology &amp; Software</h3>
       <p>Sovereign, Nation-owned software: websites and member portals, a secure workspace, and department tools, hosted in Canada and governed by the Nation. Data that stays yours.</p>
-    </div>
+      <span class="lane-go">Explore the platform &rarr;</span>
+    </a>
     <div class="lane">
       <svg class="ic" viewBox="0 0 40 40" fill="none"><path d="M20 6 L32 11 V20 C32 28 26 33 20 35 C14 33 8 28 8 20 V11 Z" stroke="currentColor" stroke-width="2"/><circle cx="20" cy="19" r="3" fill="#1fb6d6"/></svg>
       <span class="tag">Shipping now</span>
@@ -53,6 +54,7 @@
     <p class="sec-h">Built on sovereignty</p>
     <h2 class="display">Procurement is our qualification. Sovereignty is our purpose.</h2>
     <p>FNPI exists to strengthen Indigenous economic self-determination. Our Indigenous ownership is not a label, it is the qualification that lets governments and corporations buy from us and meet their Indigenous procurement commitments, across sourcing, technology, and protection alike.</p>
+    <p style="margin-top:18px"><a class="btn cyan" href="/technology">See the sovereign platform</a></p>
   </div>
   <div class="proof">
     <div class="p"><b>100%</b><span>First Nations-owned and controlled</span></div>
@@ -68,9 +70,17 @@
     <p class="sec-h" style="color:#7fd6e8">In stock and shipping</p>
     <h2 class="sec-t display">Faraday cases</h2>
     <p class="sec-sub">Electromagnetic-shielding enclosures that block cellular, WiFi, GPS, and radio signals to protect devices and data from interception. A tangible counter-surveillance and privacy product, available now on request.</p>
-    <a class="btn cyan" href="#contact">Request Faraday cases</a>
+    <a class="btn cyan" href="/contact">Request Faraday cases</a>
   </div>
 </div></div></section>
+
+<section class="proof-teaser"><div class="wrap">
+  <div>
+    <p class="sec-h" style="color:#7fd6e8">Proof, not a promise</p>
+    <h2 class="display">A real Nation's site already runs on our platform.</h2>
+  </div>
+  <a class="btn cyan" href="/proof">See the reference build</a>
+</div></section>
 
 <section id="about" class="center"><div class="wrap">
   <p class="sec-h">About First Nations Procurement Inc.</p>
@@ -87,26 +97,13 @@
   </div>
 </div></section>
 
-<section id="contact" class="band"><div class="wrap">
+<section id="contact" class="band center"><div class="wrap">
   <p class="sec-h">Get in touch</p>
-  <h2 class="sec-t display">Tell us what you need</h2>
-  <p class="sec-sub" style="margin-left:0">From a single sourcing request to a Nation-wide platform, start with a free quote.</p>
-  <div class="grid">
-    {# Static homepage for now: the form hands off to email via a mailto: action
-       until a server-side inbox/notify endpoint is wired up. #}
-    <form action="mailto:info@fnprocure.ca" method="post" enctype="text/plain">
-      <div class="field"><label>Name</label><input type="text" name="name" placeholder="Your name"></div>
-      <div class="field"><label>Email</label><input type="email" name="email" placeholder="you@email.com"></div>
-      <div class="field"><label>What can we help with?</label><textarea name="message" rows="4" placeholder="Sourcing, technology, security, or a quote..."></textarea></div>
-      <button class="btn" type="submit">Send request</button>
-    </form>
-    <div class="info">
-      <p><b>First Nations Procurement Inc.</b></p>
-      <p>91 River Rd, Sagamok Anishnawbek First Nation</p>
-      <p><a href="mailto:info@fnprocure.ca">info@fnprocure.ca</a></p>
-      <span class="cond">Hours</span>
-      <p>Open today 9:00 a.m. to 5:00 p.m.</p>
-    </div>
+  <h2 class="sec-t display">Tell us what your Nation needs</h2>
+  <p class="sec-sub">From a single sourcing request to a Nation-wide platform, start with a free quote. We work with First Nations Councils and administrators, and with funders and partners who want to support the build.</p>
+  <div class="cta" style="justify-content:center">
+    <a class="btn cyan" href="/contact">Request a quote</a>
+    <a class="btn" href="/technology">Explore the platform</a>
   </div>
 </div></section>
 {% endblock %}

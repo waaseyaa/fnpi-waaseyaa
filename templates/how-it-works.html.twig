@@ -1,0 +1,81 @@
+{% extends "base.html.twig" %}
+
+{% block title %}How it works — Start where it shows, grow as you trust it · FNPI{% endblock %}
+{% block description %}A land-and-expand playbook for Nations: start with a website and member portal, prove sovereignty, expand into department modules, and own the full stack. Your own people run it.{% endblock %}
+
+{% block head_styles %}
+  .ladder{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;counter-reset:step}
+  .rung{background:#fff;border:1px solid var(--line);border-radius:4px;padding:22px 20px;position:relative}
+  .rung .n{font-family:"Anton",sans-serif;font-size:28px;color:var(--cyan2);line-height:1}
+  .rung h3{margin:10px 0 8px;font-size:22px;color:var(--ink)}
+  .rung p{margin:0;font-size:14px;color:var(--muted)}
+  .seq{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0}
+  .seq li{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--line);font-size:16px}
+  .seq li:last-child{border-bottom:none}
+  .seq .k{font-family:"Oswald",sans-serif;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#0f7488;background:#e3f4f8;border-radius:2px;padding:4px 10px;white-space:nowrap}
+  .seq .last .k{color:#7a4e1d;background:#f3e9da}
+  @media(max-width:880px){.ladder{grid-template-columns:1fr 1fr}}
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="grid-bg"></div><div class="glow"></div>
+  <div class="wrap">
+    <p class="eyebrow">The playbook</p>
+    <h1 class="display">Start where it shows.<br>Grow as you trust it.</h1>
+    <p class="oneline">We land fast with what a Nation needs first, prove sovereignty is real, then expand one step at a time, on your timeline.</p>
+    <div class="cta">
+      <a class="btn cyan" href="/contact">Let's scope your Nation</a>
+      <a class="btn ghost" href="/technology">See the platform</a>
+    </div>
+  </div>
+</section>
+
+<section class="center"><div class="wrap">
+  <p class="sec-h">The four stages</p>
+  <h2 class="sec-t display">A ladder, not a leap.</h2>
+  <p class="sec-sub">Each stage stands on its own and de-risks the next. You never have to bet everything at once.</p>
+  <div class="ladder" style="text-align:left">
+    <div class="rung"><div class="n">01</div><h3 class="display">Land</h3><p>A fast, branded website and a working member portal. Visible value, in weeks.</p></div>
+    <div class="rung"><div class="n">02</div><h3 class="display">Prove</h3><p>Sovereign hosting in Canada, OCAP alignment, and Council governance. Sovereignty you can show.</p></div>
+    <div class="rung"><div class="n">03</div><h3 class="display">Expand</h3><p>Department modules, added one at a time. Each one owned by the Nation, each one compounding.</p></div>
+    <div class="rung"><div class="n">04</div><h3 class="display">Own</h3><p>The full stack, on infrastructure you control. The rented tools are gone.</p></div>
+  </div>
+</div></section>
+
+<section class="band"><div class="wrap">
+  <p class="sec-h">The migration, plainly</p>
+  <h2 class="display">We move you off the rented stack in a sequence that lands fast and de-risks each step.</h2>
+  <p class="sec-sub" style="margin-left:0">No big-bang cutover, no lift-and-pray. A clear order, with email moved last so nothing critical is ever in the air.</p>
+  <ul class="seq">
+    <li><span class="k">First</span> Website onto the platform, with a real editable backend.</li>
+    <li><span class="k">Then</span> Member portal, so members get services online.</li>
+    <li><span class="k">Then</span> Department data, off spreadsheets and legacy apps.</li>
+    <li><span class="k">Then</span> Files, documents, and collaboration in one place.</li>
+    <li class="last"><span class="k">Email last</span> Moved only once everything else is solid.</li>
+  </ul>
+</div></section>
+
+<section class="center"><div class="wrap">
+  <p class="sec-h">Your people run it</p>
+  <h2 class="sec-t display">The AI Operator</h2>
+  <p class="sec-sub">We do not parachute in and leave you dependent. We train a trusted person already in your office, amplified by the platform's built-in AI, so the day-to-day capability lives in the community. The money, the control, and the know-how stay with the Nation. It is OCAP aligned and non-extractive by design: AI Operatives training AI Operators.</p>
+</div></section>
+
+<section class="faraday"><div class="wrap"><div class="grid">
+  <div>
+    <p class="sec-h" style="color:#7fd6e8">Procurement is the enabler</p>
+    <h2 class="sec-t display">Often little or nothing from band funds.</h2>
+    <p class="sec-sub">Because FNPI is itself a 100% First Nations-owned procurement vehicle, on both the ISC and CCAB registries, a Nation can buy through the federal 5% Indigenous procurement set-aside and ISC funding streams. Sovereignty is why you want it; procurement is how you pay for it.</p>
+  </div>
+  <div class="panel"><div class="g"></div><span>5% set-aside &middot; ISC funding</span></div>
+</div></div></section>
+
+<section class="hero"><div class="grid-bg"></div><div class="wrap" style="text-align:center;padding:64px 26px">
+  <h2 class="display" style="font-size:44px;color:#fff;margin:0 0 22px">Let's scope your Nation.</h2>
+  <div class="cta" style="justify-content:center">
+    <a class="btn cyan" href="/contact">Request a quote</a>
+    <a class="btn ghost" href="/proof">See the reference build</a>
+  </div>
+</div></section>
+{% endblock %}

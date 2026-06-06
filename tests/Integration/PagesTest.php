@@ -1,0 +1,126 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tests\Integration;
+
+use App\Controller\PageController;
+use App\Provider\SiteServiceProvider;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Waaseyaa\Routing\WaaseyaaRouter;
+use Waaseyaa\SSR\SsrServiceProvider;
+
+/**
+ * The v1 tech-lane pages render with their key headlines, and the spec's hard
+ * guardrails hold on every public page (no defense/drones, no published pricing).
+ */
+final class PagesTest extends TestCase
+{
+    public static function setUpBeforeClass(): void
+    {
+        $provider = new SsrServiceProvider();
+        $provider->setKernelContext(dirname(__DIR__, 2), [], []);
+        $provider->boot();
+    }
+
+    #[Test]
+    public function all_v1_routes_are_registered(): void
+    {
+        $router = new WaaseyaaRouter();
+        new SiteServiceProvider()->routes($router);
+
+        $this->assertSame('home', $router->match('/')['_route'] ?? null);
+        $this->assertSame('technology', $router->match('/technology')['_route'] ?? null);
+        $this->assertSame('how-it-works', $router->match('/how-it-works')['_route'] ?? null);
+        $this->assertSame('proof', $router->match('/proof')['_route'] ?? null);
+        $this->assertSame('contact', $router->match('/contact')['_route'] ?? null);
+    }
+
+    #[Test]
+    public function technology_page_leads_with_sovereignty_and_anokii(): void
+    {
+        $html = (string) new PageController()->technology()->getContent();
+        $this->assertSame(200, new PageController()->technology()->getStatusCode());
+        $this->assertStringContainsString('Owned, not rented', $html);
+        $this->assertStringContainsString('Anokii', $html);
+        $this->assertStringContainsString('Co-Intelligence', $html);
+        $this->assertStringContainsString('Member Portal', $html);
+        $this->assertStringContainsString('CLOUD Act', $html);
+        $this->assertStringContainsString('Web Networks', $html);
+        // Roadmap modules are labelled as roadmap, not shipping.
+        $this->assertStringContainsString('roadmap', strtolower($html));
+        $this->assertStringNotContainsString('{%', $html);
+    }
+
+    #[Test]
+    public function how_it_works_shows_the_ladder_and_ai_operator(): void
+    {
+        $html = (string) new PageController()->howItWorks()->getContent();
+        $this->assertStringContainsString('Start where it shows', $html);
+        foreach (['Land', 'Prove', 'Expand', 'Own'] as $stage) {
+            $this->assertStringContainsString($stage, $html);
+        }
+        $this->assertStringContainsString('AI Operator', $html);
+        // Procurement appears as the enabler (5% set-aside), not pricing.
+        $this->assertStringContainsString('5%', $html);
+        $this->assertStringContainsString('email last', strtolower($html));
+        $this->assertStringNotContainsString('{%', $html);
+    }
+
+    #[Test]
+    public function proof_page_is_anonymized_pending_consent(): void
+    {
+        $html = (string) new PageController()->proof()->getContent();
+        $this->assertStringContainsString('already runs on our platform', $html);
+        $this->assertStringContainsString('Manitoulin First Nation', $html);
+        $this->assertStringContainsString('488', $html);
+        // Hard guardrail: the real Nation is NOT named until SFN consent.
+        $this->assertStringNotContainsString('Sheguiandah', $html);
+        $this->assertStringNotContainsString('{%', $html);
+    }
+
+    #[Test]
+    public function contact_page_has_quote_form_to_mailto(): void
+    {
+        $html = (string) new PageController()->contact()->getContent();
+        $this->assertStringContainsString('Tell us what your Nation needs', $html);
+        $this->assertStringContainsString('mailto:info@fnprocure.ca', $html);
+        $this->assertStringContainsString('name="organization"', $html);
+        $this->assertStringNotContainsString('{%', $html);
+    }
+
+    /**
+     * @return list<array{0:string}>
+     */
+    public static function pageHtmlProvider(): array
+    {
+        return [
+            ['home'],
+            ['technology'],
+            ['howItWorks'],
+            ['proof'],
+            ['contact'],
+        ];
+    }
+
+    #[Test]
+    #[DataProvider('pageHtmlProvider')]
+    public function no_defense_or_drones_anywhere_public(string $method): void
+    {
+        $html = strtolower((string) new PageController()->{$method}()->getContent());
+        foreach (['drone', 'military', 'defense', 'defence', 'weapon', ' isr', 'autonomous monitoring'] as $banned) {
+            $this->assertStringNotContainsString($banned, $html, sprintf('Public page "%s" must not mention "%s".', $method, trim($banned)));
+        }
+    }
+
+    #[Test]
+    #[DataProvider('pageHtmlProvider')]
+    public function no_published_pricing_anywhere_public(string $method): void
+    {
+        $html = (string) new PageController()->{$method}()->getContent();
+        // No dollar figures on public pages; pricing lives behind "request a quote".
+        $this->assertDoesNotMatchRegularExpression('/\$\s*[0-9]/', $html, sprintf('Public page "%s" must not publish pricing.', $method));
+    }
+}
