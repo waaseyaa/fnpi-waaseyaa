@@ -2,44 +2,56 @@
 
 {% block anokii_styles %}
   :root{
-    --green:#1f9d6b; --green-soft:#e3f5ec; --amber:#c98a16; --amber-soft:#f7eeda;
-    --orange:#cf6a2b; --orange-soft:#f7e6da; --grey:#8b929a; --grey-soft:#eceae5;
-    --cyan-soft:#e3f4f8; --panel:#ffffff;
+    --green:#138a55; --green-soft:#e4f7ee;
+    --amber:#a96a00; --amber-soft:#fff3df;
+    --orange:#c4631f; --orange-soft:#fbe9da;
+    --grey:#5b6172; --grey-soft:#eef0f4;
+    --cyan-soft:#e3f4f8;
+    --card-shadow:0 1px 3px rgba(10,14,18,.05),0 8px 24px rgba(10,14,18,.06);
   }
-  .maturity{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:26px}
-  .maturity h2{font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:0 0 12px;font-weight:700;font-family:"Oswald",sans-serif}
-  .bar{display:flex;height:16px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#fff}
-  .bar span{display:block;height:100%}
-  .legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:12px;font-size:12.5px;color:var(--muted)}
+  /* maturity card */
+  .maturity{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:28px;box-shadow:var(--card-shadow)}
+  .maturity h2{font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin:0 0 13px;font-weight:600;font-family:"Oswald",sans-serif}
+  .bar{display:flex;height:14px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:var(--bg)}
+  .bar span{display:block;height:100%;transition:width .3s}
+  .legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:13px;font-size:12.5px;color:var(--muted);font-family:"Oswald",sans-serif}
   .legend b{color:var(--ink);font-weight:700}
   .dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
   .d-defined{background:var(--green)} .d-draft{background:var(--amber)} .d-work{background:var(--orange)} .d-gap{background:var(--grey)}
+  /* sections */
   section.sec{margin:30px 0}
-  .sec-h{display:flex;align-items:baseline;gap:12px;margin:0 0 4px}
-  .sec-h h3{font-size:20px;margin:0;font-weight:800;letter-spacing:-.01em;color:var(--ink)}
-  .sec-h .n{font-size:12px;color:var(--cyan2);font-weight:700;font-family:"Oswald",sans-serif}
-  .sec-sub{color:var(--muted);margin:0 0 16px;font-size:13.5px}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .sec-h{display:flex;align-items:baseline;gap:11px;margin:0 0 5px}
+  .sec-h .n{font-family:"Oswald",sans-serif;font-size:13px;font-weight:700;color:var(--cyan2);letter-spacing:.04em}
+  .sec-h h3{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.01em;font-size:20px;margin:0;color:var(--ink)}
+  .sec-sub{color:var(--muted);margin:0 0 16px;font-size:13.5px;max-width:80ch}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   @media(max-width:760px){.grid{grid-template-columns:1fr}}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 17px;display:flex;flex-direction:column;gap:9px}
+  /* card (Anokii style) */
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:11px;box-shadow:var(--card-shadow)}
   .card.full{grid-column:1 / -1}
   .card-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
-  .card h4{margin:0;font-size:15.5px;font-weight:700;color:var(--ink)}
-  .status{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border:none;border-radius:20px;padding:5px 11px;cursor:pointer;appearance:none;font-family:"Oswald",sans-serif}
+  .card h4{margin:0;font-family:"Oswald",sans-serif;font-weight:600;font-size:15px;color:var(--ink);letter-spacing:.01em}
+  /* status pill (working selector) */
+  .status{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;border:1px solid transparent;border-radius:20px;padding:5px 12px;cursor:pointer;appearance:none;font-family:"Oswald",sans-serif;flex:0 0 auto}
+  .status:focus{outline:none;box-shadow:0 0 0 3px rgba(31,182,214,.16)}
   .s-defined{background:var(--green-soft);color:var(--green)}
   .s-draft{background:var(--amber-soft);color:var(--amber)}
   .s-work{background:var(--orange-soft);color:var(--orange)}
   .s-gap{background:var(--grey-soft);color:var(--grey)}
-  .now{font-size:13.5px;color:var(--ink)}
-  .now .lbl{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:2px;font-weight:700;font-family:"Oswald",sans-serif}
-  .now blockquote{margin:0;padding:9px 12px;background:#fafaf8;border-left:3px solid var(--cyan);border-radius:4px;color:#2a2e33;font-size:13.5px}
-  .decide{font-size:12.5px;color:var(--orange);background:var(--orange-soft);border-radius:6px;padding:7px 10px}
-  .decide b{color:var(--orange)}
-  .notes label{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:4px 0 3px;font-weight:700;font-family:"Oswald",sans-serif}
-  .notes textarea{width:100%;border:1px solid var(--line);border-radius:7px;padding:8px 10px;font:inherit;font-size:13px;background:#fcfcfa;resize:vertical;min-height:42px;color:var(--ink)}
-  .notes textarea:focus{outline:2px solid var(--cyan-soft);border-color:var(--cyan)}
+  /* now content + quiet quotes */
+  .now{font-size:13.5px;color:var(--ink);line-height:1.55}
+  .now .lbl{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:4px;font-weight:600;font-family:"Oswald",sans-serif}
+  .now blockquote{margin:4px 0 0;padding:1px 0 1px 13px;border-left:2px solid #cfe7ee;color:#3a4147;font-style:italic;font-size:13.5px}
+  /* refined Decide callout */
+  .decide{background:#f2f8fa;border-left:3px solid var(--cyan2);border-radius:0 8px 8px 0;padding:9px 12px;font-size:12.5px;color:#3a4147;line-height:1.5}
+  .decide .dl{display:block;font-family:"Oswald",sans-serif;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--cyan2);margin-bottom:3px}
+  /* notes (Anokii input) */
+  .notes label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:2px 0 4px;font-weight:600;font-family:"Oswald",sans-serif}
+  .notes textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font:inherit;font-size:13px;background:#fff;resize:vertical;min-height:44px;color:var(--ink)}
+  .notes textarea:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(31,182,214,.14)}
+  /* tag chips */
   .pills{display:flex;flex-wrap:wrap;gap:6px}
-  .pill{font-size:11.5px;background:#f0efea;border:1px solid var(--line);border-radius:20px;padding:3px 10px;color:#3a3f45}
+  .pill{font-size:11.5px;background:#eef1f3;border:1px solid var(--line);border-radius:20px;padding:3px 11px;color:#3a4147}
   .pill.cyan{background:var(--cyan-soft);border-color:#cdeaf1;color:var(--cyan2)}
   .edited{font-size:11px;color:var(--muted);font-family:"Oswald",sans-serif;letter-spacing:.02em;min-height:14px}
   .saveflash{color:var(--cyan2)}
@@ -97,7 +109,7 @@
         </div>
         {% endif %}
         {% if p.decision is not empty %}
-        <div class="decide"><b>{{ p.decide_label }}:</b> {{ p.decision }}</div>
+        <div class="decide"><span class="dl">{{ p.decide_label }}</span>{{ p.decision }}</div>
         {% endif %}
         <div class="notes">
           <label>Notes / drafts</label>
