@@ -1,0 +1,58 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Sign in · Anokii · FNPI{% endblock %}
+{% block robots %}noindex,nofollow{% endblock %}
+
+{% block head_styles %}
+  body{background:var(--dark)}
+  .authpage{min-height:calc(100vh - 0px);display:flex;align-items:center;justify-content:center;padding:48px 20px}
+  .authcard{width:100%;max-width:380px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:30px 28px}
+  .authcard .brand{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+  .authcard .brand img{height:34px}
+  .authcard .brand .nm{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.04em;font-size:20px;color:var(--ink)}
+  .authcard h1{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:24px;margin:0 0 4px;color:var(--ink)}
+  .authcard .sub{color:var(--muted);font-size:13.5px;margin:0 0 20px}
+  .fld{margin-bottom:13px}
+  .fld label{display:block;font-family:"Oswald",sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+  .fld input{width:100%;border:1px solid var(--line);border-radius:5px;padding:11px 12px;font:inherit;font-size:14px;background:#fcfcfa}
+  .fld input:focus{outline:2px solid var(--cyan-soft,#e3f4f8);border-color:var(--cyan)}
+  .abtn{width:100%;background:var(--cyan2);color:#fff;border:none;border-radius:5px;padding:12px;font-family:"Oswald",sans-serif;font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:13px;cursor:pointer}
+  .abtn:hover{background:#0f7488}
+  .err{display:none;background:#fdecea;color:#a4291c;border-radius:5px;padding:9px 11px;font-size:13px;margin-bottom:14px}
+  .err.show{display:block}
+{% endblock %}
+
+{% block topnav %}{% endblock %}
+{% block sitefooter %}{% endblock %}
+
+{% block content %}
+<div class="authpage"><div class="authcard">
+  <div class="brand"><img src="/img/fnpi-wolf.png" alt="FNPI"><span class="nm">Anokii</span></div>
+  <h1>Sign in</h1>
+  <p class="sub">FNPI's private workspace.</p>
+  <div class="err" id="err"></div>
+  <form id="loginForm" autocomplete="on">
+    <div class="fld"><label for="email">Email</label><input type="email" id="email" name="email" required autocomplete="username"></div>
+    <div class="fld"><label for="password">Password</label><input type="password" id="password" name="password" required autocomplete="current-password"></div>
+    <button class="abtn" type="submit">Sign in</button>
+  </form>
+</div></div>
+
+<script>
+(function(){
+  var f = document.getElementById('loginForm'), err = document.getElementById('err');
+  f.addEventListener('submit', function(e){
+    e.preventDefault();
+    err.classList.remove('show');
+    fetch('/anokii/login', {
+      method:'POST', headers:{'Content-Type':'application/json'}, credentials:'same-origin',
+      body: JSON.stringify({email: document.getElementById('email').value, password: document.getElementById('password').value})
+    }).then(function(r){ return r.json().catch(function(){return {ok:false,error:'Something went wrong.'};}); })
+      .then(function(d){
+        if(d && d.ok){ window.location = d.redirect || '/anokii'; }
+        else { err.textContent = (d && d.error) || 'Wrong email or password.'; err.classList.add('show'); }
+      }).catch(function(){ err.textContent='Network error. Try again.'; err.classList.add('show'); });
+  });
+})();
+</script>
+{% endblock %}

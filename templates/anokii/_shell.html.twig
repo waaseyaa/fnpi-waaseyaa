@@ -1,0 +1,51 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Anokii · FNPI{% endblock %}
+{% block description %}FNPI's private Anokii workspace.{% endblock %}
+{% block robots %}noindex,nofollow{% endblock %}
+
+{% block head_styles %}
+  .anav{position:sticky;top:0;z-index:20;background:var(--black);border-bottom:1px solid #1b2a30}
+  .anav .wrap{display:flex;align-items:center;gap:22px;height:62px}
+  .anav .brand{display:flex;align-items:center;gap:10px}
+  .anav .brand img{height:30px;width:auto;display:block}
+  .anav .brand .nm{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.04em;color:#fff;font-size:18px}
+  .anav nav{display:flex;gap:20px;margin-left:6px}
+  .anav nav a{font-family:"Oswald",sans-serif;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#9fb0b8;font-weight:600}
+  .anav nav a:hover{color:#fff}
+  .anav nav a.on{color:var(--cyan)}
+  .anav .spacer{flex:1}
+  .anav .who{font-family:"Oswald",sans-serif;font-size:13px;color:#c4ccd0;letter-spacing:.02em}
+  .anav .logout{font-family:"Oswald",sans-serif;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#9fb0b8;border:1px solid #2b3a40;border-radius:3px;padding:6px 12px}
+  .anav .logout:hover{color:#fff;border-color:var(--cyan)}
+  .awrap{max-width:1100px;margin:0 auto;padding:34px 22px 70px}
+  .ahead{margin:0 0 22px}
+  .ahead .ey{font-family:"Oswald",sans-serif;font-size:12px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--cyan2);margin:0 0 6px}
+  .ahead h1{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.01em;font-size:40px;margin:0;color:var(--ink)}
+  .ahead p.sub{color:var(--muted);margin:8px 0 0;max-width:70ch}
+  @media(max-width:760px){.anav nav{display:none}}
+  {% block anokii_styles %}{% endblock %}
+{% endblock %}
+
+{% block topnav %}
+<header class="anav"><div class="wrap">
+  <a class="brand" href="/anokii">
+    <img src="/img/fnpi-wolf.png" alt="FNPI">
+    <span class="nm">Anokii</span>
+  </a>
+  <nav>
+    <a href="/anokii" class="{{ nav_active == 'home' ? 'on' : '' }}">Home</a>
+    <a href="/anokii/identity" class="{{ nav_active == 'identity' ? 'on' : '' }}">Identity Workspace</a>
+    <a href="/anokii/settings" class="{{ nav_active == 'settings' ? 'on' : '' }}">Settings</a>
+  </nav>
+  <span class="spacer"></span>
+  <span class="who">{{ user_label }}</span>
+  <a class="logout" href="/anokii/logout">Logout</a>
+</div></header>
+{% endblock %}
+
+{% block content %}
+<main class="awrap">{% block anokii_content %}{% endblock %}</main>
+{% endblock %}
+
+{% block sitefooter %}{% endblock %}

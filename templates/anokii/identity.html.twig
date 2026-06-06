@@ -1,0 +1,157 @@
+{% extends "anokii/_shell.html.twig" %}
+
+{% block anokii_styles %}
+  :root{
+    --green:#1f9d6b; --green-soft:#e3f5ec; --amber:#c98a16; --amber-soft:#f7eeda;
+    --orange:#cf6a2b; --orange-soft:#f7e6da; --grey:#8b929a; --grey-soft:#eceae5;
+    --cyan-soft:#e3f4f8; --panel:#ffffff;
+  }
+  .maturity{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:26px}
+  .maturity h2{font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:0 0 12px;font-weight:700;font-family:"Oswald",sans-serif}
+  .bar{display:flex;height:16px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#fff}
+  .bar span{display:block;height:100%}
+  .legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:12px;font-size:12.5px;color:var(--muted)}
+  .legend b{color:var(--ink);font-weight:700}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
+  .d-defined{background:var(--green)} .d-draft{background:var(--amber)} .d-work{background:var(--orange)} .d-gap{background:var(--grey)}
+  section.sec{margin:30px 0}
+  .sec-h{display:flex;align-items:baseline;gap:12px;margin:0 0 4px}
+  .sec-h h3{font-size:20px;margin:0;font-weight:800;letter-spacing:-.01em;color:var(--ink)}
+  .sec-h .n{font-size:12px;color:var(--cyan2);font-weight:700;font-family:"Oswald",sans-serif}
+  .sec-sub{color:var(--muted);margin:0 0 16px;font-size:13.5px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 17px;display:flex;flex-direction:column;gap:9px}
+  .card.full{grid-column:1 / -1}
+  .card-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .card h4{margin:0;font-size:15.5px;font-weight:700;color:var(--ink)}
+  .status{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border:none;border-radius:20px;padding:5px 11px;cursor:pointer;appearance:none;font-family:"Oswald",sans-serif}
+  .s-defined{background:var(--green-soft);color:var(--green)}
+  .s-draft{background:var(--amber-soft);color:var(--amber)}
+  .s-work{background:var(--orange-soft);color:var(--orange)}
+  .s-gap{background:var(--grey-soft);color:var(--grey)}
+  .now{font-size:13.5px;color:var(--ink)}
+  .now .lbl{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:2px;font-weight:700;font-family:"Oswald",sans-serif}
+  .now blockquote{margin:0;padding:9px 12px;background:#fafaf8;border-left:3px solid var(--cyan);border-radius:4px;color:#2a2e33;font-size:13.5px}
+  .decide{font-size:12.5px;color:var(--orange);background:var(--orange-soft);border-radius:6px;padding:7px 10px}
+  .decide b{color:var(--orange)}
+  .notes label{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:4px 0 3px;font-weight:700;font-family:"Oswald",sans-serif}
+  .notes textarea{width:100%;border:1px solid var(--line);border-radius:7px;padding:8px 10px;font:inherit;font-size:13px;background:#fcfcfa;resize:vertical;min-height:42px;color:var(--ink)}
+  .notes textarea:focus{outline:2px solid var(--cyan-soft);border-color:var(--cyan)}
+  .pills{display:flex;flex-wrap:wrap;gap:6px}
+  .pill{font-size:11.5px;background:#f0efea;border:1px solid var(--line);border-radius:20px;padding:3px 10px;color:#3a3f45}
+  .pill.cyan{background:var(--cyan-soft);border-color:#cdeaf1;color:var(--cyan2)}
+  .edited{font-size:11px;color:var(--muted);font-family:"Oswald",sans-serif;letter-spacing:.02em;min-height:14px}
+  .saveflash{color:var(--cyan2)}
+{% endblock %}
+
+{% block anokii_content %}
+<div class="ahead">
+  <p class="ey">Identity Workspace</p>
+  <h1>Identity Workspace</h1>
+  <p class="sub">A living canvas for defining who FNPI is, before more content gets built on top of it. Foundation first, expression last. Set each pillar's status, capture decisions in the notes, and evolve it together. Changes save to the database and are shared between accounts.</p>
+</div>
+
+{% set order = ['defined','draft','work','gap'] %}
+{% set colorvar = {'defined':'var(--green)','draft':'var(--amber)','work':'var(--orange)','gap':'var(--grey)'} %}
+<div class="maturity">
+  <h2>Identity maturity</h2>
+  <div class="bar" id="bar">
+    {% for k in order %}
+      <span data-k="{{ k }}" style="width: {{ counts.total ? (counts[k] / counts.total * 100)|round(2) : 0 }}%; background: {{ colorvar[k] }}"></span>
+    {% endfor %}
+  </div>
+  <div class="legend">
+    <span><span class="dot d-defined"></span><b id="c-defined">{{ counts.defined }}</b> Defined</span>
+    <span><span class="dot d-draft"></span><b id="c-draft">{{ counts.draft }}</b> Draft / legacy</span>
+    <span><span class="dot d-work"></span><b id="c-work">{{ counts.work }}</b> Needs work</span>
+    <span><span class="dot d-gap"></span><b id="c-gap">{{ counts.gap }}</b> Gap</span>
+  </div>
+</div>
+
+{% for sec in sections %}
+  {% if sec.pillars is not empty %}
+  <section class="sec">
+    <div class="sec-h"><span class="n">{{ sec.no }}</span><h3>{{ sec.title }}</h3></div>
+    <p class="sec-sub">{{ sec.sub }}</p>
+    <div class="grid">
+      {% for p in sec.pillars %}
+      <div class="card{{ p.is_full ? ' full' : '' }}" data-pid="{{ p.pid }}" data-status="{{ p.status }}">
+        <div class="card-top">
+          <h4>{{ p.title }}</h4>
+          <select class="status s-{{ p.status }}" data-pid="{{ p.pid }}" aria-label="Status for {{ p.title }}">
+            {% for s in statuses %}<option value="{{ s.v }}"{{ s.v == p.status ? ' selected' : '' }}>{{ s.t }}</option>{% endfor %}
+          </select>
+        </div>
+        {% if p.body is not empty or p.now_label is not empty %}
+        <div class="now">
+          {% if p.now_label is not empty %}<span class="lbl">{{ p.now_label }}</span>{% endif %}
+          {% if p.body is not empty %}
+            {% if p.is_quote %}<blockquote>"{{ p.body }}"</blockquote>{% else %}{{ p.body }}{% endif %}
+          {% endif %}
+        </div>
+        {% endif %}
+        {% if p.pills is not empty %}
+        <div class="pills">
+          {% for pill in p.pills %}<span class="pill{{ pill.cyan ? ' cyan' : '' }}">{{ pill.t }}</span>{% endfor %}
+        </div>
+        {% endif %}
+        {% if p.decision is not empty %}
+        <div class="decide"><b>{{ p.decide_label }}:</b> {{ p.decision }}</div>
+        {% endif %}
+        <div class="notes">
+          <label>Notes / drafts</label>
+          <textarea data-pid="{{ p.pid }}" placeholder="Capture decisions and drafts...">{{ p.notes }}</textarea>
+        </div>
+        <div class="edited" data-pid="{{ p.pid }}">
+          {%- if p.last_edited_by is not empty -%}Last edited by {{ p.last_edited_by }} &middot; {{ p.last_edited_at }} UTC{%- endif -%}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+{% endfor %}
+
+<script>
+(function(){
+  function applyCounts(counts){
+    if(!counts) return;
+    var order=['defined','draft','work','gap'];
+    var total=counts.total||0;
+    order.forEach(function(k){
+      var b=document.getElementById('c-'+k); if(b) b.textContent=counts[k];
+      var seg=document.querySelector('#bar span[data-k="'+k+'"]');
+      if(seg) seg.style.width=(total?(counts[k]/total*100):0)+'%';
+    });
+  }
+  function stamp(pid, by, at){
+    var el=document.querySelector('.edited[data-pid="'+pid+'"]');
+    if(el && by){ el.innerHTML='Last edited by '+by+' · '+at+' UTC'; el.classList.add('saveflash'); setTimeout(function(){el.classList.remove('saveflash');},900); }
+  }
+  function save(body){
+    return fetch('/anokii/identity/save',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(body)})
+      .then(function(r){ return r.json().catch(function(){return {ok:false};}); });
+  }
+  document.querySelectorAll('select.status').forEach(function(sel){
+    sel.addEventListener('change',function(){
+      var pid=sel.getAttribute('data-pid'), v=sel.value;
+      var card=sel.closest('.card');
+      card.setAttribute('data-status',v);
+      sel.className='status s-'+v;
+      save({pid:pid,status:v}).then(function(d){ if(d&&d.ok){ applyCounts(d.counts); stamp(pid,d.last_edited_by,d.last_edited_at); } });
+    });
+  });
+  document.querySelectorAll('.notes textarea').forEach(function(ta){
+    var t=null;
+    ta.addEventListener('input',function(){
+      clearTimeout(t);
+      t=setTimeout(function(){
+        var pid=ta.getAttribute('data-pid');
+        save({pid:pid,notes:ta.value}).then(function(d){ if(d&&d.ok){ stamp(pid,d.last_edited_by,d.last_edited_at); } });
+      },700);
+    });
+  });
+})();
+</script>
+{% endblock %}

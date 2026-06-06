@@ -1,0 +1,43 @@
+{% extends "anokii/_shell.html.twig" %}
+
+{% block anokii_styles %}
+  .tools{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:880px){.tools{grid-template-columns:1fr 1fr}}
+  @media(max-width:600px){.tools{grid-template-columns:1fr}}
+  .tool{background:#fff;border:1px solid var(--line);border-radius:8px;padding:22px;display:flex;flex-direction:column;gap:10px;min-height:150px}
+  .tool.live:hover{border-color:var(--cyan);box-shadow:0 12px 30px rgba(10,14,18,.08);transform:translateY(-3px);transition:.15s}
+  .tool .tag{font-family:"Oswald",sans-serif;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;width:fit-content;border-radius:2px;padding:3px 9px}
+  .tool .tag.on{color:#0f7488;background:#e3f4f8}
+  .tool .tag.soon{color:#7a4e1d;background:#f3e9da}
+  .tool h3{margin:0;font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.01em;font-size:22px;color:var(--ink)}
+  .tool p{margin:0;color:var(--muted);font-size:14px;flex:1}
+  .tool .go{font-family:"Oswald",sans-serif;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--cyan2)}
+  .tool.soon{opacity:.62}
+{% endblock %}
+
+{% block anokii_content %}
+<div class="ahead">
+  <p class="ey">FNPI workspace</p>
+  <h1>Anokii</h1>
+  <p class="sub">FNPI's own sovereign workspace, running on the Waaseyaa platform. Tools live here; your data stays on FNPI's infrastructure. Start with the Identity Workspace.</p>
+</div>
+
+<div class="tools">
+  <a class="tool live" href="/anokii/identity">
+    <span class="tag on">Live</span>
+    <h3>Identity Workspace</h3>
+    <p>Define who FNPI is, pillar by pillar. Set each one's status, capture decisions, and settle the brand together.</p>
+    <span class="go">Open &rarr;</span>
+  </a>
+  <div class="tool soon">
+    <span class="tag soon">Coming soon</span>
+    <h3>Member Portal</h3>
+    <p>Secure services and information for members, online.</p>
+  </div>
+  <div class="tool soon">
+    <span class="tag soon">Coming soon</span>
+    <h3>Co-Intelligence</h3>
+    <p>A built-in AI assistant grounded on FNPI's own files.</p>
+  </div>
+</div>
+{% endblock %}
