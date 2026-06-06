@@ -1,6 +1,6 @@
 {% extends "base.html.twig" %}
 
-{% block title %}Proof — A real Nation's site already runs on our platform · FNPI{% endblock %}
+{% block title %}Proof: A real Nation's site already runs on our platform · FNPI{% endblock %}
 {% block description %}The reference build: a real First Nation's website migrated onto the Waaseyaa engine, a repaired member portal live in production, and a grounded AI assistant standing as a working reference.{% endblock %}
 
 {% block head_styles %}

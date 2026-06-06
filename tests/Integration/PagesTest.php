@@ -152,4 +152,14 @@ final class PagesTest extends TestCase
         // No dollar figures on public pages; pricing lives behind "request a quote".
         $this->assertDoesNotMatchRegularExpression('/\$\s*[0-9]/', $html, sprintf('Public page "%s" must not publish pricing.', $method));
     }
+
+    #[Test]
+    #[DataProvider('pageHtmlProvider')]
+    public function no_em_or_en_dashes_in_rendered_copy(string $method): void
+    {
+        // House style: no em dashes or en dashes in visible site copy.
+        $html = (string) new PageController()->{$method}()->getContent();
+        $this->assertStringNotContainsString("\u{2014}", $html, sprintf('Public page "%s" must not contain an em dash.', $method));
+        $this->assertStringNotContainsString("\u{2013}", $html, sprintf('Public page "%s" must not contain an en dash.', $method));
+    }
 }
