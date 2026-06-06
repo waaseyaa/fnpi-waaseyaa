@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}First Nations Procurement Inc.{% endblock %}</title>
+  <meta name="description" content="{% block description %}Indigenous-owned sourcing, technology, and protection. A 100% First Nations-owned company delivering through Indigenous procurement channels since 2017.{% endblock %}">
+  <meta name="robots" content="{% block robots %}index,follow{% endblock %}">
+  <meta name="theme-color" content="#0a0e12">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+  :root{
+    --ink:#0c0d0e; --black:#111315; --white:#ffffff; --bg:#f3f2ee; --grey:#e4e3e0;
+    --cyan:#1fb6d6; --cyan2:#13869f; --muted:#5c6166; --line:#e2e0da; --dark:#0a0e12;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--white);color:var(--ink);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .display{font-family:"Anton","Arial Narrow",Impact,sans-serif;font-weight:400;letter-spacing:.01em;text-transform:uppercase}
+  .cond{font-family:"Oswald",system-ui,sans-serif}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1160px;margin:0 auto;padding:0 26px}
+  /* nav */
+  header.nav{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--line)}
+  .nav .wrap{display:flex;align-items:center;gap:20px;height:74px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand img.wolf{height:46px;width:auto;display:block}
+  .brand img.wm{height:26px;width:auto;display:block}
+  nav.links{display:flex;gap:24px;margin-left:8px}
+  nav.links a{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#3a3d40;font-weight:600}
+  nav.links a:hover{color:var(--cyan2)}
+  .nav .spacer{flex:1}
+  .btn{display:inline-block;background:var(--black);color:#fff;padding:12px 20px;border-radius:2px;
+    font-weight:600;font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--black);font-family:"Oswald",sans-serif;cursor:pointer}
+  .btn:hover{background:#000}
+  .btn.cyan{background:var(--cyan2);border-color:var(--cyan2)} .btn.cyan:hover{background:#0f7488}
+  .btn.ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.55)}
+  .btn.ghost:hover{background:rgba(255,255,255,.1)}
+  /* sections */
+  section{padding:70px 0}
+  .center{text-align:center}
+  .sec-h{font-family:"Oswald",sans-serif;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--cyan2);font-weight:600;margin:0 0 10px}
+  .sec-t{font-size:40px;margin:0 0 14px;line-height:1;color:var(--ink)}
+  .sec-sub{color:var(--muted);max-width:64ch;margin:0 auto 38px}
+  /* hero */
+  .hero{position:relative;background:#0a0e12;color:#eef3f5;overflow:hidden}
+  .hero .grid-bg{position:absolute;inset:0;
+    background-image:linear-gradient(rgba(31,182,214,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(31,182,214,.18) 1px,transparent 1px);
+    background-size:46px 46px;mask-image:radial-gradient(120% 100% at 70% 0%,#000 30%,transparent 75%)}
+  .hero .glow{position:absolute;width:680px;height:680px;right:-160px;top:-260px;border-radius:50%;
+    background:radial-gradient(circle,rgba(31,182,214,.30),transparent 60%)}
+  .hero .wrap{position:relative;padding:86px 26px 76px}
+  .eyebrow{font-family:"Oswald",sans-serif;font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:#7fd6e8;margin:0 0 18px}
+  .hero .pre{font-size:18px;color:#c4ccd0;margin:0 0 8px}
+  .hero h1{font-size:74px;line-height:.96;margin:0 0 16px;max-width:15ch;color:#fff}
+  .hero .oneline{font-family:"Oswald",sans-serif;font-weight:500;font-size:19px;letter-spacing:.02em;color:#bfe9f2;margin:0 0 28px}
+  .cta{display:flex;gap:12px;flex-wrap:wrap}
+  .trust{margin-top:36px;display:flex;gap:30px;flex-wrap:wrap;font-family:"Oswald",sans-serif;font-size:13px;
+    letter-spacing:.06em;text-transform:uppercase;color:#8b969c}
+  .trust b{color:#fff;font-weight:600}
+  /* lanes */
+  .lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .lane{background:#fff;border:1px solid var(--line);border-radius:4px;padding:26px;display:flex;flex-direction:column;gap:13px;transition:.15s}
+  .lane:hover{border-color:var(--cyan);box-shadow:0 14px 34px rgba(10,14,18,.10);transform:translateY(-3px)}
+  .lane .ic{width:44px;height:44px;color:var(--ink)}
+  .lane h3{margin:0;font-size:24px;line-height:1;color:var(--ink)}
+  .lane p{margin:0;color:var(--muted);font-size:14.5px;flex:1}
+  .lane .tag{font-family:"Oswald",sans-serif;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;
+    color:#0f7488;background:#e3f4f8;border-radius:2px;padding:4px 9px;width:fit-content}
+  .lane .tag.soon{color:#7a4e1d;background:#f3e9da}
+  /* band */
+  .band{background:var(--bg);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .band .grid{display:grid;grid-template-columns:1.05fr 1fr;gap:46px;align-items:center}
+  .band h2{font-size:34px;margin:0 0 14px;line-height:1.02}
+  .band p{color:var(--muted);margin:0}
+  .proof{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .proof .p{background:#fff;border:1px solid var(--line);border-radius:4px;padding:18px;text-align:center}
+  .proof .p b{display:block;font-family:"Anton",sans-serif;font-size:32px;color:var(--ink);line-height:1}
+  .proof .p span{font-size:12.5px;color:var(--muted);display:block;margin-top:6px}
+  /* faraday */
+  .faraday{background:#0a0e12;color:#dfe7ea}
+  .faraday .grid{display:grid;grid-template-columns:1fr 1fr;gap:46px;align-items:center}
+  .faraday .panel{background:#0e151b;border:1px solid #1b2a30;border-radius:6px;min-height:260px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .faraday .panel .g{position:absolute;inset:0;opacity:.5;
+    background-image:linear-gradient(rgba(31,182,214,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(31,182,214,.16) 1px,transparent 1px);background-size:24px 24px}
+  .faraday .panel span{position:relative;font-family:"Oswald",sans-serif;font-size:13px;letter-spacing:.28em;text-transform:uppercase;color:#7fd6e8}
+  .faraday h2{color:#fff}
+  .faraday .sec-sub{margin-left:0;color:#aeb8bd}
+  /* vision mission */
+  .vm-wrap{display:grid;grid-template-columns:1fr 1fr;gap:50px;max-width:980px;margin:0 auto}
+  .vm{ text-align:center}
+  .vm .lbl{font-family:"Oswald",sans-serif;font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan2);margin:0 0 12px}
+  .vm p{font-size:18px;color:#33373a;margin:0;line-height:1.5}
+  /* contact */
+  .contact .grid{display:grid;grid-template-columns:1fr 1fr;gap:46px}
+  .field{margin-bottom:13px}
+  .field label{display:block;font-family:"Oswald",sans-serif;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .field input,.field textarea{width:100%;border:1px solid var(--line);border-radius:3px;padding:11px 13px;font:inherit;font-size:14px;background:#fff}
+  .info p{margin:0 0 8px;color:var(--muted)} .info b{color:var(--ink)}
+  .info .cond{display:block;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);margin:16px 0 6px;font-weight:600}
+  /* footer */
+  footer.f{background:#0a0e12;color:#8b969c;padding:42px 0;font-size:13px}
+  footer.f .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center}
+  footer.f img{height:40px}
+  @media(max-width:880px){
+    .lanes,.band .grid,.faraday .grid,.vm-wrap,.contact .grid{grid-template-columns:1fr}
+    .hero h1{font-size:48px}.nav .links{display:none}.brand img.wm{display:none}
+  }
+  {% block head_styles %}{% endblock %}
+  </style>
+</head>
+<body>
+
+<header class="nav"><div class="wrap">
+  <a class="brand" href="/">
+    <img class="wolf" src="https://img1.wsimg.com/isteam/ip/b26ff814-4300-461b-89a1-29a391a6e7b8/Subject.png/:/rs=w:168,h:181,cg:true,m/cr=w:168,h:181/qt=q:95" alt="FNPI wolf mark">
+    <img class="wm" src="https://img1.wsimg.com/isteam/ip/b26ff814-4300-461b-89a1-29a391a6e7b8/FNPI%20logo.tif/:/cr=t:9.39%25,l:0%25,w:100%25,h:81.23%25/rs=w:600,h:300,cg:true" alt="First Nations Procurement Inc.">
+  </a>
+  <nav class="links">
+    <a href="#what">Sourcing</a><a href="#what">Technology</a><a href="#what">Privacy</a>
+    <a href="#about">About</a><a href="#contact">Contact</a>
+  </nav>
+  <span class="spacer"></span>
+  <a class="btn" href="#contact">Get a free quote</a>
+</div></header>
+
+{% block content %}{% endblock %}
+
+<footer class="f"><div class="wrap">
+  <img src="https://img1.wsimg.com/isteam/ip/b26ff814-4300-461b-89a1-29a391a6e7b8/Subject.png/:/rs=w:168,h:181,cg:true,m/cr=w:168,h:181/qt=q:95" alt="FNPI">
+  <span>Copyright 2026 First Nations Procurement Inc. All rights reserved. Sagamok Anishnawbek First Nation.</span>
+</div></footer>
+
+</body>
+</html>

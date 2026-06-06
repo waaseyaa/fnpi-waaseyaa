@@ -1,0 +1,11 @@
+/vendor/
+/storage/framework/
+/files/*
+!/files/.gitkeep
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+.env
+composer.local.json
+/storage/*.log
+/.phpunit.cache/
