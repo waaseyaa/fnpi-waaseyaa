@@ -11,49 +11,49 @@
   }
   /* maturity card */
   .maturity{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:28px;box-shadow:var(--card-shadow)}
-  .maturity h2{font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin:0 0 13px;font-weight:600;font-family:"Oswald",sans-serif}
+  .maturity h2{font-size:11.5px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin:0 0 13px;font-weight:600;font-family:"Oswald",sans-serif}
   .bar{display:flex;height:14px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:var(--bg)}
   .bar span{display:block;height:100%;transition:width .3s}
-  .legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:13px;font-size:12.5px;color:var(--muted);font-family:"Oswald",sans-serif}
+  .legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:13px;font-size:13px;color:var(--muted);font-family:"Oswald",sans-serif}
   .legend b{color:var(--ink);font-weight:700}
   .dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
   .d-defined{background:var(--green)} .d-draft{background:var(--amber)} .d-work{background:var(--orange)} .d-gap{background:var(--grey)}
   /* sections */
   section.sec{margin:30px 0}
   .sec-h{display:flex;align-items:baseline;gap:11px;margin:0 0 5px}
-  .sec-h .n{font-family:"Oswald",sans-serif;font-size:13px;font-weight:700;color:var(--cyan2);letter-spacing:.04em}
-  .sec-h h3{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.01em;font-size:20px;margin:0;color:var(--ink)}
-  .sec-sub{color:var(--muted);margin:0 0 16px;font-size:13.5px;max-width:80ch}
+  .sec-h .n{font-family:"Oswald",sans-serif;font-size:14px;font-weight:700;color:var(--cyan2);letter-spacing:.04em}
+  .sec-h h3{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.01em;font-size:23px;margin:0;color:var(--ink)}
+  .sec-sub{color:var(--muted);margin:0 0 16px;font-size:14.5px;line-height:1.55;max-width:80ch}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   @media(max-width:760px){.grid{grid-template-columns:1fr}}
   /* card (Anokii style) */
   .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:11px;box-shadow:var(--card-shadow)}
   .card.full{grid-column:1 / -1}
   .card-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
-  .card h4{margin:0;font-family:"Oswald",sans-serif;font-weight:600;font-size:15px;color:var(--ink);letter-spacing:.01em}
+  .card h4{margin:0;font-family:"Oswald",sans-serif;font-weight:600;font-size:16.5px;color:var(--ink);letter-spacing:.01em}
   /* status pill (working selector) */
-  .status{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;border:1px solid transparent;border-radius:20px;padding:5px 12px;cursor:pointer;appearance:none;font-family:"Oswald",sans-serif;flex:0 0 auto}
+  .status{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border:1px solid transparent;border-radius:20px;padding:5px 12px;cursor:pointer;appearance:none;font-family:"Oswald",sans-serif;flex:0 0 auto}
   .status:focus{outline:none;box-shadow:0 0 0 3px rgba(31,182,214,.16)}
   .s-defined{background:var(--green-soft);color:var(--green)}
   .s-draft{background:var(--amber-soft);color:var(--amber)}
   .s-work{background:var(--orange-soft);color:var(--orange)}
   .s-gap{background:var(--grey-soft);color:var(--grey)}
   /* now content + quiet quotes */
-  .now{font-size:13.5px;color:var(--ink);line-height:1.55}
-  .now .lbl{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:4px;font-weight:600;font-family:"Oswald",sans-serif}
-  .now blockquote{margin:4px 0 0;padding:1px 0 1px 13px;border-left:2px solid #cfe7ee;color:#3a4147;font-style:italic;font-size:13.5px}
+  .now{font-size:15px;color:var(--ink);line-height:1.6}
+  .now .lbl{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:4px;font-weight:600;font-family:"Oswald",sans-serif}
+  .now blockquote{margin:4px 0 0;padding:1px 0 1px 13px;border-left:2px solid #cfe7ee;color:#3a4147;font-style:italic;font-size:15px}
   /* refined Decide callout */
-  .decide{background:#f2f8fa;border-left:3px solid var(--cyan2);border-radius:0 8px 8px 0;padding:9px 12px;font-size:12.5px;color:#3a4147;line-height:1.5}
-  .decide .dl{display:block;font-family:"Oswald",sans-serif;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--cyan2);margin-bottom:3px}
+  .decide{background:#f2f8fa;border-left:3px solid var(--cyan2);border-radius:0 8px 8px 0;padding:10px 13px;font-size:14px;color:#3a4147;line-height:1.55}
+  .decide .dl{display:block;font-family:"Oswald",sans-serif;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--cyan2);margin-bottom:3px}
   /* notes (Anokii input) */
-  .notes label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:2px 0 4px;font-weight:600;font-family:"Oswald",sans-serif}
-  .notes textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font:inherit;font-size:13px;background:#fff;resize:vertical;min-height:44px;color:var(--ink)}
+  .notes label{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:2px 0 5px;font-weight:600;font-family:"Oswald",sans-serif}
+  .notes textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px 12px;font:inherit;font-size:14.5px;line-height:1.5;background:#fff;resize:vertical;min-height:46px;color:var(--ink)}
   .notes textarea:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(31,182,214,.14)}
   /* tag chips */
   .pills{display:flex;flex-wrap:wrap;gap:6px}
-  .pill{font-size:11.5px;background:#eef1f3;border:1px solid var(--line);border-radius:20px;padding:3px 11px;color:#3a4147}
+  .pill{font-size:12px;background:#eef1f3;border:1px solid var(--line);border-radius:20px;padding:3px 11px;color:#3a4147}
   .pill.cyan{background:var(--cyan-soft);border-color:#cdeaf1;color:var(--cyan2)}
-  .edited{font-size:11px;color:var(--muted);font-family:"Oswald",sans-serif;letter-spacing:.02em;min-height:14px}
+  .edited{font-size:12px;color:var(--muted);font-family:"Oswald",sans-serif;letter-spacing:.02em;min-height:15px}
   .saveflash{color:var(--cyan2)}
 {% endblock %}
 
