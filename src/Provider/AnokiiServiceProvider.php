@@ -13,11 +13,16 @@ use App\CoIntelligence\ConversationRepository;
 use App\CoIntelligence\DocChunkRepository;
 use App\CoIntelligence\Retriever;
 use App\Command\IngestKnowledgeCommand;
+use App\Command\SeedDocumentsCommand;
 use App\Command\SeedDriveCommand;
 use App\Controller\AnokiiController;
 use App\Controller\CoIntelligenceController;
+use App\Controller\DocumentsController;
 use App\Controller\DriveController;
 use App\Controller\IdentityController;
+use App\Documents\DocumentService;
+use App\Documents\DocumentStorage;
+use App\Documents\GotenbergClient;
 use App\Drive\DriveRepository;
 use App\Drive\DriveStorage;
 use App\Drive\FileSchema;
@@ -115,6 +120,21 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
             ),
         );
 
+        // Documents (tool #4): the first entity-native tool. Bytes go to the
+        // sovereign volume via the media layer; the revisionable `document`
+        // entity carries each version as a revision; Gotenberg converts uploaded
+        // .docx to a .pdf preview (lean image, conversion out of process).
+        $docStorage = new DocumentStorage(
+            $this->filesDir(),
+            ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+            $this->uploadMaxBytes(),
+        );
+        $documents = new DocumentsController(
+            $entityTypeManager,
+            new DocumentService($entityTypeManager, $docStorage, new GotenbergClient($this->gotenbergUrl())),
+            $docStorage,
+        );
+
         $get = static fn(string $name, string $path, callable $c) => $router->addRoute(
             $name,
             RouteBuilder::create($path)->controller($c)->allowAll()->methods('GET')->build(),
@@ -140,6 +160,14 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
         $post('anokii.drive.upload', '/anokii/drive/upload', fn(Request $r) => $drive->upload($r));
         $get('anokii.drive.file', '/anokii/drive/file/{id}', fn(Request $r, string $id) => $drive->download($r, $id));
         $post('anokii.drive.delete', '/anokii/drive/delete', fn(Request $r) => $drive->delete($r));
+        $get('anokii.documents', '/anokii/documents', fn(Request $r) => $documents->index($r));
+        $post('anokii.documents.create', '/anokii/documents/create', fn(Request $r) => $documents->create($r));
+        $get('anokii.documents.show', '/anokii/documents/{uuid}', fn(Request $r, string $uuid) => $documents->show($r, $uuid));
+        $post('anokii.documents.version', '/anokii/documents/{uuid}/version', fn(Request $r, string $uuid) => $documents->uploadVersion($r, $uuid));
+        $post('anokii.documents.setcurrent', '/anokii/documents/{uuid}/set-current', fn(Request $r, string $uuid) => $documents->setCurrent($r, $uuid));
+        $post('anokii.documents.rollback', '/anokii/documents/{uuid}/rollback', fn(Request $r, string $uuid) => $documents->rollback($r, $uuid));
+        $post('anokii.documents.note', '/anokii/documents/{uuid}/note', fn(Request $r, string $uuid) => $documents->addNote($r, $uuid));
+        $get('anokii.documents.file', '/anokii/documents/{uuid}/file/{vid}/{kind}', fn(Request $r, string $uuid, string $vid, string $kind) => $documents->download($r, $uuid, $vid, $kind));
         // Coming-soon placeholder for not-yet-live modules (rooms, ...).
         $get('anokii.module', '/anokii/m/{module}', fn(Request $r, string $module) => $shell->comingSoon($r, $module));
     }
@@ -214,6 +242,40 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
                 return $command->run($io);
             },
         );
+
+        yield new CommandDefinition(
+            name: 'app:seed-documents',
+            description: 'Seed the CANCOM document (3 versions + opening note) into the entity-native Documents tool. Idempotent.',
+            options: [
+                new OptionDefinition(name: 'matthew-email', mode: OptionMode::Required, description: 'Account to attribute Matthew\'s versions to (default matthew@fnprocure.ca).'),
+                new OptionDefinition(name: 'russell-email', mode: OptionMode::Required, description: 'Account to attribute Russell\'s version + note to (default russell@fnprocure.ca).'),
+            ],
+            handler: function (CliIO $io): int {
+                $etm = null;
+                try {
+                    $resolved = $this->resolve(\Waaseyaa\Entity\EntityTypeManager::class);
+                    $etm = $resolved instanceof \Waaseyaa\Entity\EntityTypeManager ? $resolved : null;
+                } catch (\Throwable) {
+                    $io->error('Documents seed requires a booted kernel (EntityTypeManager).');
+
+                    return 1;
+                }
+                if ($etm === null) {
+                    $io->error('Documents seed requires a booted kernel (EntityTypeManager).');
+
+                    return 1;
+                }
+                $storage = new DocumentStorage(
+                    $this->filesDir(),
+                    ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+                    $this->uploadMaxBytes(),
+                );
+                $service = new DocumentService($etm, $storage, new GotenbergClient($this->gotenbergUrl()));
+                $command = new SeedDocumentsCommand($service, $etm, $this->projectRoot . '/resources/seed/cancom');
+
+                return $command->run($io);
+            },
+        );
     }
 
     private function db(): DatabaseInterface
@@ -250,6 +312,22 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
         }
 
         return $allowed !== [] ? $allowed : ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    }
+
+    /**
+     * Base URL of the Gotenberg conversion service. On the Pi this is the
+     * compose service (http://gotenberg:3000); empty disables live conversion
+     * (uploads are stored without a preview until reconverted).
+     */
+    private function gotenbergUrl(): string
+    {
+        $configured = $this->config['gotenberg_url'] ?? null;
+        if (is_string($configured) && trim($configured) !== '') {
+            return trim($configured);
+        }
+        $env = getenv('GOTENBERG_URL');
+
+        return is_string($env) ? trim($env) : '';
     }
 
     private function uploadMaxBytes(): int
