@@ -12,8 +12,8 @@ use Waaseyaa\Database\DatabaseInterface;
  * Idempotent ingestion: chunks are keyed by a stable chunk_key, so a re-run
  * updates rows whose key is unchanged, inserts new ones, and (when pruning)
  * deletes stored chunks not regenerated this run, converging the index to
- * exactly the current corpus. Plain DatabaseInterface, the same approach as
- * the Identity Workspace's PillarRepository.
+ * exactly the current corpus. Plain DatabaseInterface (a non-entity index
+ * table, not an entity repository).
  */
 final class DocChunkRepository
 {

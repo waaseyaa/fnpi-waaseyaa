@@ -9,8 +9,7 @@ use App\Auth\SetupTokenSchema;
 use App\Controller\AnokiiController;
 use App\Controller\IdentityController;
 use App\Identity\IdentitySeed;
-use App\Identity\PillarRepository;
-use App\Identity\PillarSchema;
+use App\Identity\PillarService;
 use App\Provider\AnokiiServiceProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -22,7 +21,10 @@ use Waaseyaa\Routing\WaaseyaaRouter;
 use Waaseyaa\SSR\SsrServiceProvider;
 
 /**
- * Anokii workspace: auth gating, the seeded Identity tool, and persistence.
+ * Anokii workspace: auth gating, the Identity tool's shell rendering, modules,
+ * and the dashboard. The entity-native Identity behaviour (revisionable pillar,
+ * registration, migration faithfulness) lives in IdentityPillarTest; the live
+ * Pi check covers the end-to-end migrate + edit flow.
  */
 final class AnokiiTest extends TestCase
 {
@@ -36,7 +38,6 @@ final class AnokiiTest extends TestCase
     private function db(): DatabaseInterface
     {
         $db = DBALDatabase::createSqlite(':memory:');
-        new PillarSchema($db)->ensure();
         new SetupTokenSchema($db)->ensure();
 
         return $db;
@@ -48,8 +49,6 @@ final class AnokiiTest extends TestCase
         $router = new WaaseyaaRouter();
         new AnokiiServiceProvider()->routes($router);
 
-        // GET routes (match() defaults to GET; the POST save route is covered by
-        // the signed-out 401 test and the live verification).
         $this->assertSame('anokii.home', $router->match('/anokii')['_route'] ?? null);
         $this->assertSame('anokii.login', $router->match('/anokii/login')['_route'] ?? null);
         $this->assertSame('anokii.settings', $router->match('/anokii/settings')['_route'] ?? null);
@@ -60,13 +59,14 @@ final class AnokiiTest extends TestCase
     #[Test]
     public function anokii_pages_redirect_to_login_when_signed_out(): void
     {
-        // No EntityTypeManager => no current user => signed out.
+        // No EntityTypeManager => no current user => signed out, and the
+        // controller redirects before the service is ever touched.
         $shell = new AnokiiController(null, new SetupTokenRepository($this->db()));
         $home = $shell->dashboard(new Request());
         $this->assertInstanceOf(RedirectResponse::class, $home);
         $this->assertSame('/anokii/login', $home->getTargetUrl());
 
-        $identity = new IdentityController(null, new PillarRepository($this->db()));
+        $identity = new IdentityController(null, new PillarService(null));
         $tool = $identity->index(new Request());
         $this->assertInstanceOf(RedirectResponse::class, $tool);
         $this->assertSame('/anokii/login', $tool->getTargetUrl());
@@ -75,59 +75,18 @@ final class AnokiiTest extends TestCase
     #[Test]
     public function identity_save_is_401_when_signed_out(): void
     {
-        $identity = new IdentityController(null, new PillarRepository($this->db()));
+        $identity = new IdentityController(null, new PillarService(null));
         $request = Request::create('/anokii/identity/save', 'POST', [], [], [], [], (string) json_encode(['pid' => 'purpose', 'status' => 'work']));
         $response = $identity->save($request);
         $this->assertSame(401, $response->getStatusCode());
     }
 
     #[Test]
-    public function pillars_seed_all_seven_sections_and_eighteen_cards(): void
+    public function identity_history_is_401_when_signed_out(): void
     {
-        $repo = new PillarRepository($this->db());
-        $repo->seedIfEmpty();
-
-        $this->assertSame(18, $repo->count());
-        $this->assertCount(7, IdentitySeed::sections());
-
-        $counts = $repo->statusCounts();
-        $this->assertSame(18, $counts['total']);
-        $this->assertSame(4, $counts['defined']);
-
-        // A representative pillar carries its artifact content.
-        $spine = $repo->find('spine');
-        $this->assertNotNull($spine);
-        $this->assertStringContainsString('turns Indigenous procurement qualification into a platform', (string) $spine['body']);
-        $this->assertSame('defined', $spine['status']);
-    }
-
-    #[Test]
-    public function seeding_is_idempotent(): void
-    {
-        $repo = new PillarRepository($this->db());
-        $repo->seedIfEmpty();
-        $repo->seedIfEmpty();
-        $this->assertSame(18, $repo->count());
-    }
-
-    #[Test]
-    public function a_saved_note_and_status_persist_with_editor_stamp(): void
-    {
-        $repo = new PillarRepository($this->db());
-        $repo->seedIfEmpty();
-
-        $result = $repo->update('purpose', 'work', 'A decision we settled.', 'Russell');
-        $this->assertNotNull($result);
-        $this->assertSame('Russell', $result['last_edited_by']);
-
-        $row = $repo->find('purpose');
-        $this->assertSame('work', $row['status']);
-        $this->assertSame('A decision we settled.', $row['notes']);
-        $this->assertSame('Russell', $row['last_edited_by']);
-        $this->assertNotSame('', (string) $row['last_edited_at']);
-
-        // Invalid status is rejected.
-        $this->assertNull($repo->update('purpose', 'bogus', null, 'Russell'));
+        $identity = new IdentityController(null, new PillarService(null));
+        $response = $identity->history(new Request(), 'purpose');
+        $this->assertSame(401, $response->getStatusCode());
     }
 
     #[Test]
@@ -145,26 +104,35 @@ final class AnokiiTest extends TestCase
     }
 
     #[Test]
-    public function identity_template_renders_the_seeded_tool(): void
+    public function identity_template_renders_the_tool(): void
     {
         $twig = SsrServiceProvider::getTwigEnvironment();
         $this->assertNotNull($twig);
 
-        $repo = new PillarRepository($this->db());
-        $repo->seedIfEmpty();
-
-        // Mirror IdentityController::index's context build.
+        // Build the controller's presented-pillar context from the seed shape,
+        // so the template renders without a database.
         $sections = [];
         foreach (IdentitySeed::sections() as $key => $meta) {
             $sections[$key] = $meta + ['key' => $key, 'pillars' => []];
         }
-        foreach ($repo->all() as $p) {
-            $sections[(string) $p['section']]['pillars'][] = $p;
+        $counts = ['defined' => 0, 'draft' => 0, 'work' => 0, 'gap' => 0];
+        foreach (IdentitySeed::pillars() as $p) {
+            $sections[(string) $p['section']]['pillars'][] = [
+                'pid' => $p['pid'], 'section' => $p['section'], 'title' => $p['title'],
+                'now_label' => $p['now_label'], 'body' => $p['body'], 'is_quote' => (bool) $p['is_quote'],
+                'decide_label' => $p['decide_label'], 'decision' => $p['decision'], 'status' => $p['status'],
+                'notes' => '', 'pills' => $p['pills'], 'is_full' => (bool) $p['is_full'],
+                'last_edited_by' => '', 'last_edited_at' => '',
+            ];
+            if (isset($counts[$p['status']])) {
+                $counts[$p['status']]++;
+            }
         }
+        $counts['total'] = array_sum($counts);
 
         $html = $twig->render('anokii/identity.html.twig', $this->shell('identity') + [
             'sections' => array_values($sections),
-            'counts' => $repo->statusCounts(),
+            'counts' => $counts,
             'statuses' => [
                 ['v' => 'defined', 't' => 'Defined'], ['v' => 'draft', 't' => 'Draft / legacy'],
                 ['v' => 'work', 't' => 'Needs work'], ['v' => 'gap', 't' => 'Gap'],
@@ -175,6 +143,8 @@ final class AnokiiTest extends TestCase
         $this->assertStringContainsString('Positioning spine', $html);
         $this->assertStringContainsString('Anishinaabe foundation', $html);
         $this->assertStringContainsString('data-pid="tagline"', $html);
+        // The revisionable rebuild surfaces a per-pillar history control.
+        $this->assertStringContainsString('class="hbtn"', $html);
         $this->assertStringContainsString('/anokii/logout', $html);
         // Rendered inside the new shell (sidebar + topbar).
         $this->assertStringContainsString('Sovereign workspace', $html);

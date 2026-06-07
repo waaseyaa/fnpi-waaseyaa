@@ -7,7 +7,7 @@ namespace App\Command;
 use App\CoIntelligence\ChunkData;
 use App\CoIntelligence\DocChunkRepository;
 use App\CoIntelligence\KnowledgeChunker;
-use App\Identity\PillarRepository;
+use App\Identity\PillarService;
 use Twig\Environment;
 use Waaseyaa\CLI\CliIO;
 
@@ -46,7 +46,7 @@ final class IngestKnowledgeCommand
 
     public function __construct(
         private readonly DocChunkRepository $chunks,
-        private readonly PillarRepository $pillars,
+        private readonly PillarService $pillars,
         private readonly Environment $twig,
         private readonly string $knowledgeDir,
         private readonly KnowledgeChunker $chunker = new KnowledgeChunker(),
@@ -150,10 +150,10 @@ final class IngestKnowledgeCommand
     private function pillarChunks(): array
     {
         $chunks = [];
-        foreach ($this->pillars->all() as $p) {
+        foreach ($this->pillars->listPillars() as $pillar) {
             $parts = [];
-            foreach (['now_label', 'body', 'decision', 'notes'] as $field) {
-                $value = trim((string) ($p[$field] ?? ''));
+            foreach ([$pillar->getNowLabel(), $pillar->getBody(), $pillar->getDecision(), $pillar->getNotes()] as $value) {
+                $value = trim($value);
                 if ($value !== '') {
                     $parts[] = $value;
                 }
@@ -162,7 +162,7 @@ final class IngestKnowledgeCommand
             if (trim($text) === '') {
                 continue;
             }
-            $heading = (string) ($p['title'] ?? '');
+            $heading = $pillar->getTitle();
             foreach ($this->chunker->chunkText($text, '/anokii/identity', 'Identity Workspace: ' . $heading, $heading) as $c) {
                 $chunks[] = $c;
             }

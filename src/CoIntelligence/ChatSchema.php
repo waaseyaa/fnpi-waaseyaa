@@ -7,9 +7,9 @@ namespace App\CoIntelligence;
 use Waaseyaa\Database\DatabaseInterface;
 
 /**
- * Creates the Co-Intelligence tables on demand, the same approach as the
- * Identity Workspace's PillarSchema: ensured at boot, guarded by tableExists(),
- * via DatabaseInterface (the framework's sanctioned abstraction for app tables).
+ * Creates the Co-Intelligence tables on demand: ensured at boot, guarded by
+ * tableExists(), via DatabaseInterface (the framework's sanctioned abstraction
+ * for non-entity app tables, e.g. the RAG chunk index and conversations).
  * All three live in the app SQLite on the storage volume (sovereign at rest).
  *
  * - anokii_doc_chunk: the RAG knowledge base (heading-delimited passages).

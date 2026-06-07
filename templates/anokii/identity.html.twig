@@ -24,10 +24,10 @@
   .sec-h .n{font-family:"Oswald",sans-serif;font-size:14px;font-weight:700;color:var(--cyan2);letter-spacing:.04em}
   .sec-h h3{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.01em;font-size:23px;margin:0;color:var(--ink)}
   .sec-sub{color:var(--muted);margin:0 0 16px;font-size:14.5px;line-height:1.55;max-width:80ch}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
   @media(max-width:760px){.grid{grid-template-columns:1fr}}
   /* card (Anokii style) */
-  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:11px;box-shadow:var(--card-shadow)}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--card-shadow)}
   .card.full{grid-column:1 / -1}
   .card-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
   .card h4{margin:0;font-family:"Oswald",sans-serif;font-weight:600;font-size:16.5px;color:var(--ink);letter-spacing:.01em}
@@ -45,23 +45,38 @@
   /* refined Decide callout */
   .decide{background:#f2f8fa;border-left:3px solid var(--cyan2);border-radius:0 8px 8px 0;padding:10px 13px;font-size:14px;color:#3a4147;line-height:1.55}
   .decide .dl{display:block;font-family:"Oswald",sans-serif;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--cyan2);margin-bottom:3px}
-  /* notes (Anokii input) */
+  /* notes (Anokii input) — long content stays in a scroll well, never runs away */
   .notes label{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:2px 0 5px;font-weight:600;font-family:"Oswald",sans-serif}
-  .notes textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px 12px;font:inherit;font-size:14.5px;line-height:1.5;background:#fff;resize:vertical;min-height:46px;color:var(--ink)}
+  .notes textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px 12px;font:inherit;font-size:14.5px;line-height:1.55;background:#fff;resize:vertical;min-height:46px;max-height:340px;overflow-y:auto;color:var(--ink);box-sizing:border-box}
   .notes textarea:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(31,182,214,.14)}
   /* tag chips */
   .pills{display:flex;flex-wrap:wrap;gap:6px}
   .pill{font-size:12px;background:#eef1f3;border:1px solid var(--line);border-radius:20px;padding:3px 11px;color:#3a4147}
   .pill.cyan{background:var(--cyan-soft);border-color:#cdeaf1;color:var(--cyan2)}
+  /* card footer: stamp + history toggle */
+  .cfoot{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--line);padding-top:10px;margin-top:1px}
   .edited{font-size:12px;color:var(--muted);font-family:"Oswald",sans-serif;letter-spacing:.02em;min-height:15px}
   .saveflash{color:var(--cyan2)}
+  .hbtn{font-family:"Oswald",sans-serif;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--cyan2);background:none;border:none;cursor:pointer;padding:2px 4px;flex:0 0 auto}
+  .hbtn:hover{text-decoration:underline}
+  .hbtn:focus{outline:none;box-shadow:0 0 0 3px rgba(31,182,214,.16);border-radius:4px}
+  /* history panel */
+  .hist{display:none;border-top:1px dashed var(--line);padding-top:10px;margin-top:2px}
+  .hist.open{display:block}
+  .hist ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+  .hist li{display:flex;gap:10px;font-size:13px;line-height:1.45}
+  .hist .stat{flex:0 0 auto;width:8px;height:8px;border-radius:2px;margin-top:5px}
+  .hist .meta{color:var(--muted);font-family:"Oswald",sans-serif;font-size:11.5px;letter-spacing:.02em}
+  .hist .sum{color:var(--ink)}
+  .hist .cur{color:var(--cyan2);font-weight:700}
+  .hist .empty{color:var(--muted);font-size:13px}
 {% endblock %}
 
 {% block anokii_content %}
 <div class="ahead">
   <p class="ey">Identity Workspace</p>
   <h1>Identity Workspace</h1>
-  <p class="sub">A living canvas for defining who FNPI is, before more content gets built on top of it. Foundation first, expression last. Set each pillar's status, capture decisions in the notes, and evolve it together. Changes save to the database and are shared between accounts.</p>
+  <p class="sub">A living canvas for defining who FNPI is, before more content gets built on top of it. Foundation first, expression last. Set each pillar's status, capture decisions in the notes, and evolve it together. Every edit is saved as a revision, so the full history of each pillar is kept and shared between accounts.</p>
 </div>
 
 {% set order = ['defined','draft','work','gap'] %}
@@ -115,9 +130,13 @@
           <label>Notes / drafts</label>
           <textarea data-pid="{{ p.pid }}" placeholder="Capture decisions and drafts...">{{ p.notes }}</textarea>
         </div>
-        <div class="edited" data-pid="{{ p.pid }}">
-          {%- if p.last_edited_by is not empty -%}Last edited by {{ p.last_edited_by }} &middot; {{ p.last_edited_at }} UTC{%- endif -%}
+        <div class="cfoot">
+          <div class="edited" data-pid="{{ p.pid }}">
+            {%- if p.last_edited_by is not empty -%}Last edited by {{ p.last_edited_by }} &middot; {{ p.last_edited_at }}{%- endif -%}
+          </div>
+          <button type="button" class="hbtn" data-pid="{{ p.pid }}" aria-expanded="false">History</button>
         </div>
+        <div class="hist" data-pid="{{ p.pid }}" hidden></div>
       </div>
       {% endfor %}
     </div>
@@ -127,9 +146,10 @@
 
 <script>
 (function(){
+  var order=['defined','draft','work','gap'];
+  var colorvar={defined:'var(--green)',draft:'var(--amber)',work:'var(--orange)',gap:'var(--grey)'};
   function applyCounts(counts){
     if(!counts) return;
-    var order=['defined','draft','work','gap'];
     var total=counts.total||0;
     order.forEach(function(k){
       var b=document.getElementById('c-'+k); if(b) b.textContent=counts[k];
@@ -139,7 +159,12 @@
   }
   function stamp(pid, by, at){
     var el=document.querySelector('.edited[data-pid="'+pid+'"]');
-    if(el && by){ el.innerHTML='Last edited by '+by+' · '+at+' UTC'; el.classList.add('saveflash'); setTimeout(function(){el.classList.remove('saveflash');},900); }
+    if(el && by){ el.innerHTML='Last edited by '+by+' · '+at; el.classList.add('saveflash'); setTimeout(function(){el.classList.remove('saveflash');},900); }
+  }
+  function autosize(ta){
+    // Grow to fit content up to the CSS max-height, then the well scrolls.
+    ta.style.height='auto';
+    ta.style.height=Math.min(ta.scrollHeight+2,340)+'px';
   }
   function save(body){
     return fetch('/anokii/identity/save',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(body)})
@@ -151,17 +176,57 @@
       var card=sel.closest('.card');
       card.setAttribute('data-status',v);
       sel.className='status s-'+v;
-      save({pid:pid,status:v}).then(function(d){ if(d&&d.ok){ applyCounts(d.counts); stamp(pid,d.last_edited_by,d.last_edited_at); } });
+      save({pid:pid,status:v}).then(function(d){ if(d&&d.ok){ applyCounts(d.counts); stamp(pid,d.last_edited_by,d.last_edited_at); refreshIfOpen(pid); } });
     });
   });
   document.querySelectorAll('.notes textarea').forEach(function(ta){
+    autosize(ta);
     var t=null;
     ta.addEventListener('input',function(){
+      autosize(ta);
       clearTimeout(t);
       t=setTimeout(function(){
         var pid=ta.getAttribute('data-pid');
-        save({pid:pid,notes:ta.value}).then(function(d){ if(d&&d.ok){ stamp(pid,d.last_edited_by,d.last_edited_at); } });
+        save({pid:pid,notes:ta.value}).then(function(d){ if(d&&d.ok){ stamp(pid,d.last_edited_by,d.last_edited_at); refreshIfOpen(pid); } });
       },700);
+    });
+  });
+  function renderHistory(panel, revisions){
+    if(!revisions || !revisions.length){ panel.innerHTML='<p class="empty">No history yet.</p>'; return; }
+    var html='<ol>';
+    revisions.forEach(function(r){
+      var c=colorvar[r.status]||'var(--grey)';
+      html+='<li><span class="stat" style="background:'+c+'"></span><div>'
+        +'<div class="sum">'+escapeHtml(r.summary||('Status '+r.status))+(r.is_current?' <span class="cur">(current)</span>':'')+'</div>'
+        +'<div class="meta">'+escapeHtml(r.editor)+' · '+escapeHtml(r.when)+'</div>'
+        +'</div></li>';
+    });
+    html+='</ol>';
+    panel.innerHTML=html;
+  }
+  function escapeHtml(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function loadHistory(pid){
+    var panel=document.querySelector('.hist[data-pid="'+pid+'"]');
+    if(!panel) return Promise.resolve();
+    panel.innerHTML='<p class="empty">Loading...</p>';
+    return fetch('/anokii/identity/'+encodeURIComponent(pid)+'/history',{credentials:'same-origin'})
+      .then(function(r){ return r.json().catch(function(){return {ok:false};}); })
+      .then(function(d){ renderHistory(panel, d&&d.ok?d.revisions:[]); });
+  }
+  function refreshIfOpen(pid){
+    var panel=document.querySelector('.hist[data-pid="'+pid+'"]');
+    if(panel && panel.classList.contains('open')){ loadHistory(pid); }
+  }
+  document.querySelectorAll('.hbtn').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var pid=btn.getAttribute('data-pid');
+      var panel=document.querySelector('.hist[data-pid="'+pid+'"]');
+      if(!panel) return;
+      var open=panel.classList.toggle('open');
+      panel.hidden=!open;
+      btn.setAttribute('aria-expanded',open?'true':'false');
+      btn.textContent=open?'Hide history':'History';
+      if(open){ loadHistory(pid); }
     });
   });
 })();

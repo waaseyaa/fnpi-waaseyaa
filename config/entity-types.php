@@ -14,9 +14,28 @@ declare(strict_types=1);
 
 use App\Entity\Document;
 use App\Entity\DocumentNote;
+use App\Entity\Pillar;
 use Waaseyaa\Entity\EntityType;
 
 return [
+    // Identity Workspace pillar. Revisionable: each edit (status / notes) is one
+    // revision, so identity content carries full history. The entity-native
+    // rebuild of the raw `pillar` prototype; tables identity_pillar +
+    // identity_pillar_revision are materialized by db:init --sync-schema.
+    new EntityType(
+        id: 'identity_pillar',
+        label: 'Identity pillar',
+        class: Pillar::class,
+        keys: [
+            'id' => 'id',
+            'uuid' => 'uuid',
+            'label' => 'title',
+            'revision' => 'revision_id',
+        ],
+        revisionable: true,
+        revisionDefault: true,
+    ),
+
     // Revisionable: each version of a document is one revision. revisionDefault
     // true so every save records a new version; listRevisions() is the history.
     new EntityType(

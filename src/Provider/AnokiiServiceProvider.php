@@ -13,6 +13,7 @@ use App\CoIntelligence\ConversationRepository;
 use App\CoIntelligence\DocChunkRepository;
 use App\CoIntelligence\Retriever;
 use App\Command\IngestKnowledgeCommand;
+use App\Command\MigratePillarsCommand;
 use App\Command\SeedDocumentsCommand;
 use App\Command\SeedDriveCommand;
 use App\Controller\AnokiiController;
@@ -26,8 +27,7 @@ use App\Documents\GotenbergClient;
 use App\Drive\DriveRepository;
 use App\Drive\DriveStorage;
 use App\Drive\FileSchema;
-use App\Identity\PillarRepository;
-use App\Identity\PillarSchema;
+use App\Identity\PillarService;
 use App\Support\Db;
 use Symfony\Component\HttpFoundation\Request;
 use Waaseyaa\AI\Agent\Provider\AnthropicProvider;
@@ -75,11 +75,12 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
         }
         try {
             $db = $this->db();
-            new PillarSchema($db)->ensure();
             new SetupTokenSchema($db)->ensure();
             new ChatSchema($db)->ensure();
             new FileSchema($db)->ensure();
-            new PillarRepository($db)->seedIfEmpty();
+            // Identity pillars are an entity now (identity_pillar): their tables
+            // are materialized by db:init --sync-schema and populated once via
+            // app:migrate-pillars, not ensured/seeded at boot.
         } catch (\Throwable) {
             // best effort; the tool surfaces an empty state rather than 500ing
         }
@@ -88,7 +89,7 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
     public function routes(WaaseyaaRouter $router, ?\Waaseyaa\Entity\EntityTypeManager $entityTypeManager = null): void
     {
         $shell = new AnokiiController($entityTypeManager, new SetupTokenRepository($this->db()));
-        $identity = new IdentityController($entityTypeManager, new PillarRepository($this->db()));
+        $identity = new IdentityController($entityTypeManager, new PillarService($entityTypeManager));
 
         // Co-Intelligence (tool #2): construct the model provider directly from the
         // server-side key (mirrors oiatc; resolve() at route-build can hand back an
@@ -154,6 +155,7 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
         $post('anokii.setpw.post', '/anokii/set-password', fn(Request $r) => $shell->setPasswordSubmit($r));
         $get('anokii.identity', '/anokii/identity', fn(Request $r) => $identity->index($r));
         $post('anokii.identity.save', '/anokii/identity/save', fn(Request $r) => $identity->save($r));
+        $get('anokii.identity.history', '/anokii/identity/{pid}/history', fn(Request $r, string $pid) => $identity->history($r, $pid));
         $get('anokii.cointelligence', '/anokii/cointelligence', fn(Request $r) => $cointel->index($r));
         $post('anokii.cointelligence.send', '/anokii/cointelligence/send', fn(Request $r) => $cointel->send($r));
         $get('anokii.drive', '/anokii/drive', fn(Request $r) => $drive->index($r));
@@ -204,7 +206,7 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
                 $twig = SsrServiceProvider::createTwigEnvironment($this->projectRoot, $this->config);
                 $command = new IngestKnowledgeCommand(
                     new DocChunkRepository($db),
-                    new PillarRepository($db),
+                    new PillarService($this->entityTypeManager()),
                     $twig,
                     $this->projectRoot . '/resources/knowledge',
                 );
@@ -276,11 +278,42 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
                 return $command->run($io);
             },
         );
+
+        yield new CommandDefinition(
+            name: 'app:migrate-pillars',
+            description: 'Migrate the Identity Workspace from the raw pillar table to the entity-native identity_pillar entity, verbatim. One-time and idempotent.',
+            handler: function (CliIO $io): int {
+                $etm = $this->entityTypeManager();
+                if ($etm === null) {
+                    $io->error('Pillar migration requires a booted kernel (EntityTypeManager).');
+
+                    return 1;
+                }
+                $command = new MigratePillarsCommand(new PillarService($etm), $this->db());
+
+                return $command->run($io);
+            },
+        );
     }
 
     private function db(): DatabaseInterface
     {
         return $this->db ??= Db::persistent();
+    }
+
+    /**
+     * Resolve the kernel EntityTypeManager for CLI handlers (entity-native
+     * commands). Null when no kernel is present (routing-only unit tests).
+     */
+    private function entityTypeManager(): ?\Waaseyaa\Entity\EntityTypeManager
+    {
+        try {
+            $resolved = $this->resolve(\Waaseyaa\Entity\EntityTypeManager::class);
+
+            return $resolved instanceof \Waaseyaa\Entity\EntityTypeManager ? $resolved : null;
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**
