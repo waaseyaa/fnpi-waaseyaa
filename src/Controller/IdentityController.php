@@ -13,6 +13,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Waaseyaa\Access\EntityAccessHandler;
 use Waaseyaa\Entity\EntityTypeManager;
 use Waaseyaa\SSR\SsrServiceProvider;
 
@@ -31,6 +32,7 @@ final class IdentityController
     public function __construct(
         private readonly ?EntityTypeManager $entityTypeManager,
         private readonly PillarService $pillars,
+        private readonly EntityAccessHandler $access,
     ) {}
 
     public function index(Request $request): Response
@@ -88,6 +90,16 @@ final class IdentityController
         $pid = trim((string) ($data['pid'] ?? ''));
         if ($pid === '') {
             return new JsonResponse(['ok' => false, 'error' => 'Missing pillar id.'], 422);
+        }
+
+        // Access: the pillar must exist, and the account must be allowed to edit
+        // it (the AccessPolicy is the single source of truth).
+        $pillar = $this->pillars->findByPid($pid);
+        if ($pillar === null) {
+            return new JsonResponse(['ok' => false, 'error' => 'Unknown pillar.'], 422);
+        }
+        if (!$this->access->check($pillar, 'update', $user)->isAllowed()) {
+            return new JsonResponse(['ok' => false, 'error' => 'You do not have permission to edit the Identity Workspace.'], 403);
         }
 
         $status = array_key_exists('status', $data) ? (string) $data['status'] : null;

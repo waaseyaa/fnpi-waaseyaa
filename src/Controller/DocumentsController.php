@@ -17,6 +17,7 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Waaseyaa\Access\EntityAccessHandler;
 use Waaseyaa\Entity\EntityTypeManager;
 use Waaseyaa\SSR\SsrServiceProvider;
 
@@ -34,6 +35,7 @@ final class DocumentsController
         private readonly ?EntityTypeManager $entityTypeManager,
         private readonly DocumentService $documents,
         private readonly DocumentStorage $storage,
+        private readonly EntityAccessHandler $access,
     ) {}
 
     public function index(Request $request): Response
@@ -103,6 +105,10 @@ final class DocumentsController
         if (!$uploaded instanceof UploadedFile || !$uploaded->isValid()) {
             return new JsonResponse(['ok' => false, 'error' => 'No valid file was uploaded.'], 422);
         }
+        if (!$this->access->checkCreateAccess('document', '', $user)->isAllowed()) {
+            return new JsonResponse(['ok' => false, 'error' => 'You do not have permission to create documents.'], 403);
+        }
+
         $title = trim((string) $request->request->get('title', '')) ?: pathinfo($uploaded->getClientOriginalName(), PATHINFO_FILENAME);
         $folder = trim((string) $request->request->get('folder', ''));
         $label = trim((string) $request->request->get('version_label', '')) ?: 'Initial version';
@@ -137,6 +143,15 @@ final class DocumentsController
         if (!$uploaded instanceof UploadedFile || !$uploaded->isValid()) {
             return new JsonResponse(['ok' => false, 'error' => 'No valid file was uploaded.'], 422);
         }
+
+        $doc = $this->documents->findByUuid($uuid);
+        if ($doc === null) {
+            return new JsonResponse(['ok' => false, 'error' => 'Unknown document.'], 404);
+        }
+        if (!$this->access->check($doc, 'update', $user)->isAllowed()) {
+            return new JsonResponse(['ok' => false, 'error' => 'You do not have permission to edit documents.'], 403);
+        }
+
         $label = trim((string) $request->request->get('version_label', '')) ?: ('Version uploaded ' . gmdate('Y-m-d'));
 
         try {
@@ -181,6 +196,9 @@ final class DocumentsController
         }
         if ($this->documents->findByUuid($uuid) === null) {
             return new JsonResponse(['ok' => false, 'error' => 'Unknown document.'], 404);
+        }
+        if (!$this->access->checkCreateAccess('document_note', '', $user)->isAllowed()) {
+            return new JsonResponse(['ok' => false, 'error' => 'You do not have permission to post notes.'], 403);
         }
 
         $note = $this->documents->addNote($uuid, $user->id(), Auth::label($user), $body);
@@ -235,6 +253,14 @@ final class DocumentsController
         $vid = (int) ($data['vid'] ?? 0);
         if ($vid <= 0) {
             return new JsonResponse(['ok' => false, 'error' => 'Missing version id.'], 422);
+        }
+
+        $doc = $this->documents->findByUuid($uuid);
+        if ($doc === null) {
+            return new JsonResponse(['ok' => false, 'error' => 'Unknown document.'], 404);
+        }
+        if (!$this->access->check($doc, 'update', $user)->isAllowed()) {
+            return new JsonResponse(['ok' => false, 'error' => 'You do not have permission to edit documents.'], 403);
         }
 
         try {

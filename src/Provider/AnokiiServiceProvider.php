@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Provider;
 
+use App\Access\WorkspaceAccess;
 use App\Auth\SetupTokenRepository;
 use App\Auth\SetupTokenSchema;
 use App\CLI\AnokiiInviteHandler;
+use App\Command\AssignRoleCommand;
 use App\CoIntelligence\ChatPromptBuilder;
 use App\CoIntelligence\ChatSchema;
 use App\CoIntelligence\ConversationRepository;
@@ -88,8 +90,13 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
 
     public function routes(WaaseyaaRouter $router, ?\Waaseyaa\Entity\EntityTypeManager $entityTypeManager = null): void
     {
+        // Workspace access: the three entity policies (Identity, Documents,
+        // Document notes), the single source of truth the UI controllers consult
+        // (and the agent tools will consult in a later increment).
+        $access = WorkspaceAccess::handler();
+
         $shell = new AnokiiController($entityTypeManager, new SetupTokenRepository($this->db()));
-        $identity = new IdentityController($entityTypeManager, new PillarService($entityTypeManager));
+        $identity = new IdentityController($entityTypeManager, new PillarService($entityTypeManager), $access);
 
         // Co-Intelligence (tool #2): construct the model provider directly from the
         // server-side key (mirrors oiatc; resolve() at route-build can hand back an
@@ -134,6 +141,7 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
             $entityTypeManager,
             new DocumentService($entityTypeManager, $docStorage, new GotenbergClient($this->gotenbergUrl())),
             $docStorage,
+            $access,
         );
 
         $get = static fn(string $name, string $path, callable $c) => $router->addRoute(
@@ -293,6 +301,16 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
 
                 return $command->run($io);
             },
+        );
+
+        yield new CommandDefinition(
+            name: 'app:assign-role',
+            description: 'Assign an Anokii workspace role (admin | editor | viewer) to an account, by email or numeric uid.',
+            arguments: [
+                new ArgumentDefinition(name: 'role', mode: ArgumentMode::Required, description: 'admin, editor, or viewer'),
+                new ArgumentDefinition(name: 'user', mode: ArgumentMode::Required, description: 'Account email or numeric uid'),
+            ],
+            handler: fn(CliIO $io): int => new AssignRoleCommand($this->entityTypeManager())->run($io),
         );
     }
 

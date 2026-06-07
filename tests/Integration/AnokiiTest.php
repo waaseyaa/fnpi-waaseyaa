@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration;
 
+use App\Access\WorkspaceAccess;
 use App\Auth\SetupTokenRepository;
 use App\Auth\SetupTokenSchema;
 use App\Controller\AnokiiController;
@@ -66,7 +67,7 @@ final class AnokiiTest extends TestCase
         $this->assertInstanceOf(RedirectResponse::class, $home);
         $this->assertSame('/anokii/login', $home->getTargetUrl());
 
-        $identity = new IdentityController(null, new PillarService(null));
+        $identity = new IdentityController(null, new PillarService(null), WorkspaceAccess::handler());
         $tool = $identity->index(new Request());
         $this->assertInstanceOf(RedirectResponse::class, $tool);
         $this->assertSame('/anokii/login', $tool->getTargetUrl());
@@ -75,7 +76,7 @@ final class AnokiiTest extends TestCase
     #[Test]
     public function identity_save_is_401_when_signed_out(): void
     {
-        $identity = new IdentityController(null, new PillarService(null));
+        $identity = new IdentityController(null, new PillarService(null), WorkspaceAccess::handler());
         $request = Request::create('/anokii/identity/save', 'POST', [], [], [], [], (string) json_encode(['pid' => 'purpose', 'status' => 'work']));
         $response = $identity->save($request);
         $this->assertSame(401, $response->getStatusCode());
@@ -84,7 +85,7 @@ final class AnokiiTest extends TestCase
     #[Test]
     public function identity_history_is_401_when_signed_out(): void
     {
-        $identity = new IdentityController(null, new PillarService(null));
+        $identity = new IdentityController(null, new PillarService(null), WorkspaceAccess::handler());
         $response = $identity->history(new Request(), 'purpose');
         $this->assertSame(401, $response->getStatusCode());
     }
