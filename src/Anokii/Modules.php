@@ -36,8 +36,8 @@ final class Modules
                 'icon' => '<path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" stroke="currentColor" stroke-width="1.7" fill="none"/>',
             ],
             [
-                'id' => 'ai', 'label' => 'Co-Intelligence', 'group' => 'Workspace', 'live' => false,
-                'href' => '/anokii/m/ai', 'desc' => 'Ask questions of your own documents and decisions.', 'badge' => 'Soon', 'tile' => true,
+                'id' => 'ai', 'label' => 'Co-Intelligence', 'group' => 'Workspace', 'live' => true,
+                'href' => '/anokii/cointelligence', 'desc' => 'Ask questions of your own documents and decisions.', 'badge' => '', 'tile' => true,
                 'icon' => '<path d="M5 5h14v10H8l-3 3V5Z" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="12" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/>',
             ],
             [

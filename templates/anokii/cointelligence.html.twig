@@ -1,0 +1,243 @@
+{% extends "anokii/_shell.html.twig" %}
+
+{% block anokii_styles %}
+  :root{ --cyan-soft:#e3f4f8; --card-shadow:0 1px 3px rgba(10,14,18,.05),0 8px 24px rgba(10,14,18,.06); }
+  .chat-wrap{display:grid;grid-template-columns:1fr 286px;gap:18px;align-items:start}
+  @media(max-width:880px){.chat-wrap{grid-template-columns:1fr}}
+  /* chat column */
+  .chat-col{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--card-shadow);display:flex;flex-direction:column;min-height:540px;padding:18px}
+  .chat-stream{flex:1;overflow-y:auto;max-height:60vh;display:flex;flex-direction:column;gap:16px;padding-right:4px}
+  .msg{display:flex;gap:11px;align-items:flex-start}
+  .msg.user{flex-direction:row-reverse}
+  .mav{width:30px;height:30px;border-radius:8px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-family:"Oswald",sans-serif;font-weight:700;font-size:11.5px;color:#fff;margin-top:2px}
+  .msg.ai .mav{background:linear-gradient(135deg,var(--cyan2),var(--cyan))}
+  .msg.user .mav{background:#2b3a40}
+  .bubble{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:15px;line-height:1.6;color:var(--ink);max-width:82%;box-shadow:0 1px 2px rgba(10,14,18,.04);overflow-wrap:anywhere}
+  .msg.user .bubble{background:#e9f5f9;border-color:#cfe7ee}
+  .bubble p{margin:0 0 9px} .bubble p:last-child{margin:0}
+  .bubble ul{margin:7px 0;padding-left:18px} .bubble li{margin:2px 0}
+  .bubble strong{font-weight:700}
+  .bubble a{color:var(--cyan2);text-decoration:underline}
+  .srcline{margin-top:10px;padding-top:9px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);font-family:"Oswald",sans-serif}
+  .srcline .src{display:inline-block;background:#eef1f3;border:1px solid var(--line);border-radius:20px;padding:2px 10px;margin:3px 5px 0 0;color:#3a4147;font-size:11.5px}
+  .working{display:inline-flex;gap:9px;align-items:center;font-family:"Oswald",sans-serif;font-size:12.5px;color:var(--muted)}
+  .wdot{width:9px;height:9px;border-radius:50%;background:var(--cyan2);animation:wpulse 1s ease-in-out infinite}
+  @keyframes wpulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)}}
+  /* composer */
+  .chat-input{display:flex;gap:10px;margin-top:14px;border-top:1px solid var(--line);padding-top:14px}
+  .chat-input textarea{flex:1;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font:inherit;font-size:15px;line-height:1.5;resize:none;min-height:48px;max-height:170px;background:#fff;color:var(--ink)}
+  .chat-input textarea:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(31,182,214,.14)}
+  .chat-send{flex:0 0 auto;align-self:stretch;border:none;border-radius:10px;background:var(--cyan2);color:#fff;font-family:"Oswald",sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:13px;padding:0 20px;cursor:pointer}
+  .chat-send:hover{background:var(--cyan)} .chat-send:disabled{opacity:.5;cursor:default}
+  .chat-note{margin:0 0 4px;font-size:12.5px;color:var(--amber,#a96a00);font-family:"Oswald",sans-serif}
+  /* right rail */
+  .crail{display:flex;flex-direction:column;gap:18px}
+  .crail .panel{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--card-shadow);padding:15px 16px}
+  .crail h4{font-family:"Oswald",sans-serif;font-size:11.5px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:0 0 10px;font-weight:600}
+  .newchat{display:block;width:100%;text-align:center;border:1px solid var(--cyan);background:var(--cyan-soft);color:var(--cyan2);border-radius:10px;padding:9px;font-family:"Oswald",sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:12.5px;text-decoration:none;margin-bottom:16px}
+  .newchat:hover{background:#d7eef4}
+  .sug{display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 11px;font:inherit;font-size:13.5px;line-height:1.4;color:var(--ink);cursor:pointer;margin-bottom:7px}
+  .sug:hover{border-color:var(--cyan);background:#f2fafc}
+  .rconv{display:block;border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:7px;text-decoration:none;color:var(--ink)}
+  .rconv:hover{border-color:var(--cyan);background:#f2fafc}
+  .rconv.on{border-color:var(--cyan);background:#eaf6fa}
+  .rconv b{display:block;font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rconv small{color:var(--muted);font-size:11px;font-family:"Oswald",sans-serif}
+  .rempty{font-size:13px;color:var(--muted)}
+{% endblock %}
+
+{% block anokii_content %}
+<div class="ahead">
+  <p class="ey">Co-Intelligence</p>
+  <h1>Co-Intelligence</h1>
+  <p class="sub">An assistant that knows FNPI's own documents, decisions, and positioning, grounded in your knowledge base and the Identity Workspace. Answers stay on FNPI's own infrastructure and cite the sources they used.</p>
+</div>
+
+<div class="chat-wrap">
+  <div class="chat-col" id="ciPanel" data-cid="{{ active.id|default(0) }}" data-configured="{{ configured ? '1' : '0' }}">
+    <div class="chat-stream" id="chatStream">
+      {% if not configured %}
+        <p class="chat-note">Co-Intelligence is not configured on this instance yet.</p>
+      {% endif %}
+      {% if messages is empty %}
+        <div class="msg ai">
+          <div class="mav">CI</div>
+          <div class="bubble"><p>Aanii. I am Co-Intelligence, grounded in FNPI's own documents and the Identity Workspace. Ask me about FNPI's lanes, positioning, business model, or the vendor pathway.</p></div>
+        </div>
+      {% else %}
+        {% for m in messages %}
+          <div class="msg {{ m.role == 'user' ? 'user' : 'ai' }}">
+            <div class="mav">{{ m.role == 'user' ? 'YOU' : 'CI' }}</div>
+            <div class="bubble{{ m.role == 'ai' or m.role == 'assistant' ? ' raw' : '' }}">
+              {%- if m.role == 'user' -%}{{ m.content }}{%- else -%}{{ m.content }}{%- endif -%}
+              {%- if m.sources is not empty -%}
+                <div class="srcline" data-srcline>Sources{% for s in m.sources %} <span class="src">{{ s.title }}</span>{% endfor %}</div>
+              {%- endif -%}
+            </div>
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+    <div class="chat-input">
+      <textarea id="chatBox" placeholder="Ask about FNPI's documents, decisions, or positioning..." rows="1" maxlength="500"{{ configured ? '' : ' disabled' }}></textarea>
+      <button class="chat-send" id="sendBtn"{{ configured ? '' : ' disabled' }}>Send</button>
+    </div>
+  </div>
+
+  <div class="crail">
+    <div class="panel">
+      <a class="newchat" href="/anokii/cointelligence">+ New chat</a>
+      <h4>Suggested prompts</h4>
+      {% for q in suggested %}<button class="sug" data-q="{{ q }}">{{ q }}</button>{% endfor %}
+    </div>
+    <div class="panel">
+      <h4>Recent</h4>
+      <div id="recentList">
+        {% if recent is empty %}
+          <p class="rempty">No conversations yet.</p>
+        {% else %}
+          {% for c in recent %}
+            <a class="rconv{{ active and active.id == c.id ? ' on' : '' }}" href="/anokii/cointelligence?c={{ c.id }}">
+              <b>{{ c.title }}</b><small>{{ c.created_by }}</small>
+            </a>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var panel=document.getElementById('ciPanel');
+  if(!panel) return;
+  var cid=parseInt(panel.getAttribute('data-cid')||'0',10);
+  var configured=panel.getAttribute('data-configured')==='1';
+  var stream=document.getElementById('chatStream');
+  var box=document.getElementById('chatBox');
+  var sendBtn=document.getElementById('sendBtn');
+  var recentList=document.getElementById('recentList');
+  var busy=false;
+
+  function esc(s){var d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;}
+
+  // Minimal, safe markdown: escape, then **bold**, [text](url) links, "- " bullet
+  // lists, and blank-line paragraphs. Mirrors oiatc's client renderer.
+  function inlineMd(s){
+    s=s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,function(m,t,u){
+      if(!/^https?:\/\//.test(u) && u.charAt(0)!=='/') return t;
+      return '<a href="'+u+'" target="_blank" rel="noopener">'+t+'</a>';
+    });
+    return s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  }
+  function fmt(text){
+    var lines=esc(text).split(/\n/);
+    var html='', para=[], list=[];
+    function flushP(){ if(para.length){ html+='<p>'+inlineMd(para.join(' '))+'</p>'; para=[]; } }
+    function flushL(){ if(list.length){ html+='<ul>'+list.map(function(i){return '<li>'+inlineMd(i)+'</li>';}).join('')+'</ul>'; list=[]; } }
+    lines.forEach(function(ln){
+      var t=ln.trim();
+      if(t===''){ flushL(); flushP(); return; }
+      if(/^[-*]\s+/.test(t)){ flushP(); list.push(t.replace(/^[-*]\s+/,'')); return; }
+      flushL(); para.push(t);
+    });
+    flushL(); flushP();
+    return html||'<p>'+inlineMd(esc(text))+'</p>';
+  }
+  function srcLine(sources){
+    if(!sources||!sources.length) return '';
+    var pills=sources.map(function(s){return '<span class="src">'+esc(s.title||s.source_url)+'</span>';}).join('');
+    return '<div class="srcline" data-srcline>Sources '+pills+'</div>';
+  }
+  // Format any server-rendered assistant bubbles (history) with the same renderer.
+  [].slice.call(document.querySelectorAll('.msg.ai .bubble.raw')).forEach(function(b){
+    var sl=b.querySelector('[data-srcline]');
+    var srcHtml=sl?sl.outerHTML:'';
+    if(sl)sl.remove();
+    b.innerHTML=fmt(b.textContent.trim())+srcHtml;
+  });
+
+  function addMsg(role,initials){
+    var m=document.createElement('div'); m.className='msg '+(role==='user'?'user':'ai');
+    var av=document.createElement('div'); av.className='mav'; av.textContent=initials;
+    var b=document.createElement('div'); b.className='bubble';
+    m.appendChild(av); m.appendChild(b); stream.appendChild(m); scrollDown();
+    return b;
+  }
+  function scrollDown(){ stream.scrollTop=stream.scrollHeight; }
+
+  function parseFrames(buffer, onEvent){
+    var parts=buffer.split('\n\n'); var rest=parts.pop();
+    parts.forEach(function(block){
+      var ev='message', data='';
+      block.split('\n').forEach(function(line){
+        if(line.indexOf('event:')===0) ev=line.slice(6).trim();
+        else if(line.indexOf('data:')===0) data+=line.slice(5).trim();
+      });
+      if(data){ try{ onEvent(ev, JSON.parse(data)); }catch(e){} }
+    });
+    return rest;
+  }
+
+  function send(q){
+    q=(q||'').trim();
+    if(!q||busy||!configured) return;
+    busy=true; sendBtn.disabled=true;
+    var greet=stream.querySelector('.msg.ai .bubble');
+    if(cid===0 && greet && stream.querySelectorAll('.msg').length===1){ stream.innerHTML=''; }
+    addMsg('user','YOU').textContent=q;
+    box.value='';
+    var bub=addMsg('ai','CI');
+    bub.innerHTML='<span class="working"><span class="wdot"></span>Searching FNPI knowledge...</span>';
+    var raw='', sources=[];
+    fetch('/anokii/cointelligence/send',{
+      method:'POST', headers:{'Content-Type':'application/json','Accept':'text/event-stream'},
+      credentials:'same-origin', body:JSON.stringify({question:q, conversation_id:cid})
+    }).then(function(r){
+      if(!r.ok||!r.body){ throw new Error('bad'); }
+      var reader=r.body.getReader(), dec=new TextDecoder(), buf='', started=false;
+      function pump(){
+        return reader.read().then(function(res){
+          if(res.done){ finish(); return; }
+          buf+=dec.decode(res.value,{stream:true});
+          buf=parseFrames(buf,function(ev,data){
+            if(ev==='meta'){ onMeta(data); }
+            else if(ev==='delta'){ if(!started){ bub.textContent=''; started=true; } raw+=data.text||''; bub.textContent=raw; scrollDown(); }
+            else if(ev==='done'){ sources=data.sources||[]; }
+          });
+          return pump();
+        });
+      }
+      function finish(){ bub.innerHTML=fmt(raw)+srcLine(sources); scrollDown(); busy=false; sendBtn.disabled=false; box.focus(); }
+      return pump();
+    }).catch(function(){ bub.innerHTML='<p>Sorry, something went wrong. Please try again.</p>'; busy=false; sendBtn.disabled=false; });
+  }
+
+  function onMeta(data){
+    if(data.conversation_id && data.conversation_id!==cid){
+      var fresh=(cid===0);
+      cid=data.conversation_id;
+      panel.setAttribute('data-cid',String(cid));
+      try{ history.replaceState(null,'','/anokii/cointelligence?c='+cid); }catch(e){}
+      if(fresh && recentList){
+        var empty=recentList.querySelector('.rempty'); if(empty)empty.remove();
+        var a=document.createElement('a'); a.className='rconv on'; a.href='/anokii/cointelligence?c='+cid;
+        a.innerHTML='<b>'+esc(data.title||'New conversation')+'</b><small>you</small>';
+        [].slice.call(recentList.querySelectorAll('.rconv.on')).forEach(function(x){x.classList.remove('on');});
+        recentList.insertBefore(a, recentList.firstChild);
+      }
+    }
+  }
+
+  sendBtn.addEventListener('click', function(){ send(box.value); });
+  box.addEventListener('keydown', function(e){
+    if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(box.value); }
+  });
+  box.addEventListener('input', function(){ box.style.height='auto'; box.style.height=Math.min(box.scrollHeight,170)+'px'; });
+  [].slice.call(document.querySelectorAll('.sug')).forEach(function(b){
+    b.addEventListener('click', function(){ box.value=b.getAttribute('data-q')||''; send(box.value); });
+  });
+  scrollDown();
+})();
+</script>
+{% endblock %}

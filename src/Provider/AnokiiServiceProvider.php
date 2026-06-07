@@ -7,14 +7,25 @@ namespace App\Provider;
 use App\Auth\SetupTokenRepository;
 use App\Auth\SetupTokenSchema;
 use App\CLI\AnokiiInviteHandler;
+use App\CoIntelligence\ChatPromptBuilder;
+use App\CoIntelligence\ChatSchema;
+use App\CoIntelligence\ConversationRepository;
+use App\CoIntelligence\DocChunkRepository;
+use App\CoIntelligence\Retriever;
+use App\Command\IngestKnowledgeCommand;
 use App\Controller\AnokiiController;
+use App\Controller\CoIntelligenceController;
 use App\Controller\IdentityController;
 use App\Identity\PillarRepository;
 use App\Identity\PillarSchema;
 use App\Support\Db;
 use Symfony\Component\HttpFoundation\Request;
+use Waaseyaa\AI\Agent\Provider\AnthropicProvider;
+use Waaseyaa\AI\Agent\Provider\NullLlmProvider;
+use Waaseyaa\AI\Agent\Provider\ProviderInterface;
 use Waaseyaa\CLI\ArgumentDefinition;
 use Waaseyaa\CLI\ArgumentMode;
+use Waaseyaa\CLI\CliIO;
 use Waaseyaa\CLI\CommandDefinition;
 use Waaseyaa\CLI\OptionDefinition;
 use Waaseyaa\CLI\OptionMode;
@@ -23,6 +34,7 @@ use Waaseyaa\Foundation\ServiceProvider\Capability\HasNativeCommandsInterface;
 use Waaseyaa\Foundation\ServiceProvider\ServiceProvider;
 use Waaseyaa\Routing\RouteBuilder;
 use Waaseyaa\Routing\WaaseyaaRouter;
+use Waaseyaa\SSR\SsrServiceProvider;
 
 /**
  * Wires the authenticated Anokii workspace at /anokii/*: the shell (login,
@@ -36,6 +48,9 @@ use Waaseyaa\Routing\WaaseyaaRouter;
  */
 final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCommandsInterface
 {
+    /** Chat model, matching oiatc's Co-Intelligence (current Claude Sonnet). */
+    private const CHAT_MODEL = 'claude-sonnet-4-6';
+
     private ?DatabaseInterface $db = null;
 
     public function register(): void {}
@@ -52,6 +67,7 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
             $db = $this->db();
             new PillarSchema($db)->ensure();
             new SetupTokenSchema($db)->ensure();
+            new ChatSchema($db)->ensure();
             new PillarRepository($db)->seedIfEmpty();
         } catch (\Throwable) {
             // best effort; the tool surfaces an empty state rather than 500ing
@@ -62,6 +78,24 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
     {
         $shell = new AnokiiController($entityTypeManager, new SetupTokenRepository($this->db()));
         $identity = new IdentityController($entityTypeManager, new PillarRepository($this->db()));
+
+        // Co-Intelligence (tool #2): construct the model provider directly from the
+        // server-side key (mirrors oiatc; resolve() at route-build can hand back an
+        // ephemeral binding). NullLlmProvider keeps the page working when no key is
+        // set, with the controller reporting "not configured" instead of erroring.
+        $anthropicKey = getenv('ANTHROPIC_API_KEY') ?: '';
+        $configured = $anthropicKey !== '';
+        $provider = $configured
+            ? new AnthropicProvider($anthropicKey, self::CHAT_MODEL)
+            : new NullLlmProvider();
+        $cointel = new CoIntelligenceController(
+            $entityTypeManager,
+            new Retriever($this->db()),
+            new ChatPromptBuilder(),
+            new ConversationRepository($this->db()),
+            $provider,
+            $configured,
+        );
 
         $get = static fn(string $name, string $path, callable $c) => $router->addRoute(
             $name,
@@ -82,7 +116,9 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
         $post('anokii.setpw.post', '/anokii/set-password', fn(Request $r) => $shell->setPasswordSubmit($r));
         $get('anokii.identity', '/anokii/identity', fn(Request $r) => $identity->index($r));
         $post('anokii.identity.save', '/anokii/identity/save', fn(Request $r) => $identity->save($r));
-        // Coming-soon placeholder for not-yet-live modules (drive, ai, rooms, ...).
+        $get('anokii.cointelligence', '/anokii/cointelligence', fn(Request $r) => $cointel->index($r));
+        $post('anokii.cointelligence.send', '/anokii/cointelligence/send', fn(Request $r) => $cointel->send($r));
+        // Coming-soon placeholder for not-yet-live modules (drive, rooms, ...).
         $get('anokii.module', '/anokii/m/{module}', fn(Request $r, string $module) => $shell->comingSoon($r, $module));
     }
 
@@ -103,6 +139,28 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
                 new OptionDefinition(name: 'base-url', mode: OptionMode::Required, description: 'Base URL for the link (default https://fnprocure.ca)'),
             ],
             handler: [AnokiiInviteHandler::class, 'execute'],
+        );
+
+        yield new CommandDefinition(
+            name: 'app:ingest-knowledge',
+            description: 'Build the Co-Intelligence RAG knowledge base from FNPI docs, the live site copy, and the Identity pillars.',
+            options: [
+                new OptionDefinition(name: 'dry-run', mode: OptionMode::None, description: 'Preview extracted chunks without writing.'),
+                new OptionDefinition(name: 'prune', mode: OptionMode::Negatable, description: 'Delete stored chunks no longer present (use --no-prune to keep).', default: true),
+            ],
+            handler: function (CliIO $io): int {
+                $db = $this->db();
+                new ChatSchema($db)->ensure();
+                $twig = SsrServiceProvider::createTwigEnvironment($this->projectRoot, $this->config);
+                $command = new IngestKnowledgeCommand(
+                    new DocChunkRepository($db),
+                    new PillarRepository($db),
+                    $twig,
+                    $this->projectRoot . '/resources/knowledge',
+                );
+
+                return $command->run($io);
+            },
         );
     }
 
