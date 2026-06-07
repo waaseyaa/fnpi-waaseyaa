@@ -31,8 +31,8 @@ final class Modules
                 'icon' => '<circle cx="12" cy="9" r="3.2" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M5 20c1.2-3.6 4-5.4 7-5.4s5.8 1.8 7 5.4" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round"/>',
             ],
             [
-                'id' => 'drive', 'label' => 'Drive', 'group' => 'Workspace', 'live' => false,
-                'href' => '/anokii/m/drive', 'desc' => 'Department file storage, scoped to the Nation.', 'badge' => 'Soon', 'tile' => true,
+                'id' => 'drive', 'label' => 'Drive', 'group' => 'Workspace', 'live' => true,
+                'href' => '/anokii/drive', 'desc' => 'Department file storage, scoped to the Nation.', 'badge' => '', 'tile' => true,
                 'icon' => '<path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" stroke="currentColor" stroke-width="1.7" fill="none"/>',
             ],
             [

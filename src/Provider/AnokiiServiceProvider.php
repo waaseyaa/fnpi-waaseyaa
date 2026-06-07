@@ -13,9 +13,14 @@ use App\CoIntelligence\ConversationRepository;
 use App\CoIntelligence\DocChunkRepository;
 use App\CoIntelligence\Retriever;
 use App\Command\IngestKnowledgeCommand;
+use App\Command\SeedDriveCommand;
 use App\Controller\AnokiiController;
 use App\Controller\CoIntelligenceController;
+use App\Controller\DriveController;
 use App\Controller\IdentityController;
+use App\Drive\DriveRepository;
+use App\Drive\DriveStorage;
+use App\Drive\FileSchema;
 use App\Identity\PillarRepository;
 use App\Identity\PillarSchema;
 use App\Support\Db;
@@ -68,6 +73,7 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
             new PillarSchema($db)->ensure();
             new SetupTokenSchema($db)->ensure();
             new ChatSchema($db)->ensure();
+            new FileSchema($db)->ensure();
             new PillarRepository($db)->seedIfEmpty();
         } catch (\Throwable) {
             // best effort; the tool surfaces an empty state rather than 500ing
@@ -97,6 +103,18 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
             $configured,
         );
 
+        // Drive (tool #3): file storage on the sovereign volume via the media
+        // layer, with a queryable index table for the listing + attribution.
+        $drive = new DriveController(
+            $entityTypeManager,
+            new DriveRepository($this->db()),
+            new DriveStorage(
+                $this->filesDir(),
+                $this->allowedUploadMimeTypes(),
+                $this->uploadMaxBytes(),
+            ),
+        );
+
         $get = static fn(string $name, string $path, callable $c) => $router->addRoute(
             $name,
             RouteBuilder::create($path)->controller($c)->allowAll()->methods('GET')->build(),
@@ -118,7 +136,11 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
         $post('anokii.identity.save', '/anokii/identity/save', fn(Request $r) => $identity->save($r));
         $get('anokii.cointelligence', '/anokii/cointelligence', fn(Request $r) => $cointel->index($r));
         $post('anokii.cointelligence.send', '/anokii/cointelligence/send', fn(Request $r) => $cointel->send($r));
-        // Coming-soon placeholder for not-yet-live modules (drive, rooms, ...).
+        $get('anokii.drive', '/anokii/drive', fn(Request $r) => $drive->index($r));
+        $post('anokii.drive.upload', '/anokii/drive/upload', fn(Request $r) => $drive->upload($r));
+        $get('anokii.drive.file', '/anokii/drive/file/{id}', fn(Request $r, string $id) => $drive->download($r, $id));
+        $post('anokii.drive.delete', '/anokii/drive/delete', fn(Request $r) => $drive->delete($r));
+        // Coming-soon placeholder for not-yet-live modules (rooms, ...).
         $get('anokii.module', '/anokii/m/{module}', fn(Request $r, string $module) => $shell->comingSoon($r, $module));
     }
 
@@ -162,11 +184,79 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
                 return $command->run($io);
             },
         );
+
+        yield new CommandDefinition(
+            name: 'app:seed-drive',
+            description: 'Seed Drive with a directory of images. Bytes go to the sovereign volume via the media layer; one index row per file. Idempotent.',
+            options: [
+                new OptionDefinition(name: 'dir', mode: OptionMode::Required, description: 'Directory of images to import (required).'),
+                new OptionDefinition(name: 'folder', mode: OptionMode::Required, description: 'Target folder / tag (default "Global relationships").'),
+                new OptionDefinition(name: 'owner-email', mode: OptionMode::Required, description: 'Attribute uploads to this account when it exists.'),
+                new OptionDefinition(name: 'owner-id', mode: OptionMode::Required, description: 'Fallback owner uid (default 1).'),
+                new OptionDefinition(name: 'owner-label', mode: OptionMode::Required, description: 'Fallback display name (default "Matthew Owl").'),
+            ],
+            handler: function (CliIO $io): int {
+                $db = $this->db();
+                new FileSchema($db)->ensure();
+                $etm = null;
+                try {
+                    $resolved = $this->resolve(\Waaseyaa\Entity\EntityTypeManagerInterface::class);
+                    $etm = $resolved instanceof \Waaseyaa\Entity\EntityTypeManagerInterface ? $resolved : null;
+                } catch (\Throwable) {
+                    // owner-email lookup unavailable; the command falls back to id/label
+                }
+                $command = new SeedDriveCommand(
+                    new DriveRepository($db),
+                    new DriveStorage($this->filesDir(), $this->allowedUploadMimeTypes(), $this->uploadMaxBytes()),
+                    $etm,
+                );
+
+                return $command->run($io);
+            },
+        );
     }
 
     private function db(): DatabaseInterface
     {
         return $this->db ??= Db::persistent();
+    }
+
+    /**
+     * Storage root for Drive bytes. On the Pi this is the fnpi_storage volume
+     * (WAASEYAA_FILES_DIR via config); default is the project storage dir.
+     */
+    private function filesDir(): string
+    {
+        $configured = $this->config['files_dir'] ?? '';
+
+        return is_string($configured) && $configured !== ''
+            ? $configured
+            : $this->projectRoot . '/storage/files';
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function allowedUploadMimeTypes(): array
+    {
+        $configured = $this->config['upload_allowed_mime_types'] ?? null;
+        $allowed = [];
+        if (is_array($configured)) {
+            foreach ($configured as $value) {
+                if (is_string($value) && trim($value) !== '') {
+                    $allowed[] = trim($value);
+                }
+            }
+        }
+
+        return $allowed !== [] ? $allowed : ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    }
+
+    private function uploadMaxBytes(): int
+    {
+        $configured = $this->config['upload_max_bytes'] ?? null;
+
+        return is_numeric($configured) && (int) $configured > 0 ? (int) $configured : 10 * 1024 * 1024;
     }
 
     private function kernelPresent(): bool

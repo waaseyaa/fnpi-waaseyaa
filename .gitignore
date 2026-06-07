@@ -10,3 +10,7 @@ composer.local.json
 /storage/*.log
 /storage/*.lock
 /.phpunit.cache/
+# Runtime file storage (Drive bytes + media sidecars) lives on the volume, not in git.
+/storage/files/
+# Scratch space for one-off seeding (unzipped/converted source photos).
+/storage/_seed_photos/

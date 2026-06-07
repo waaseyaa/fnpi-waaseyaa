@@ -204,7 +204,7 @@ final class AnokiiTest extends TestCase
         }
         $this->assertTrue(\App\Anokii\Modules::find('identity')['live']);
         $this->assertTrue(\App\Anokii\Modules::find('home')['live']);
-        $this->assertFalse(\App\Anokii\Modules::find('drive')['live']);
+        $this->assertTrue(\App\Anokii\Modules::find('drive')['live']);
         $this->assertFalse(\App\Anokii\Modules::find('governance')['live']);
         $this->assertNull(\App\Anokii\Modules::find('nope'));
     }
@@ -220,7 +220,7 @@ final class AnokiiTest extends TestCase
         $this->assertStringContainsString('Co-Intelligence', $html);
         $this->assertStringContainsString('Coming soon', $html);
         $this->assertStringContainsString('href="/anokii/identity"', $html);
-        $this->assertStringContainsString('href="/anokii/m/drive"', $html);
+        $this->assertStringContainsString('href="/anokii/drive"', $html);
         $this->assertStringNotContainsString('{%', $html);
     }
 
@@ -228,7 +228,7 @@ final class AnokiiTest extends TestCase
     public function coming_soon_redirects_to_login_when_signed_out(): void
     {
         $shell = new AnokiiController(null, new SetupTokenRepository($this->db()));
-        $r = $shell->comingSoon(new Request(), 'drive');
+        $r = $shell->comingSoon(new Request(), 'rooms');
         $this->assertInstanceOf(RedirectResponse::class, $r);
         $this->assertSame('/anokii/login', $r->getTargetUrl());
     }
