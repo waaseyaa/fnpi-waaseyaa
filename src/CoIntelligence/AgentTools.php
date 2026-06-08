@@ -62,16 +62,37 @@ final class AgentTools
 
     public function isMutating(string $name): bool
     {
-        return in_array($name, self::MUTATING, true);
+        return in_array($this->canonicalName($name), self::MUTATING, true);
     }
 
     public function isKnown(string $name): bool
     {
-        return in_array($name, self::TOOLS, true);
+        return in_array($this->canonicalName($name), self::TOOLS, true);
     }
 
     /**
-     * Anthropic `tools` descriptors for the advertised tools.
+     * The framework tool names use dots (entity.update), but Anthropic requires
+     * tool names to match ^[a-zA-Z0-9_-]+$. Advertise a wire-safe name (dots ->
+     * underscores) and translate the model's calls back to the canonical name.
+     */
+    public function wireName(string $canonical): string
+    {
+        return str_replace('.', '_', $canonical);
+    }
+
+    public function canonicalName(string $name): string
+    {
+        foreach (self::TOOLS as $canonical) {
+            if ($this->wireName($canonical) === $name) {
+                return $canonical;
+            }
+        }
+
+        return $name;
+    }
+
+    /**
+     * Anthropic `tools` descriptors for the advertised tools (wire-safe names).
      *
      * @return list<array{name:string, description:string, input_schema:array<string,mixed>}>
      */
@@ -84,7 +105,7 @@ final class AgentTools
                 continue;
             }
             $out[] = [
-                'name' => $name,
+                'name' => $this->wireName($name),
                 'description' => $tool->description(),
                 'input_schema' => $tool->inputSchema(),
             ];
@@ -101,6 +122,7 @@ final class AgentTools
      */
     public function execute(string $name, array $input, AccountInterface $account): AgentToolResult
     {
+        $name = $this->canonicalName($name);
         $scope = $this->guardScope($name, $input);
         if ($scope !== null) {
             return $scope;
@@ -120,6 +142,7 @@ final class AgentTools
      */
     public function dryRun(string $name, array $input, AccountInterface $account): AgentToolResult
     {
+        $name = $this->canonicalName($name);
         $scope = $this->guardScope($name, $input);
         if ($scope !== null) {
             return $scope;

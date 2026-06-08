@@ -159,7 +159,7 @@ final class AgentConversation
         [$summary, $diff] = $this->describe($toolUse, $account);
         $token = $this->proposals->create(
             conversationId: $conversationId,
-            toolName: $toolUse->name,
+            toolName: $this->tools->canonicalName($toolUse->name),
             toolUseId: $toolUse->id,
             toolInput: $toolUse->input,
             messages: $messages,
@@ -175,7 +175,7 @@ final class AgentConversation
             'tool' => $toolUse->name,
             'summary' => $summary,
             'diff' => $diff,
-            'destructive' => $toolUse->name === 'entity.delete',
+            'destructive' => $this->tools->canonicalName($toolUse->name) === 'entity.delete',
         ]);
     }
 
@@ -190,7 +190,7 @@ final class AgentConversation
         $type = (string) ($input['entity_type'] ?? '');
         $id = (string) ($input['id'] ?? '');
 
-        switch ($toolUse->name) {
+        switch ($this->tools->canonicalName($toolUse->name)) {
             case 'entity.update':
                 $current = $this->loadValues($type, $id, $account);
                 $diff = [];

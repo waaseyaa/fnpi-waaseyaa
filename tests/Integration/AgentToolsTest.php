@@ -87,6 +87,25 @@ final class AgentToolsTest extends TestCase
     }
 
     #[Test]
+    public function tool_names_are_wire_safe_for_anthropic_and_map_back(): void
+    {
+        $tools = new AgentTools(null);
+
+        // Anthropic tool names must match ^[a-zA-Z0-9_-]+$ (no dots).
+        $this->assertSame('entity_update', $tools->wireName('entity.update'));
+        $this->assertSame('entity.update', $tools->canonicalName('entity_update'));
+        $this->assertSame('entity.set_current_revision', $tools->canonicalName('entity_set_current_revision'));
+
+        // Classification + dispatch work when the model calls the wire name.
+        $this->assertTrue($tools->isMutating('entity_update'));
+        $this->assertFalse($tools->isMutating('entity_read'));
+        $this->assertTrue($tools->isKnown('entity_search'));
+
+        $result = $tools->execute('entity_update', ['entity_type' => 'user', 'id' => 1, 'values' => []], $this->account());
+        $this->assertSame('out_of_scope', $result->summary);
+    }
+
+    #[Test]
     public function the_workspace_types_are_the_four_entities(): void
     {
         $this->assertSame(
