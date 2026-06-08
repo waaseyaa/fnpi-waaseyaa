@@ -138,6 +138,23 @@ final class AgentConversation
             }
 
             $first = array_shift($writes);
+
+            // No-op guard: an entity.update whose proposed values already match
+            // the stored values must never become a proposal. Approving it would
+            // record a revision and report success while changing nothing, and
+            // the model tends to narrate a state change it did not make. Instead,
+            // feed the truth back so it answers honestly (or proposes a real edit).
+            $noop = $this->noopUpdate($first, $account);
+            if ($noop !== null) {
+                $resultBlocks[] = (new ToolResultBlock($first->id, $noop, false))->toArray();
+                foreach ($writes as $extra) {
+                    $resultBlocks[] = (new ToolResultBlock($extra->id, 'Deferred: propose one change at a time.', true))->toArray();
+                }
+                $messages[] = ['role' => 'user', 'content' => $resultBlocks];
+
+                continue;
+            }
+
             foreach ($writes as $extra) {
                 $resultBlocks[] = (new ToolResultBlock($extra->id, 'Deferred: please propose one change at a time.', true))->toArray();
             }
@@ -250,6 +267,80 @@ final class AgentConversation
         }
 
         return [];
+    }
+
+    /**
+     * Decide whether a proposed write is an entity.update that changes nothing.
+     *
+     * Returns a tool-result message (to feed back to the model) when the update
+     * is a no-op or empty, or null when there is a real change to propose. Only
+     * entity.update is checked: create always changes, and the revision tools
+     * (delete / set_current_revision / rollback) are state moves, not value
+     * comparisons. Attribution fields are added later in withAttribution(), so
+     * they are never part of the model's proposed values here.
+     */
+    private function noopUpdate(ToolUseBlock $toolUse, AccountInterface $account): ?string
+    {
+        if ($this->tools->canonicalName($toolUse->name) !== 'entity.update') {
+            return null;
+        }
+        $input = $toolUse->input;
+        $values = is_array($input['values'] ?? null) ? $input['values'] : [];
+        if ($values === []) {
+            return 'No fields were given to update, so nothing would change. Ask the user what they want changed.';
+        }
+        $current = $this->loadValues((string) ($input['entity_type'] ?? ''), (string) ($input['id'] ?? ''), $account);
+        if ($current === []) {
+            return null; // Cannot confirm current state; let it propose.
+        }
+
+        ['changed' => $changed, 'already' => $already] = self::diffValues($current, $values);
+        if ($changed !== []) {
+            return null; // At least one real change; proceed to propose.
+        }
+
+        return 'No change needed: ' . implode('; ', $already)
+            . '. The item already has these values, so do not propose this update and do not claim you changed it. Tell the user it is already set this way.';
+    }
+
+    /**
+     * Compare proposed values against current stored values. A field is
+     * "already" set when it exists in current and is scalar-equal to the
+     * proposed value; otherwise it is "changed". Pure and testable: this is the
+     * decision that keeps a no-op update from ever becoming a proposal.
+     *
+     * @param array<string,mixed> $current
+     * @param array<string,mixed> $proposed
+     * @return array{changed: list<string>, already: list<string>}
+     */
+    public static function diffValues(array $current, array $proposed): array
+    {
+        $changed = [];
+        $already = [];
+        foreach ($proposed as $field => $after) {
+            $field = (string) $field;
+            if (array_key_exists($field, $current) && self::sameScalar($current[$field], $after)) {
+                $already[] = sprintf('%s is already "%s"', $field, self::scalarText($after));
+            } else {
+                $changed[] = $field;
+            }
+        }
+
+        return ['changed' => $changed, 'already' => $already];
+    }
+
+    private static function sameScalar(mixed $a, mixed $b): bool
+    {
+        if ((is_scalar($a) || $a === null) && (is_scalar($b) || $b === null)) {
+            return (string) $a === (string) $b;
+        }
+
+        return $a === $b;
+    }
+
+    private static function scalarText(mixed $v): string
+    {
+        return is_scalar($v) ? (string) $v : (string) json_encode($v, JSON_UNESCAPED_SLASHES);
     }
 
     /**

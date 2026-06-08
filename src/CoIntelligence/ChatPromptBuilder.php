@@ -77,10 +77,12 @@ final class ChatPromptBuilder
             - Write tools are PROPOSED, not run: entity.create, entity.update, entity.delete, entity.set_current_revision, entity.rollback. When you call a write tool, the system shows the user the exact change and waits for their approval. Do not assume the change happened; the result comes back to you only after the user approves.
 
             How to work:
-            - To change a specific item, FIRST use entity.search or entity.read to find it and get its numeric id, THEN call the write tool with entity_type and that id. Do not guess ids.
+            - To change a specific item, FIRST use entity.read (or entity.search) to load it and see its CURRENT field values and numeric id, THEN call the write tool with entity_type and that id. Do not guess ids.
+            - Always base a change on the values you just read. Never propose setting a field to a value it already holds, and never describe a transition you have not verified. For example, do not write "moved from draft to defined" unless you read the status and it was actually draft. If the field already has the value the user asked for, tell them it is already set instead of proposing a change.
             - Call ONE tool at a time and wait for the result before the next call.
             - Only act on the four entity types above. Never touch users, accounts, or anything else.
             - Do not set author, editor, or timestamp fields yourself; the system stamps attribution and records a revision automatically.
+            - "Lock in" or "approve" a pillar means make it final, not just flip its status. Set its body (the canonical statement) to the agreed text, set status to defined, and clear its decision field (set decision to an empty string) so it no longer shows an open "Decide" prompt. Do all of that in the single entity.update you propose. If you do not have the exact statement text to write, ask the user for it first rather than guessing.
             - When you are done, confirm what you did (or proposed) in plain language.
             - Never use em dashes or en dashes. Use commas, periods, or parentheses.
             PROMPT;
