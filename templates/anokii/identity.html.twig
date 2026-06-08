@@ -9,8 +9,16 @@
     --cyan-soft:#e3f4f8;
     --card-shadow:0 1px 3px rgba(10,14,18,.05),0 8px 24px rgba(10,14,18,.06);
   }
+  /* Cowork-style two-pane: work surface + a persistent assistant companion. */
+  .cowork{display:flex;gap:26px;align-items:flex-start}
+  .cowork-main{flex:1;min-width:0}
+  .cowork-chat{flex:0 0 408px;width:408px;position:sticky;top:74px;height:calc(100vh - 98px);display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:var(--card-shadow);overflow:hidden}
+  @media(max-width:1180px){
+    .cowork{flex-direction:column}
+    .cowork-chat{position:static;width:auto;flex:none;height:600px;max-height:74vh}
+  }
   /* maturity card */
-  .maturity{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:28px;box-shadow:var(--card-shadow)}
+  .maturity{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:26px;box-shadow:var(--card-shadow)}
   .maturity h2{font-size:11.5px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin:0 0 13px;font-weight:600;font-family:"Oswald",sans-serif}
   .bar{display:flex;height:14px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:var(--bg)}
   .bar span{display:block;height:100%;transition:width .3s}
@@ -19,16 +27,19 @@
   .dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
   .d-defined{background:var(--green)} .d-draft{background:var(--amber)} .d-work{background:var(--orange)} .d-gap{background:var(--grey)}
   /* sections */
-  section.sec{margin:30px 0}
+  section.sec{margin:26px 0}
   .sec-h{display:flex;align-items:baseline;gap:11px;margin:0 0 5px}
   .sec-h .n{font-family:"Oswald",sans-serif;font-size:14px;font-weight:700;color:var(--cyan2);letter-spacing:.04em}
-  .sec-h h3{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.01em;font-size:23px;margin:0;color:var(--ink)}
-  .sec-sub{color:var(--muted);margin:0 0 16px;font-size:14.5px;line-height:1.55;max-width:80ch}
+  .sec-h h3{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.01em;font-size:22px;margin:0;color:var(--ink)}
+  .sec-sub{color:var(--muted);margin:0 0 15px;font-size:14px;line-height:1.55;max-width:80ch}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  @media(max-width:1480px){.grid{grid-template-columns:1fr}}
+  @media(max-width:1180px){.grid{grid-template-columns:1fr 1fr}}
   @media(max-width:760px){.grid{grid-template-columns:1fr}}
   /* card (Anokii style) */
-  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--card-shadow)}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--card-shadow);scroll-margin-top:84px;transition:box-shadow .2s,border-color .2s}
   .card.full{grid-column:1 / -1}
+  .card.flash{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(31,182,214,.18),var(--card-shadow)}
   .card-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
   .card h4{margin:0;font-family:"Oswald",sans-serif;font-weight:600;font-size:16.5px;color:var(--ink);letter-spacing:.01em}
   /* status pill (working selector) */
@@ -45,7 +56,7 @@
   /* refined Decide callout */
   .decide{background:#f2f8fa;border-left:3px solid var(--cyan2);border-radius:0 8px 8px 0;padding:10px 13px;font-size:14px;color:#3a4147;line-height:1.55}
   .decide .dl{display:block;font-family:"Oswald",sans-serif;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--cyan2);margin-bottom:3px}
-  /* notes (Anokii input) — long content stays in a scroll well, never runs away */
+  /* notes (Anokii input) */
   .notes label{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:2px 0 5px;font-weight:600;font-family:"Oswald",sans-serif}
   .notes textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px 12px;font:inherit;font-size:14.5px;line-height:1.55;background:#fff;resize:vertical;min-height:46px;max-height:340px;overflow-y:auto;color:var(--ink);box-sizing:border-box}
   .notes textarea:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(31,182,214,.14)}
@@ -70,132 +81,143 @@
   .hist .sum{color:var(--ink)}
   .hist .cur{color:var(--cyan2);font-weight:700}
   .hist .empty{color:var(--muted);font-size:13px}
-  /* identity assistant chat dock */
-  .idock-toggle{position:fixed;right:22px;bottom:22px;z-index:40;display:inline-flex;align-items:center;gap:8px;background:var(--cyan2);color:#fff;border:none;border-radius:24px;padding:11px 18px;font-family:"Oswald",sans-serif;font-weight:600;font-size:14px;letter-spacing:.02em;cursor:pointer;box-shadow:0 6px 20px rgba(19,134,159,.35)}
-  .idock-toggle:hover{background:#0f6f85}
-  .idock{position:fixed;right:22px;bottom:22px;z-index:41;width:380px;max-width:calc(100vw - 32px);height:520px;max-height:calc(100vh - 90px);display:none;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 50px rgba(10,14,18,.22);overflow:hidden}
-  .idock.open{display:flex}
-  .idock-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line);background:#f7fbfc}
-  .idock-head b{font-family:"Oswald",sans-serif;font-size:14px;color:var(--ink)}
-  .idock-head small{display:block;font-size:11.5px;color:var(--muted)}
-  .idock-x{background:none;border:none;font-size:21px;line-height:1;color:var(--muted);cursor:pointer;padding:0 6px}
-  .idock-stream{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;background:var(--bg)}
+  /* Co-Intelligence companion panel */
+  .cw-head{display:flex;align-items:center;gap:11px;padding:14px 16px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#f7fbfc,#fff)}
+  .cw-ava{flex:0 0 auto;width:34px;height:34px;border-radius:10px;background:var(--cyan2);color:#fff;display:flex;align-items:center;justify-content:center;font-family:"Anton",sans-serif;font-size:15px;letter-spacing:.02em}
+  .cw-head b{font-family:"Oswald",sans-serif;font-weight:600;font-size:15px;color:var(--ink);display:block;line-height:1.2}
+  .cw-head small{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+  .cw-head small::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green)}
+  .cw-stream{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:13px;background:var(--bg)}
   .imsg{display:flex;gap:9px;align-items:flex-start}
-  .imsg .av{flex:0 0 auto;width:26px;height:26px;border-radius:7px;font-family:"Oswald",sans-serif;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#fff}
+  .imsg .av{flex:0 0 auto;width:26px;height:26px;border-radius:8px;font-family:"Oswald",sans-serif;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#fff}
+  .imsg.user{flex-direction:row-reverse}
   .imsg.user .av{background:var(--ink)} .imsg.ai .av{background:var(--cyan2)}
-  .ibub{background:#fff;border:1px solid var(--line);border-radius:11px;padding:9px 11px;font-size:14px;line-height:1.55;color:var(--ink);max-width:84%;overflow-wrap:anywhere}
-  .imsg.user .ibub{background:#eef6f9;border-color:#d3e9f0}
+  .ibub{background:#fff;border:1px solid var(--line);border-radius:13px;padding:10px 13px;font-size:14.5px;line-height:1.58;color:var(--ink);max-width:86%;overflow-wrap:anywhere;box-shadow:0 1px 2px rgba(10,14,18,.04)}
+  .imsg.user .ibub{background:#0a0e12;border-color:#0a0e12;color:#eaf6f9}
   .ibub p{margin:0 0 7px} .ibub p:last-child{margin:0} .ibub strong{font-weight:700}
-  .idock-foot{border-top:1px solid var(--line);padding:10px;display:flex;gap:8px}
-  .idock-foot textarea{flex:1;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font:inherit;font-size:14px;resize:none;height:40px;max-height:120px;color:var(--ink)}
-  .idock-foot textarea:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(31,182,214,.14)}
-  .idock-send{background:var(--cyan2);color:#fff;border:none;border-radius:9px;padding:0 16px;font-family:"Oswald",sans-serif;font-weight:600;cursor:pointer}
-  .idock-send:disabled{opacity:.5;cursor:default}
-  .iwork{display:inline-flex;align-items:center;gap:7px;color:var(--muted);font-size:13px}
+  .cw-chips{display:flex;flex-wrap:wrap;gap:7px;margin:2px 0 0 35px}
+  .cw-chip{font-size:12.5px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:6px 12px;color:var(--cyan2);cursor:pointer;font-family:"Oswald",sans-serif;letter-spacing:.01em}
+  .cw-chip:hover{background:var(--cyan-soft);border-color:#cdeaf1}
+  .cw-foot{border-top:1px solid var(--line);padding:11px;display:flex;gap:8px;align-items:flex-end;background:#fff}
+  .cw-foot textarea{flex:1;border:1px solid var(--line);border-radius:11px;padding:10px 12px;font:inherit;font-size:14.5px;line-height:1.5;resize:none;height:42px;max-height:140px;color:var(--ink);background:var(--bg)}
+  .cw-foot textarea:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(31,182,214,.14);background:#fff}
+  .cw-send{flex:0 0 auto;background:var(--cyan2);color:#fff;border:none;border-radius:11px;height:42px;padding:0 16px;font-family:"Oswald",sans-serif;font-weight:600;font-size:14px;cursor:pointer}
+  .cw-send:hover{background:#0f6f85} .cw-send:disabled{opacity:.5;cursor:default}
+  .iwork{display:inline-flex;align-items:center;gap:7px;color:var(--muted);font-size:13.5px}
   .iwork .d{width:6px;height:6px;border-radius:50%;background:var(--cyan2);animation:ipulse 1s infinite}
   @keyframes ipulse{0%,100%{opacity:.3}50%{opacity:1}}
-  .iprop{margin-top:8px;border:1px solid var(--cyan);border-radius:10px;background:#f2fafd;overflow:hidden}
+  /* proposal card inside the conversation */
+  .iprop{margin-top:9px;border:1px solid var(--cyan);border-radius:11px;background:#f2fafd;overflow:hidden}
   .iprop.danger{border-color:#d98b5f;background:#fdf3ec}
-  .iprop .ph{font-family:"Oswald",sans-serif;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--cyan2);padding:7px 11px;border-bottom:1px solid #d7ecf3}
+  .iprop .ph{font-family:"Oswald",sans-serif;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--cyan2);padding:8px 12px;border-bottom:1px solid #d7ecf3}
   .iprop.danger .ph{color:#c4631f}
-  .iprop .ps{padding:8px 11px 3px;font-weight:600;font-size:13.5px;color:var(--ink)}
-  .iprop ul.pd{list-style:none;margin:0;padding:3px 11px 7px;display:flex;flex-direction:column;gap:4px}
-  .iprop ul.pd li{font-size:12.5px;line-height:1.4;display:flex;flex-wrap:wrap;gap:5px;align-items:baseline}
-  .iprop .f{font-family:"Oswald",sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);min-width:70px}
+  .iprop .ps{padding:9px 12px 4px;font-weight:600;font-size:14px;color:var(--ink)}
+  .iprop ul.pd{list-style:none;margin:0;padding:4px 12px 8px;display:flex;flex-direction:column;gap:5px}
+  .iprop ul.pd li{font-size:13px;line-height:1.45;display:flex;flex-wrap:wrap;gap:6px;align-items:baseline}
+  .iprop .f{font-family:"Oswald",sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);min-width:74px}
   .iprop .b{color:#9a4242;text-decoration:line-through;opacity:.85;overflow-wrap:anywhere} .iprop .a{color:#138a55;font-weight:600;overflow-wrap:anywhere}
-  .iprop .pact{display:flex;gap:7px;padding:7px 11px 10px}
-  .ipb{font-family:"Oswald",sans-serif;font-size:12.5px;font-weight:600;border-radius:7px;padding:5px 14px;cursor:pointer;border:1px solid transparent}
+  .iprop .pact{display:flex;gap:8px;padding:8px 12px 11px}
+  .ipb{font-family:"Oswald",sans-serif;font-size:13px;font-weight:600;border-radius:9px;padding:6px 16px;cursor:pointer;border:1px solid transparent}
   .ipb.ok{background:var(--cyan);color:#06303a} .ipb.no{background:#fff;color:#5b6172;border-color:var(--line)} .ipb:disabled{opacity:.5;cursor:default}
 {% endblock %}
 
 {% block anokii_content %}
-<div class="ahead">
-  <p class="ey">Identity Workspace</p>
-  <h1>Identity Workspace</h1>
-  <p class="sub">A living canvas for defining who FNPI is, before more content gets built on top of it. Foundation first, expression last. Set each pillar's status, capture decisions in the notes, and evolve it together. Every edit is saved as a revision, so the full history of each pillar is kept and shared between accounts.</p>
-</div>
-
 {% set order = ['defined','draft','work','gap'] %}
 {% set colorvar = {'defined':'var(--green)','draft':'var(--amber)','work':'var(--orange)','gap':'var(--grey)'} %}
-<div class="maturity">
-  <h2>Identity maturity</h2>
-  <div class="bar" id="bar">
-    {% for k in order %}
-      <span data-k="{{ k }}" style="width: {{ counts.total ? (counts[k] / counts.total * 100)|round(2) : 0 }}%; background: {{ colorvar[k] }}"></span>
+<div class="cowork">
+  <div class="cowork-main">
+    <div class="ahead">
+      <p class="ey">Identity Workspace</p>
+      <h1>Identity Workspace</h1>
+      <p class="sub">A living canvas for defining who FNPI is. Shape the pillars on the left, or work with Co-Intelligence on the right. Every change is shown for your approval, attributed to you, and saved as a revision.</p>
+    </div>
+
+    <div class="maturity">
+      <h2>Identity maturity</h2>
+      <div class="bar" id="bar">
+        {% for k in order %}
+          <span data-k="{{ k }}" style="width: {{ counts.total ? (counts[k] / counts.total * 100)|round(2) : 0 }}%; background: {{ colorvar[k] }}"></span>
+        {% endfor %}
+      </div>
+      <div class="legend">
+        <span><span class="dot d-defined"></span><b id="c-defined">{{ counts.defined }}</b> Defined</span>
+        <span><span class="dot d-draft"></span><b id="c-draft">{{ counts.draft }}</b> Draft / legacy</span>
+        <span><span class="dot d-work"></span><b id="c-work">{{ counts.work }}</b> Needs work</span>
+        <span><span class="dot d-gap"></span><b id="c-gap">{{ counts.gap }}</b> Gap</span>
+      </div>
+    </div>
+
+    {% for sec in sections %}
+      {% if sec.pillars is not empty %}
+      <section class="sec">
+        <div class="sec-h"><span class="n">{{ sec.no }}</span><h3>{{ sec.title }}</h3></div>
+        <p class="sec-sub">{{ sec.sub }}</p>
+        <div class="grid">
+          {% for p in sec.pillars %}
+          <div class="card{{ p.is_full ? ' full' : '' }}" id="pillar-{{ p.pid }}" data-pid="{{ p.pid }}" data-status="{{ p.status }}">
+            <div class="card-top">
+              <h4>{{ p.title }}</h4>
+              <select class="status s-{{ p.status }}" data-pid="{{ p.pid }}" aria-label="Status for {{ p.title }}">
+                {% for s in statuses %}<option value="{{ s.v }}"{{ s.v == p.status ? ' selected' : '' }}>{{ s.t }}</option>{% endfor %}
+              </select>
+            </div>
+            {% if p.body is not empty or p.now_label is not empty %}
+            <div class="now">
+              {% if p.now_label is not empty %}<span class="lbl">{{ p.now_label }}</span>{% endif %}
+              {% if p.body is not empty %}
+                {% if p.is_quote %}<blockquote>"{{ p.body }}"</blockquote>{% else %}{{ p.body }}{% endif %}
+              {% endif %}
+            </div>
+            {% endif %}
+            {% if p.pills is not empty %}
+            <div class="pills">
+              {% for pill in p.pills %}<span class="pill{{ pill.cyan ? ' cyan' : '' }}">{{ pill.t }}</span>{% endfor %}
+            </div>
+            {% endif %}
+            {% if p.decision is not empty %}
+            <div class="decide"><span class="dl">{{ p.decide_label }}</span>{{ p.decision }}</div>
+            {% endif %}
+            <div class="notes">
+              <label>Notes / drafts</label>
+              <textarea data-pid="{{ p.pid }}" placeholder="Capture decisions and drafts...">{{ p.notes }}</textarea>
+            </div>
+            <div class="cfoot">
+              <div class="edited" data-pid="{{ p.pid }}">
+                {%- if p.last_edited_by is not empty -%}Last edited by {{ p.last_edited_by }} &middot; {{ p.last_edited_at }}{%- endif -%}
+              </div>
+              <button type="button" class="hbtn" data-pid="{{ p.pid }}" aria-expanded="false">History</button>
+            </div>
+            <div class="hist" data-pid="{{ p.pid }}" hidden></div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
     {% endfor %}
   </div>
-  <div class="legend">
-    <span><span class="dot d-defined"></span><b id="c-defined">{{ counts.defined }}</b> Defined</span>
-    <span><span class="dot d-draft"></span><b id="c-draft">{{ counts.draft }}</b> Draft / legacy</span>
-    <span><span class="dot d-work"></span><b id="c-work">{{ counts.work }}</b> Needs work</span>
-    <span><span class="dot d-gap"></span><b id="c-gap">{{ counts.gap }}</b> Gap</span>
-  </div>
-</div>
 
-{% for sec in sections %}
-  {% if sec.pillars is not empty %}
-  <section class="sec">
-    <div class="sec-h"><span class="n">{{ sec.no }}</span><h3>{{ sec.title }}</h3></div>
-    <p class="sec-sub">{{ sec.sub }}</p>
-    <div class="grid">
-      {% for p in sec.pillars %}
-      <div class="card{{ p.is_full ? ' full' : '' }}" data-pid="{{ p.pid }}" data-status="{{ p.status }}">
-        <div class="card-top">
-          <h4>{{ p.title }}</h4>
-          <select class="status s-{{ p.status }}" data-pid="{{ p.pid }}" aria-label="Status for {{ p.title }}">
-            {% for s in statuses %}<option value="{{ s.v }}"{{ s.v == p.status ? ' selected' : '' }}>{{ s.t }}</option>{% endfor %}
-          </select>
-        </div>
-        {% if p.body is not empty or p.now_label is not empty %}
-        <div class="now">
-          {% if p.now_label is not empty %}<span class="lbl">{{ p.now_label }}</span>{% endif %}
-          {% if p.body is not empty %}
-            {% if p.is_quote %}<blockquote>"{{ p.body }}"</blockquote>{% else %}{{ p.body }}{% endif %}
-          {% endif %}
-        </div>
-        {% endif %}
-        {% if p.pills is not empty %}
-        <div class="pills">
-          {% for pill in p.pills %}<span class="pill{{ pill.cyan ? ' cyan' : '' }}">{{ pill.t }}</span>{% endfor %}
-        </div>
-        {% endif %}
-        {% if p.decision is not empty %}
-        <div class="decide"><span class="dl">{{ p.decide_label }}</span>{{ p.decision }}</div>
-        {% endif %}
-        <div class="notes">
-          <label>Notes / drafts</label>
-          <textarea data-pid="{{ p.pid }}" placeholder="Capture decisions and drafts...">{{ p.notes }}</textarea>
-        </div>
-        <div class="cfoot">
-          <div class="edited" data-pid="{{ p.pid }}">
-            {%- if p.last_edited_by is not empty -%}Last edited by {{ p.last_edited_by }} &middot; {{ p.last_edited_at }}{%- endif -%}
-          </div>
-          <button type="button" class="hbtn" data-pid="{{ p.pid }}" aria-expanded="false">History</button>
-        </div>
-        <div class="hist" data-pid="{{ p.pid }}" hidden></div>
-      </div>
-      {% endfor %}
+  <aside class="cowork-chat" aria-label="Co-Intelligence assistant">
+    <div class="cw-head">
+      <div class="cw-ava">CI</div>
+      <div><b>Co-Intelligence</b><small>Working on Identity with you</small></div>
     </div>
-  </section>
-  {% endif %}
-{% endfor %}
-
-<button type="button" class="idock-toggle" id="idockToggle" aria-label="Open the Identity assistant">Ask Co-Intelligence</button>
-<div class="idock" id="idock" aria-hidden="true">
-  <div class="idock-head">
-    <div><b>Identity assistant</b><small>Ask it to update a pillar. You approve every change.</small></div>
-    <button type="button" class="idock-x" id="idockClose" aria-label="Close">&times;</button>
-  </div>
-  <div class="idock-stream" id="idockStream">
-    <div class="imsg ai"><div class="av">CI</div><div class="ibub">Aanii. Tell me what to change on a pillar, for example: "set the Purpose pillar status to defined and add a note that we reviewed it." I will show you the exact change to approve before anything is written.</div></div>
-  </div>
-  <div class="idock-foot">
-    <textarea id="idockInput" rows="1" placeholder="Ask the assistant to update a pillar..."></textarea>
-    <button type="button" class="idock-send" id="idockSend">Send</button>
-  </div>
+    <div class="cw-stream" id="cwStream">
+      <div class="imsg ai"><div class="av">CI</div><div class="ibub">Aanii. I can read and refine the Identity pillars with you. Ask me anything, or tell me what to change. I will show you the exact edit to approve before anything is written.</div></div>
+      <div class="cw-chips" id="cwChips">
+        <button type="button" class="cw-chip">What is still a gap?</button>
+        <button type="button" class="cw-chip">Read the Purpose pillar</button>
+        <button type="button" class="cw-chip">Summarize the Foundation pillars</button>
+      </div>
+    </div>
+    <div class="cw-foot">
+      <textarea id="cwInput" rows="1" placeholder="Ask Co-Intelligence to read or update a pillar..."></textarea>
+      <button type="button" class="cw-send" id="cwSend">Send</button>
+    </div>
+  </aside>
 </div>
 
 <script>
+// Pillar work surface: inline status + notes edits (saved as revisions), history.
 (function(){
   var order=['defined','draft','work','gap'];
   var colorvar={defined:'var(--green)',draft:'var(--amber)',work:'var(--orange)',gap:'var(--grey)'};
@@ -212,11 +234,7 @@
     var el=document.querySelector('.edited[data-pid="'+pid+'"]');
     if(el && by){ el.innerHTML='Last edited by '+by+' · '+at; el.classList.add('saveflash'); setTimeout(function(){el.classList.remove('saveflash');},900); }
   }
-  function autosize(ta){
-    // Grow to fit content up to the CSS max-height, then the well scrolls.
-    ta.style.height='auto';
-    ta.style.height=Math.min(ta.scrollHeight+2,340)+'px';
-  }
+  function autosize(ta){ ta.style.height='auto'; ta.style.height=Math.min(ta.scrollHeight+2,340)+'px'; }
   function save(body){
     return fetch('/anokii/identity/save',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(body)})
       .then(function(r){ return r.json().catch(function(){return {ok:false};}); });
@@ -282,26 +300,24 @@
   });
 })();
 
-// Identity assistant chat dock: talks to the live agent endpoints
+// Co-Intelligence companion: talks to the live agent endpoints
 // (/anokii/cointelligence/send + /apply) with confirm-before-apply. On an
-// applied change it reloads so the pillar grid + maturity bar reflect it.
+// applied change it refreshes so the pillars + maturity bar reflect it.
 (function(){
-  var toggle=document.getElementById('idockToggle'), dock=document.getElementById('idock');
-  var closeBtn=document.getElementById('idockClose'), stream=document.getElementById('idockStream');
-  var input=document.getElementById('idockInput'), sendBtn=document.getElementById('idockSend');
-  if(!toggle||!dock) return;
+  var stream=document.getElementById('cwStream');
+  var input=document.getElementById('cwInput');
+  var sendBtn=document.getElementById('cwSend');
+  var chips=document.getElementById('cwChips');
+  if(!stream||!input||!sendBtn) return;
   var cid=0, busy=false, didApply=false;
-
-  toggle.addEventListener('click', function(){ dock.classList.add('open'); dock.setAttribute('aria-hidden','false'); toggle.style.display='none'; input.focus(); });
-  closeBtn.addEventListener('click', function(){ dock.classList.remove('open'); dock.setAttribute('aria-hidden','true'); toggle.style.display=''; });
 
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function fmt(t){ var h=esc(t).replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>'); return h.split(/\n\n+/).map(function(p){return '<p>'+p.replace(/\n/g,'<br>')+'</p>';}).join(''); }
-  function fmtVal(v){ if(v===null||v===undefined||v==='') return '(none)'; if(typeof v==='object') return JSON.stringify(v); var s=String(v); return s.length>120?s.slice(0,117)+'...':s; }
+  function fmtVal(v){ if(v===null||v===undefined||v==='') return '(none)'; if(typeof v==='object') return JSON.stringify(v); var s=String(v); return s.length>140?s.slice(0,137)+'...':s; }
   function addMsg(role){ var m=document.createElement('div'); m.className='imsg '+(role==='user'?'user':'ai'); var a=document.createElement('div'); a.className='av'; a.textContent=role==='user'?'YOU':'CI'; var b=document.createElement('div'); b.className='ibub'; m.appendChild(a); m.appendChild(b); stream.appendChild(m); stream.scrollTop=stream.scrollHeight; return b; }
   function frames(buf,on){ var parts=buf.split('\n\n'); var rest=parts.pop(); parts.forEach(function(bl){ var ev='message',data=''; bl.split('\n').forEach(function(l){ if(l.indexOf('event:')===0)ev=l.slice(6).trim(); else if(l.indexOf('data:')===0)data+=l.slice(5).trim(); }); if(data){ try{ on(ev,JSON.parse(data)); }catch(e){} } }); return rest; }
 
-  function send(){ var q=(input.value||'').trim(); if(!q||busy) return; input.value=''; addMsg('user').textContent=q; var bub=addMsg('ai'); bub.innerHTML='<span class="iwork"><span class="d"></span>Thinking...</span>'; consume('/anokii/cointelligence/send',{question:q,conversation_id:cid},bub); }
+  function send(q){ q=(q||input.value||'').trim(); if(!q||busy) return; if(chips){ chips.remove(); chips=null; } input.value=''; input.style.height='42px'; addMsg('user').textContent=q; var bub=addMsg('ai'); bub.innerHTML='<span class="iwork"><span class="d"></span>Thinking...</span>'; consume('/anokii/cointelligence/send',{question:q,conversation_id:cid},bub); }
 
   function consume(url,body,bub){
     busy=true; sendBtn.disabled=true; var raw='',proposed=false,started=false;
@@ -330,8 +346,10 @@
   }
   function decide(c,token,decision){ if(busy) return; [].slice.call(c.querySelectorAll('.ipb')).forEach(function(b){ b.disabled=true; }); var bub=addMsg('ai'); bub.innerHTML='<span class="iwork"><span class="d"></span>'+(decision==='approve'?'Applying...':'Cancelling...')+'</span>'; consume('/anokii/cointelligence/apply',{token:token,decision:decision},bub); }
 
-  sendBtn.addEventListener('click', send);
+  sendBtn.addEventListener('click', function(){ send(); });
   input.addEventListener('keydown', function(e){ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send(); } });
+  input.addEventListener('input', function(){ input.style.height='42px'; input.style.height=Math.min(input.scrollHeight,140)+'px'; });
+  if(chips){ chips.querySelectorAll('.cw-chip').forEach(function(b){ b.addEventListener('click', function(){ send(b.textContent); }); }); }
 })();
 </script>
 {% endblock %}
