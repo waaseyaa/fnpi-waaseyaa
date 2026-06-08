@@ -11,13 +11,19 @@
   }
   /* Cowork-style: the conversation is the central, widest pane; the pillars are
      a narrower work-surface rail on the right (left column is the shell nav). */
-  .cowork{display:flex;gap:26px;align-items:flex-start}
+  .cowork{display:flex;gap:0;align-items:flex-start}
   .cowork-chat{flex:1;min-width:0;position:sticky;top:74px;height:calc(100vh - 98px);display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:var(--card-shadow);overflow:hidden}
-  .cowork-main{flex:0 0 420px;width:420px;min-width:0}
+  .cowork-main{flex:0 0 var(--rail-w,420px);width:var(--rail-w,420px);min-width:0}
+  /* draggable gutter between chat (middle) and the pillar rail (right) */
+  .cw-resizer{flex:0 0 26px;position:sticky;top:74px;height:calc(100vh - 98px);cursor:col-resize;touch-action:none}
+  .cw-resizer::before{content:"";position:absolute;top:0;bottom:0;left:50%;transform:translateX(-50%);width:1px;background:var(--line)}
+  .cw-resizer::after{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:4px;height:40px;border-radius:3px;background:#cdd3dd;transition:background .15s,height .15s}
+  .cw-resizer:hover::after,.cw-resizer.drag::after{background:var(--cyan2);height:64px}
   @media(max-width:1180px){
     .cowork{flex-direction:column}
     .cowork-chat{position:static;flex:none;height:600px;max-height:74vh}
     .cowork-main{flex:none;width:auto}
+    .cw-resizer{display:none}
   }
   /* maturity card */
   .maturity{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:26px;box-shadow:var(--card-shadow)}
@@ -158,6 +164,8 @@
       <button type="button" class="cw-send" id="cwSend">Send</button>
     </div>
   </aside>
+
+  <div class="cw-resizer" id="cwResizer" role="separator" aria-orientation="vertical" title="Drag to resize. Double-click to reset."></div>
 
   <div class="cowork-main">
     <div class="ahead">
@@ -436,6 +444,32 @@
   if(newBtn){ newBtn.addEventListener('click', newChat); }
   var startId=0; try{ startId=parseInt(localStorage.getItem(CIDKEY)||'0',10)||0; }catch(e){}
   if(startId>0){ loadThread(startId); }
+})();
+
+// Resizable gutter between the chat (middle) and the pillar rail (right). The
+// left shell nav is untouched. Width persists in localStorage; double-click resets.
+(function(){
+  var cowork=document.querySelector('.cowork');
+  var rail=document.querySelector('.cowork-main');
+  var rez=document.getElementById('cwResizer');
+  if(!cowork||!rail||!rez) return;
+  var KEY='anokiiRailW', MIN=320, MAXHARD=760, cur=420;
+  function maxW(){ return Math.min(MAXHARD, Math.round(cowork.getBoundingClientRect().width*0.6)); }
+  function setW(w){ w=Math.round(Math.max(MIN, Math.min(maxW(), w))); cur=w; rail.style.setProperty('--rail-w', w+'px'); }
+  var stored=0; try{ stored=parseInt(localStorage.getItem(KEY)||'0',10)||0; }catch(e){}
+  if(stored>0) setW(stored);
+  var dragging=false;
+  function pt(e){ return (e.touches&&e.touches[0])?e.touches[0].clientX:e.clientX; }
+  function onDown(e){ dragging=true; rez.classList.add('drag'); document.body.style.userSelect='none'; document.body.style.cursor='col-resize'; e.preventDefault(); }
+  function onMove(e){ if(!dragging) return; setW(cowork.getBoundingClientRect().right - pt(e)); e.preventDefault(); }
+  function onUp(){ if(!dragging) return; dragging=false; rez.classList.remove('drag'); document.body.style.userSelect=''; document.body.style.cursor=''; try{ localStorage.setItem(KEY,String(cur)); }catch(e){} }
+  rez.addEventListener('mousedown',onDown);
+  window.addEventListener('mousemove',onMove);
+  window.addEventListener('mouseup',onUp);
+  rez.addEventListener('touchstart',onDown,{passive:false});
+  window.addEventListener('touchmove',onMove,{passive:false});
+  window.addEventListener('touchend',onUp);
+  rez.addEventListener('dblclick',function(){ rail.style.removeProperty('--rail-w'); cur=420; try{ localStorage.removeItem(KEY); }catch(e){} });
 })();
 </script>
 {% endblock %}

@@ -220,9 +220,17 @@ final class AgentConversation
         switch ($this->tools->canonicalName($toolUse->name)) {
             case 'entity.update':
                 $current = $this->loadValues($type, $id, $account);
+                $values = (array) ($input['values'] ?? []);
                 $diff = [];
-                foreach ((array) ($input['values'] ?? []) as $field => $after) {
+                foreach ($values as $field => $after) {
                     $diff[] = ['field' => (string) $field, 'before' => $current[$field] ?? null, 'after' => $after];
+                }
+                // Surface the auto-clear of the Decide prompt that approval applies.
+                if ($type === 'identity_pillar'
+                    && !array_key_exists('decision', $values)
+                    && trim((string) ($current['decision'] ?? '')) !== ''
+                ) {
+                    $diff[] = ['field' => 'decision', 'before' => $current['decision'], 'after' => ''];
                 }
 
                 return [sprintf('Update %s #%s', $type, $id), $diff];
@@ -374,6 +382,15 @@ final class AgentConversation
             default => ['updated_at' => $now],
         };
         $values = is_array($input['values'] ?? null) ? $input['values'] : [];
+
+        // Approving any change to a pillar resolves its open "Decide" prompt: a
+        // decision has been made. Clear it (unless the model is itself setting
+        // the decision field) so an approved pillar never keeps asking to decide.
+        if ($type === 'identity_pillar' && !array_key_exists('decision', $values)) {
+            $attribution['decision'] = '';
+            $attribution['decide_label'] = '';
+        }
+
         $input['values'] = array_merge($values, $attribution);
         if (!isset($input['revision_log']) || !is_string($input['revision_log']) || $input['revision_log'] === '') {
             $input['revision_log'] = 'Co-Intelligence edit by ' . $label;
