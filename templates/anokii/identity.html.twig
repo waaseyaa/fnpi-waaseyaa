@@ -9,13 +9,15 @@
     --cyan-soft:#e3f4f8;
     --card-shadow:0 1px 3px rgba(10,14,18,.05),0 8px 24px rgba(10,14,18,.06);
   }
-  /* Cowork-style two-pane: work surface + a persistent assistant companion. */
+  /* Cowork-style: the conversation is the central, widest pane; the pillars are
+     a narrower work-surface rail on the right (left column is the shell nav). */
   .cowork{display:flex;gap:26px;align-items:flex-start}
-  .cowork-main{flex:1;min-width:0}
-  .cowork-chat{flex:0 0 408px;width:408px;position:sticky;top:74px;height:calc(100vh - 98px);display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:var(--card-shadow);overflow:hidden}
+  .cowork-chat{flex:1;min-width:0;position:sticky;top:74px;height:calc(100vh - 98px);display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:var(--card-shadow);overflow:hidden}
+  .cowork-main{flex:0 0 420px;width:420px;min-width:0}
   @media(max-width:1180px){
     .cowork{flex-direction:column}
-    .cowork-chat{position:static;width:auto;flex:none;height:600px;max-height:74vh}
+    .cowork-chat{position:static;flex:none;height:600px;max-height:74vh}
+    .cowork-main{flex:none;width:auto}
   }
   /* maturity card */
   .maturity{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:26px;box-shadow:var(--card-shadow)}
@@ -32,8 +34,8 @@
   .sec-h .n{font-family:"Oswald",sans-serif;font-size:14px;font-weight:700;color:var(--cyan2);letter-spacing:.04em}
   .sec-h h3{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.01em;font-size:22px;margin:0;color:var(--ink)}
   .sec-sub{color:var(--muted);margin:0 0 15px;font-size:14px;line-height:1.55;max-width:80ch}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
-  @media(max-width:1480px){.grid{grid-template-columns:1fr}}
+  /* Single-column pillar list in the right rail (a scannable work surface). */
+  .grid{display:grid;grid-template-columns:1fr;gap:14px;align-items:start}
   @media(max-width:1180px){.grid{grid-template-columns:1fr 1fr}}
   @media(max-width:760px){.grid{grid-template-columns:1fr}}
   /* card (Anokii style) */
@@ -125,11 +127,30 @@
 {% set order = ['defined','draft','work','gap'] %}
 {% set colorvar = {'defined':'var(--green)','draft':'var(--amber)','work':'var(--orange)','gap':'var(--grey)'} %}
 <div class="cowork">
+  <aside class="cowork-chat" aria-label="Co-Intelligence assistant">
+    <div class="cw-head">
+      <div class="cw-ava">CI</div>
+      <div><b>Co-Intelligence</b><small>Working on Identity with you</small></div>
+    </div>
+    <div class="cw-stream" id="cwStream">
+      <div class="imsg ai"><div class="av">CI</div><div class="ibub">Aanii. I can read and refine the Identity pillars with you. Ask me anything, or tell me what to change. I will show you the exact edit to approve before anything is written.</div></div>
+      <div class="cw-chips" id="cwChips">
+        <button type="button" class="cw-chip">What is still a gap?</button>
+        <button type="button" class="cw-chip">Read the Purpose pillar</button>
+        <button type="button" class="cw-chip">Summarize the Foundation pillars</button>
+      </div>
+    </div>
+    <div class="cw-foot">
+      <textarea id="cwInput" rows="1" placeholder="Ask Co-Intelligence to read or update a pillar..."></textarea>
+      <button type="button" class="cw-send" id="cwSend">Send</button>
+    </div>
+  </aside>
+
   <div class="cowork-main">
     <div class="ahead">
       <p class="ey">Identity Workspace</p>
       <h1>Identity Workspace</h1>
-      <p class="sub">A living canvas for defining who FNPI is. Shape the pillars on the left, or work with Co-Intelligence on the right. Every change is shown for your approval, attributed to you, and saved as a revision.</p>
+      <p class="sub">The pillars are on the right. Work with Co-Intelligence here in the middle, or edit a pillar directly. Every change is shown for your approval, attributed to you, and saved as a revision.</p>
     </div>
 
     <div class="maturity">
@@ -195,25 +216,6 @@
       {% endif %}
     {% endfor %}
   </div>
-
-  <aside class="cowork-chat" aria-label="Co-Intelligence assistant">
-    <div class="cw-head">
-      <div class="cw-ava">CI</div>
-      <div><b>Co-Intelligence</b><small>Working on Identity with you</small></div>
-    </div>
-    <div class="cw-stream" id="cwStream">
-      <div class="imsg ai"><div class="av">CI</div><div class="ibub">Aanii. I can read and refine the Identity pillars with you. Ask me anything, or tell me what to change. I will show you the exact edit to approve before anything is written.</div></div>
-      <div class="cw-chips" id="cwChips">
-        <button type="button" class="cw-chip">What is still a gap?</button>
-        <button type="button" class="cw-chip">Read the Purpose pillar</button>
-        <button type="button" class="cw-chip">Summarize the Foundation pillars</button>
-      </div>
-    </div>
-    <div class="cw-foot">
-      <textarea id="cwInput" rows="1" placeholder="Ask Co-Intelligence to read or update a pillar..."></textarea>
-      <button type="button" class="cw-send" id="cwSend">Send</button>
-    </div>
-  </aside>
 </div>
 
 <script>
