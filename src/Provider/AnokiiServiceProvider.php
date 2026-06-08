@@ -9,6 +9,9 @@ use App\Auth\SetupTokenRepository;
 use App\Auth\SetupTokenSchema;
 use App\CLI\AnokiiInviteHandler;
 use App\Command\AssignRoleCommand;
+use App\CoIntelligence\AgentConversation;
+use App\CoIntelligence\AgentProposalRepository;
+use App\CoIntelligence\AgentTools;
 use App\CoIntelligence\ChatPromptBuilder;
 use App\CoIntelligence\ChatSchema;
 use App\CoIntelligence\ConversationRepository;
@@ -79,6 +82,7 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
             $db = $this->db();
             new SetupTokenSchema($db)->ensure();
             new ChatSchema($db)->ensure();
+            new AgentProposalRepository($db)->ensure();
             // Identity pillars and Drive files are entities now (identity_pillar,
             // drive_asset): their tables are materialized by db:init
             // --sync-schema and populated once via app:migrate-pillars /
@@ -107,13 +111,29 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
         $provider = $configured
             ? new AnthropicProvider($anthropicKey, self::CHAT_MODEL)
             : new NullLlmProvider();
+        $prompts = new ChatPromptBuilder();
+        $conversations = new ConversationRepository($this->db());
+        $proposals = new AgentProposalRepository($this->db());
+
+        // Agentic mode (confirm-before-apply CRUD over the workspace): only when
+        // a model is configured AND the flag is set. Off by default, so the live
+        // chat stays read-only grounded RAG until explicitly enabled. The agent
+        // tools consult WorkspaceAccess (the same policies as the UI).
+        $agentEnabled = $this->agentToolsEnabled();
+        $agent = ($configured && $agentEnabled)
+            ? new AgentConversation($provider, new AgentTools($entityTypeManager), $proposals, $conversations, $prompts)
+            : null;
+
         $cointel = new CoIntelligenceController(
             $entityTypeManager,
             new Retriever($this->db()),
-            new ChatPromptBuilder(),
-            new ConversationRepository($this->db()),
+            $prompts,
+            $conversations,
             $provider,
             $configured,
+            $agent,
+            $proposals,
+            $agentEnabled,
         );
 
         // Drive (tool #3): entity-native file storage. Bytes go to the sovereign
@@ -168,6 +188,7 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
         $get('anokii.identity.history', '/anokii/identity/{pid}/history', fn(Request $r, string $pid) => $identity->history($r, $pid));
         $get('anokii.cointelligence', '/anokii/cointelligence', fn(Request $r) => $cointel->index($r));
         $post('anokii.cointelligence.send', '/anokii/cointelligence/send', fn(Request $r) => $cointel->send($r));
+        $post('anokii.cointelligence.apply', '/anokii/cointelligence/apply', fn(Request $r) => $cointel->apply($r));
         $get('anokii.drive', '/anokii/drive', fn(Request $r) => $drive->index($r));
         $post('anokii.drive.upload', '/anokii/drive/upload', fn(Request $r) => $drive->upload($r));
         $get('anokii.drive.file', '/anokii/drive/file/{id}', fn(Request $r, string $id) => $drive->download($r, $id));
@@ -394,6 +415,22 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
         $env = getenv('GOTENBERG_URL');
 
         return is_string($env) ? trim($env) : '';
+    }
+
+    /**
+     * Whether Co-Intelligence may propose and apply workspace changes (agentic
+     * mode). Off unless ANOKII_AGENT_TOOLS is 1/true/on, so the live chat stays
+     * read-only grounded RAG until explicitly turned on.
+     */
+    private function agentToolsEnabled(): bool
+    {
+        $configured = $this->config['agent_tools'] ?? null;
+        if (is_bool($configured)) {
+            return $configured;
+        }
+        $value = strtolower(trim((string) (getenv('ANOKII_AGENT_TOOLS') ?: '')));
+
+        return in_array($value, ['1', 'true', 'on', 'yes'], true);
     }
 
     private function uploadMaxBytes(): int

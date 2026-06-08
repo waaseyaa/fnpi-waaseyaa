@@ -42,6 +42,24 @@ final class WorkspaceAccess
     public const string EDIT_DRIVE = 'edit drive';
     public const string ADMINISTER_DRIVE = 'administer drive';
 
+    /**
+     * Coarse capabilities the framework's entity agent tools require before they
+     * run. We grant the full set to every workspace role so the per-entity
+     * AccessPolicy (attached to the tools) is the single decisive gate: a Viewer
+     * passes the capability check but the policy refuses any write, an Editor is
+     * refused deletes, etc. Exactly the same outcome as the UI controllers.
+     *
+     * @var list<string>
+     */
+    public const array AGENT_TOOL_CAPABILITIES = [
+        'tool.entity.read',
+        'tool.entity.list',
+        'tool.entity.search',
+        'tool.entity.create',
+        'tool.entity.update',
+        'tool.entity.delete',
+    ];
+
     /** @return list<string> every workspace permission */
     public static function allPermissions(): array
     {
@@ -52,6 +70,7 @@ final class WorkspaceAccess
             self::ADMINISTER_DOCUMENTS,
             self::EDIT_DRIVE,
             self::ADMINISTER_DRIVE,
+            ...self::AGENT_TOOL_CAPABILITIES,
         ];
     }
 
@@ -66,8 +85,8 @@ final class WorkspaceAccess
     {
         return [
             self::ROLE_ADMIN => ['label' => 'Admin', 'permissions' => self::allPermissions()],
-            self::ROLE_EDITOR => ['label' => 'Editor', 'permissions' => [self::EDIT_IDENTITY, self::EDIT_DOCUMENTS, self::EDIT_DRIVE]],
-            self::ROLE_VIEWER => ['label' => 'Viewer', 'permissions' => []],
+            self::ROLE_EDITOR => ['label' => 'Editor', 'permissions' => [self::EDIT_IDENTITY, self::EDIT_DOCUMENTS, self::EDIT_DRIVE, ...self::AGENT_TOOL_CAPABILITIES]],
+            self::ROLE_VIEWER => ['label' => 'Viewer', 'permissions' => [...self::AGENT_TOOL_CAPABILITIES]],
         ];
     }
 

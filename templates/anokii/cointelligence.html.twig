@@ -18,6 +18,23 @@
   .bubble ul{margin:7px 0;padding-left:18px} .bubble li{margin:2px 0}
   .bubble strong{font-weight:700}
   .bubble a{color:var(--cyan2);text-decoration:underline}
+  /* agent proposal card (confirm-before-apply) */
+  .proposal{margin-top:8px;border:1px solid var(--cyan);border-radius:10px;background:#f2fafd;overflow:hidden}
+  .proposal.danger{border-color:#d98b5f;background:#fdf3ec}
+  .proposal.approved{opacity:.7} .proposal.rejected{opacity:.55}
+  .proposal .phead{font-family:"Oswald",sans-serif;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--cyan2);padding:8px 12px;border-bottom:1px solid #d7ecf3}
+  .proposal.danger .phead{color:#c4631f;border-bottom-color:#f0d9c9}
+  .proposal .psum{padding:9px 12px 4px;font-weight:600;color:var(--ink);font-size:14.5px}
+  .proposal .pdiff{list-style:none;margin:0;padding:4px 12px 8px;display:flex;flex-direction:column;gap:5px}
+  .proposal .pdiff li{font-size:13px;line-height:1.45;display:flex;flex-wrap:wrap;gap:6px;align-items:baseline}
+  .proposal .pf{font-family:"Oswald",sans-serif;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);min-width:90px}
+  .proposal .pb{color:#9a4242;text-decoration:line-through;opacity:.8;overflow-wrap:anywhere}
+  .proposal .pa{color:#138a55;font-weight:600;overflow-wrap:anywhere}
+  .proposal .pacts{display:flex;gap:8px;padding:8px 12px 11px}
+  .pbtn{font-family:"Oswald",sans-serif;font-size:13px;font-weight:600;letter-spacing:.02em;border-radius:8px;padding:6px 16px;cursor:pointer;border:1px solid transparent}
+  .pbtn.approve{background:var(--cyan);color:#06303a;border-color:var(--cyan)}
+  .pbtn.reject{background:#fff;color:#5b6172;border-color:var(--line)}
+  .pbtn:disabled{opacity:.5;cursor:default}
   .srcline{margin-top:10px;padding-top:9px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);font-family:"Oswald",sans-serif}
   .srcline .src{display:inline-block;background:#eef1f3;border:1px solid var(--line);border-radius:20px;padding:2px 10px;margin:3px 5px 0 0;color:#3a4147;font-size:11.5px}
   .working{display:inline-flex;gap:9px;align-items:center;font-family:"Oswald",sans-serif;font-size:12.5px;color:var(--muted)}
@@ -182,17 +199,23 @@
   function send(q){
     q=(q||'').trim();
     if(!q||busy||!configured) return;
-    busy=true; sendBtn.disabled=true;
     var greet=stream.querySelector('.msg.ai .bubble');
     if(cid===0 && greet && stream.querySelectorAll('.msg').length===1){ stream.innerHTML=''; }
     addMsg('user','YOU').textContent=q;
     box.value='';
     var bub=addMsg('ai','CI');
-    bub.innerHTML='<span class="working"><span class="wdot"></span>Searching FNPI knowledge...</span>';
-    var raw='', sources=[];
-    fetch('/anokii/cointelligence/send',{
+    bub.innerHTML='<span class="working"><span class="wdot"></span>Thinking...</span>';
+    consume('/anokii/cointelligence/send', {question:q, conversation_id:cid}, bub);
+  }
+
+  // Drive an SSE stream (send or apply) into a bubble. Handles meta/delta/done,
+  // plus the agentic proposal/applied events (confirm-before-apply).
+  function consume(url, body, bub){
+    busy=true; sendBtn.disabled=true;
+    var raw='', sources=[], proposed=false;
+    return fetch(url,{
       method:'POST', headers:{'Content-Type':'application/json','Accept':'text/event-stream'},
-      credentials:'same-origin', body:JSON.stringify({question:q, conversation_id:cid})
+      credentials:'same-origin', body:JSON.stringify(body)
     }).then(function(r){
       if(!r.ok||!r.body){ throw new Error('bad'); }
       var reader=r.body.getReader(), dec=new TextDecoder(), buf='', started=false;
@@ -204,13 +227,46 @@
             if(ev==='meta'){ onMeta(data); }
             else if(ev==='delta'){ if(!started){ bub.textContent=''; started=true; } raw+=data.text||''; bub.textContent=raw; scrollDown(); }
             else if(ev==='done'){ sources=data.sources||[]; }
+            else if(ev==='proposal'){ proposed=true; renderProposal(bub, raw, data); }
           });
           return pump();
         });
       }
-      function finish(){ bub.innerHTML=fmt(raw)+srcLine(sources); scrollDown(); busy=false; sendBtn.disabled=false; box.focus(); }
+      function finish(){ if(!proposed){ bub.innerHTML=fmt(raw)+srcLine(sources); } scrollDown(); busy=false; sendBtn.disabled=false; box.focus(); }
       return pump();
-    }).catch(function(){ bub.innerHTML='<p>Sorry, something went wrong. Please try again.</p>'; busy=false; sendBtn.disabled=false; });
+    }).catch(function(){ if(!proposed){ bub.innerHTML='<p>Sorry, something went wrong. Please try again.</p>'; } busy=false; sendBtn.disabled=false; });
+  }
+
+  function fmtVal(v){ if(v===null||v===undefined) return '(none)'; if(typeof v==='object') return JSON.stringify(v); var s=String(v); return s.length>140?s.slice(0,137)+'...':s; }
+
+  function renderProposal(bub, leadingText, data){
+    var html = leadingText ? fmt(leadingText) : '';
+    html += '<div class="proposal'+(data.destructive?' danger':'')+'">';
+    html += '<div class="phead">Proposed change'+(data.destructive?' (delete)':'')+'</div>';
+    html += '<div class="psum">'+esc(data.summary||'')+'</div>';
+    if(data.diff && data.diff.length){
+      html += '<ul class="pdiff">';
+      data.diff.forEach(function(d){
+        html += '<li><span class="pf">'+esc(d.field)+'</span><span class="pb">'+esc(fmtVal(d.before))+'</span><span>&rarr;</span><span class="pa">'+esc(fmtVal(d.after))+'</span></li>';
+      });
+      html += '</ul>';
+    }
+    html += '<div class="pacts"><button class="pbtn approve">Approve</button><button class="pbtn reject">Reject</button></div></div>';
+    bub.innerHTML = html;
+    busy=false; sendBtn.disabled=false;
+    var card=bub.querySelector('.proposal');
+    card.querySelector('.approve').addEventListener('click', function(){ decide(card, data.token, 'approve'); });
+    card.querySelector('.reject').addEventListener('click', function(){ decide(card, data.token, 'reject'); });
+    scrollDown();
+  }
+
+  function decide(card, token, decision){
+    if(busy) return;
+    [].slice.call(card.querySelectorAll('.pbtn')).forEach(function(b){ b.disabled=true; });
+    card.classList.add(decision==='approve'?'approved':'rejected');
+    var bub=addMsg('ai','CI');
+    bub.innerHTML='<span class="working"><span class="wdot"></span>'+(decision==='approve'?'Applying...':'Cancelling...')+'</span>';
+    consume('/anokii/cointelligence/apply', {token:token, decision:decision}, bub);
   }
 
   function onMeta(data){

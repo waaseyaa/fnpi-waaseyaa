@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\CoIntelligence\AgentConversation;
+use App\CoIntelligence\AgentProposalRepository;
 use App\CoIntelligence\ChatPromptBuilder;
 use App\CoIntelligence\ConversationRepository;
 use App\CoIntelligence\Passage;
@@ -49,6 +51,9 @@ final class CoIntelligenceController
         private readonly ConversationRepository $conversations,
         private readonly ProviderInterface $provider,
         private readonly bool $configured,
+        private readonly ?AgentConversation $agent = null,
+        private readonly ?AgentProposalRepository $proposals = null,
+        private readonly bool $agentEnabled = false,
     ) {}
 
     public function index(Request $request): Response
@@ -119,7 +124,78 @@ final class CoIntelligenceController
 
         $passages = $this->retriever->retrieve($question, self::TOP_K);
 
+        // Agentic mode (gated by flag): Co-Intelligence can both answer and
+        // propose changes to the workspace. Off by default, so the live chat is
+        // the unchanged read-only grounded RAG until enabled.
+        if ($this->agentEnabled && $this->agent !== null) {
+            return $this->streamAgent($conversationId, $title, $question, $passages, $user);
+        }
+
         return $this->streamAnswer($conversationId, $title, $question, $passages);
+    }
+
+    /**
+     * Approve or reject a pending agent proposal. On approve the change executes
+     * as the signed-in user (gated by the same AccessPolicy as the UI), records a
+     * revision, and the loop resumes; on reject the model is told and resumes.
+     */
+    public function apply(Request $request): Response
+    {
+        $user = Auth::currentUser($this->entityTypeManager);
+        if ($user === null) {
+            return new JsonResponse(['ok' => false, 'error' => 'Not signed in.'], 401);
+        }
+        if (!$this->agentEnabled || $this->agent === null || $this->proposals === null) {
+            return new JsonResponse(['ok' => false, 'error' => 'Agent actions are not enabled.'], 403);
+        }
+
+        $payload = json_decode((string) $request->getContent(), true);
+        $data = is_array($payload) ? $payload : [];
+        $token = trim((string) ($data['token'] ?? ''));
+        $approve = (string) ($data['decision'] ?? '') === 'approve';
+
+        $proposal = $this->proposals->find($token);
+        if ($proposal === null || (string) ($proposal['status'] ?? '') !== 'pending') {
+            return new JsonResponse(['ok' => false, 'error' => 'Unknown or already-resolved proposal.'], 404);
+        }
+        // Only the account that was proposed to may act on it.
+        if ((int) ($proposal['author_uid'] ?? 0) !== $user->id()) {
+            return new JsonResponse(['ok' => false, 'error' => 'This proposal belongs to another account.'], 403);
+        }
+
+        $this->proposals->markStatus($token, $approve ? 'applied' : 'rejected');
+
+        $agent = $this->agent;
+        $account = $user;
+        $label = Auth::label($user);
+
+        return $this->sse(static function () use ($agent, $proposal, $approve, $account, $label): void {
+            self::emit('meta', ['conversation_id' => (int) ($proposal['conversation_id'] ?? 0)]);
+            $agent->applyDecision($proposal, $approve, $account, $label, static function (string $event, array $payload): void {
+                self::emit($event, $payload);
+            });
+        });
+    }
+
+    /**
+     * @param list<Passage> $passages
+     */
+    private function streamAgent(int $conversationId, string $title, string $question, array $passages, \Waaseyaa\User\User $user): StreamedResponse
+    {
+        $agent = $this->agent;
+        $userMessage = $this->prompts->userMessage($question, $passages);
+        $account = $user;
+        $label = Auth::label($user);
+
+        return $this->sse(static function () use ($agent, $conversationId, $title, $userMessage, $account, $label): void {
+            self::emit('meta', ['conversation_id' => $conversationId, 'title' => $title]);
+            if ($agent === null) {
+                return;
+            }
+            $agent->respond($conversationId, $userMessage, $account, $label, static function (string $event, array $payload): void {
+                self::emit($event, $payload);
+            });
+        });
     }
 
     /**

@@ -65,8 +65,15 @@ final class WorkspaceAccessTest extends TestCase
         $this->assertArrayHasKey('editor', $roles);
         $this->assertArrayHasKey('viewer', $roles);
 
-        $this->assertSame(['edit identity', 'edit documents', 'edit drive'], $roles['editor']['permissions']);
-        $this->assertSame([], $roles['viewer']['permissions']);
+        // Editor: the three edit permissions plus the coarse agent-tool
+        // capabilities (the policy is the decisive gate).
+        foreach (['edit identity', 'edit documents', 'edit drive', 'tool.entity.update', 'tool.entity.create'] as $perm) {
+            $this->assertContains($perm, $roles['editor']['permissions']);
+        }
+        $this->assertNotContains('administer identity', $roles['editor']['permissions']);
+        // Viewer: only the agent-tool capabilities, no edit/administer rights.
+        $this->assertContains('tool.entity.read', $roles['viewer']['permissions']);
+        $this->assertNotContains('edit identity', $roles['viewer']['permissions']);
         $this->assertContains('administer identity', $roles['administrator']['permissions']);
         $this->assertContains('administer drive', $roles['administrator']['permissions']);
     }
