@@ -54,6 +54,16 @@ final class CoIntelligenceTest extends TestCase
         new AnokiiServiceProvider()->routes($router);
 
         $this->assertSame('anokii.cointelligence', $router->match('/anokii/cointelligence')['_route'] ?? null);
+        $this->assertSame('anokii.cointelligence.messages', $router->match('/anokii/cointelligence/7/messages')['_route'] ?? null);
+    }
+
+    #[Test]
+    public function messages_is_401_when_signed_out(): void
+    {
+        $controller = $this->controller(false);
+        $response = $controller->messages(new Request(), '7');
+
+        $this->assertSame(401, $response->getStatusCode());
     }
 
     #[Test]

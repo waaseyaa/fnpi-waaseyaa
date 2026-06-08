@@ -99,6 +99,8 @@
   .cw-head b{font-family:"Oswald",sans-serif;font-weight:600;font-size:15px;color:var(--ink);display:block;line-height:1.2}
   .cw-head small{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
   .cw-head small::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green)}
+  .cw-new{margin-left:auto;flex:0 0 auto;font-family:"Oswald",sans-serif;font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--cyan2);background:#fff;border:1px solid var(--line);border-radius:8px;padding:5px 11px;cursor:pointer}
+  .cw-new:hover{background:var(--cyan-soft);border-color:#cdeaf1}
   .cw-stream{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:13px;background:var(--bg)}
   .imsg{display:flex;gap:9px;align-items:flex-start}
   .imsg .av{flex:0 0 auto;width:26px;height:26px;border-radius:8px;font-family:"Oswald",sans-serif;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#fff}
@@ -141,9 +143,10 @@
     <div class="cw-head">
       <div class="cw-ava">CI</div>
       <div><b>Co-Intelligence</b><small>Working on Identity with you</small></div>
+      <button type="button" class="cw-new" id="cwNew" title="Start a new chat">New chat</button>
     </div>
     <div class="cw-stream" id="cwStream">
-      <div class="imsg ai"><div class="av">CI</div><div class="ibub">Aanii. I can read and refine the Identity pillars with you. Ask me anything, or tell me what to change. When I draft an edit, it appears right on the pillar for you to approve before anything is written.</div></div>
+      <div class="imsg ai" id="cwIntro"><div class="av">CI</div><div class="ibub">Aanii. I can read and refine the Identity pillars with you. Ask me anything, or tell me what to change. When I draft an edit, it appears right on the pillar for you to approve before anything is written.</div></div>
       <div class="cw-chips" id="cwChips">
         <button type="button" class="cw-chip">What is still a gap?</button>
         <button type="button" class="cw-chip">Read the Purpose pillar</button>
@@ -303,8 +306,12 @@
   var input=document.getElementById('cwInput');
   var sendBtn=document.getElementById('cwSend');
   var chips=document.getElementById('cwChips');
+  var newBtn=document.getElementById('cwNew');
   if(!stream||!input||!sendBtn) return;
   var cid=0, busy=false, didApply=false;
+  var CIDKEY='anokiiIdentityCid';
+  function rememberCid(id){ cid=id; try{ localStorage.setItem(CIDKEY,String(id)); }catch(e){} }
+  function forgetCid(){ cid=0; try{ localStorage.removeItem(CIDKEY); }catch(e){} }
 
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function fmt(t){ var h=esc(t).replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>'); return h.split(/\n\n+/).map(function(p){return '<p>'+p.replace(/\n/g,'<br>')+'</p>';}).join(''); }
@@ -320,7 +327,7 @@
     fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Accept':'text/event-stream'},credentials:'same-origin',body:JSON.stringify(body)})
     .then(function(r){ if(!r.ok||!r.body) throw new Error('bad'); var rd=r.body.getReader(),dec=new TextDecoder(),buf='';
       function pump(){ return rd.read().then(function(res){ if(res.done){ fin(); return; } buf+=dec.decode(res.value,{stream:true}); buf=frames(buf,function(ev,d){
-        if(ev==='meta'){ if(d.conversation_id) cid=d.conversation_id; }
+        if(ev==='meta'){ if(d.conversation_id) rememberCid(d.conversation_id); }
         else if(ev==='delta'){ if(!started){ bub.textContent=''; started=true; } raw+=d.text||''; bub.textContent=raw; stream.scrollTop=stream.scrollHeight; }
         else if(ev==='proposal'){ proposed=true; routeProposal(bub,raw,d); }
         else if(ev==='applied'){ if(d.ok) didApply=true; }
@@ -400,6 +407,35 @@
   input.addEventListener('keydown', function(e){ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send(); } });
   input.addEventListener('input', function(){ input.style.height='42px'; input.style.height=Math.min(input.scrollHeight,140)+'px'; });
   if(chips){ chips.querySelectorAll('.cw-chip').forEach(function(b){ b.addEventListener('click', function(){ send(b.textContent); }); }); }
+
+  // Chat history: the Identity thread id is kept in localStorage so it survives
+  // the page reload that follows applying a change. On load, rehydrate prior
+  // turns; "New chat" starts a fresh thread.
+  function renderTurn(m){ var bub=addMsg(m.role==='user'?'user':'ai'); if(m.role==='user'){ bub.textContent=m.content; } else { bub.innerHTML=fmt(m.content)||'<p>...</p>'; } return bub; }
+  function loadThread(id){
+    fetch('/anokii/cointelligence/'+encodeURIComponent(id)+'/messages',{credentials:'same-origin'})
+      .then(function(r){ return r.ok?r.json():null; })
+      .then(function(d){
+        if(!d||!d.ok){ forgetCid(); return; }
+        cid=id;
+        if(!d.messages||!d.messages.length) return;
+        var intro=document.getElementById('cwIntro'); if(intro) intro.remove();
+        if(chips){ chips.remove(); chips=null; }
+        d.messages.forEach(renderTurn);
+        stream.scrollTop=stream.scrollHeight;
+      }).catch(function(){});
+  }
+  function newChat(){
+    if(busy) return;
+    forgetCid(); didApply=false;
+    stream.innerHTML='';
+    var bub=addMsg('ai'); var wrap=bub.closest('.imsg'); if(wrap) wrap.id='cwIntro';
+    bub.innerHTML='Aanii. Fresh thread. Ask me anything about the Identity pillars, or tell me what to change. When I draft an edit, it appears on the pillar for you to approve.';
+    input.focus();
+  }
+  if(newBtn){ newBtn.addEventListener('click', newChat); }
+  var startId=0; try{ startId=parseInt(localStorage.getItem(CIDKEY)||'0',10)||0; }catch(e){}
+  if(startId>0){ loadThread(startId); }
 })();
 </script>
 {% endblock %}

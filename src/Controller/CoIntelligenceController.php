@@ -135,6 +135,45 @@ final class CoIntelligenceController
     }
 
     /**
+     * Return a conversation's messages as JSON so a chat surface can rehydrate
+     * its history (the Identity companion persists its thread id client-side and
+     * loads it on each page render, which matters because applying an agent
+     * change reloads the page). Only user/assistant turns, content + author.
+     */
+    public function messages(Request $request, string $id): Response
+    {
+        $user = Auth::currentUser($this->entityTypeManager);
+        if ($user === null) {
+            return new JsonResponse(['ok' => false, 'error' => 'Not signed in.'], 401);
+        }
+
+        $conversationId = (int) $id;
+        $conversation = $conversationId > 0 ? $this->conversations->find($conversationId) : null;
+        if ($conversation === null) {
+            return new JsonResponse(['ok' => false, 'error' => 'Unknown conversation.'], 404);
+        }
+
+        $out = [];
+        foreach ($this->conversations->messages($conversationId) as $message) {
+            if (!in_array($message['role'], ['user', 'assistant'], true)) {
+                continue;
+            }
+            $out[] = [
+                'role' => $message['role'],
+                'author' => $message['author'],
+                'content' => $message['content'],
+            ];
+        }
+
+        return new JsonResponse([
+            'ok' => true,
+            'id' => $conversationId,
+            'title' => $conversation['title'],
+            'messages' => $out,
+        ]);
+    }
+
+    /**
      * Approve or reject a pending agent proposal. On approve the change executes
      * as the signed-in user (gated by the same AccessPolicy as the UI), records a
      * revision, and the loop resumes; on reject the model is told and resumes.

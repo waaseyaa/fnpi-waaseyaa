@@ -189,6 +189,7 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
         $get('anokii.cointelligence', '/anokii/cointelligence', fn(Request $r) => $cointel->index($r));
         $post('anokii.cointelligence.send', '/anokii/cointelligence/send', fn(Request $r) => $cointel->send($r));
         $post('anokii.cointelligence.apply', '/anokii/cointelligence/apply', fn(Request $r) => $cointel->apply($r));
+        $get('anokii.cointelligence.messages', '/anokii/cointelligence/{id}/messages', fn(Request $r, string $id) => $cointel->messages($r, $id));
         $get('anokii.drive', '/anokii/drive', fn(Request $r) => $drive->index($r));
         $post('anokii.drive.upload', '/anokii/drive/upload', fn(Request $r) => $drive->upload($r));
         $get('anokii.drive.file', '/anokii/drive/file/{id}', fn(Request $r, string $id) => $drive->download($r, $id));
