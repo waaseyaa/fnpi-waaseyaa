@@ -187,12 +187,22 @@ final class AgentConversation
             authorLabel: $authorLabel,
         );
 
+        // Tell the UI which workspace item this targets so it can preview the
+        // draft on that pillar card (pid is the card handle). Reads are cheap.
+        $type = (string) ($toolUse->input['entity_type'] ?? '');
+        $id = (string) ($toolUse->input['id'] ?? '');
+        $pid = '';
+        if ($type === 'identity_pillar' && $id !== '') {
+            $pid = (string) ($this->loadValues($type, $id, $account)['pid'] ?? '');
+        }
+
         $emit('proposal', [
             'token' => $token,
             'tool' => $toolUse->name,
             'summary' => $summary,
             'diff' => $diff,
             'destructive' => $this->tools->canonicalName($toolUse->name) === 'entity.delete',
+            'target' => ['entity_type' => $type, 'id' => $id, 'pid' => $pid],
         ]);
     }
 
