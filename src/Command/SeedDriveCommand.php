@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Command;
 
-use App\Drive\DriveRepository;
+use App\Drive\DriveFileService;
 use App\Drive\DriveStorage;
+use App\Drive\FileTypes;
 use Waaseyaa\CLI\CliIO;
 use Waaseyaa\Entity\EntityTypeManagerInterface;
 use Waaseyaa\User\User;
@@ -24,7 +25,7 @@ final class SeedDriveCommand
     private const array IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 
     public function __construct(
-        private readonly DriveRepository $files,
+        private readonly DriveFileService $files,
         private readonly DriveStorage $storage,
         private readonly ?EntityTypeManagerInterface $entityTypeManager,
     ) {}
@@ -43,9 +44,9 @@ final class SeedDriveCommand
 
         // Existing names in this folder, for idempotent re-runs.
         $existing = [];
-        foreach ($this->files->all() as $row) {
-            if ((string) $row['folder'] === $folder) {
-                $existing[(string) $row['name']] = true;
+        foreach ($this->files->listFiles() as $existingFile) {
+            if ($existingFile->getFolder() === $folder) {
+                $existing[$existingFile->getName()] = true;
             }
         }
 
@@ -63,14 +64,21 @@ final class SeedDriveCommand
 
             try {
                 $file = $this->storage->store($path, $name, $ownerId);
-                $this->files->create(
+                $now = gmdate('Y-m-d H:i:s');
+                $this->files->createFile(
                     name: $name,
                     mimeType: $file->mimeType,
+                    kind: FileTypes::kind($file->mimeType, $name),
                     sizeBytes: $file->size,
-                    ownerId: $ownerId,
+                    ownerUid: $ownerId,
                     ownerLabel: $ownerLabel,
                     folder: $folder,
                     storageUri: $file->uri,
+                    uploadedAt: $now,
+                    editorUid: $ownerId,
+                    editorLabel: $ownerLabel,
+                    updatedAt: $now,
+                    revisionLog: 'Seeded',
                 );
                 $io->writeln(sprintf('  add    %s (%d KB)', $name, (int) round($file->size / 1024)));
                 $added++;

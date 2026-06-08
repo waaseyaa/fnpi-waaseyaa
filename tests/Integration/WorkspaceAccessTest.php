@@ -7,6 +7,7 @@ namespace App\Tests\Integration;
 use App\Access\WorkspaceAccess;
 use App\Entity\Document;
 use App\Entity\DocumentNote;
+use App\Entity\DriveFile;
 use App\Entity\Pillar;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -64,9 +65,10 @@ final class WorkspaceAccessTest extends TestCase
         $this->assertArrayHasKey('editor', $roles);
         $this->assertArrayHasKey('viewer', $roles);
 
-        $this->assertSame(['edit identity', 'edit documents'], $roles['editor']['permissions']);
+        $this->assertSame(['edit identity', 'edit documents', 'edit drive'], $roles['editor']['permissions']);
         $this->assertSame([], $roles['viewer']['permissions']);
         $this->assertContains('administer identity', $roles['administrator']['permissions']);
+        $this->assertContains('administer drive', $roles['administrator']['permissions']);
     }
 
     #[Test]
@@ -91,8 +93,10 @@ final class WorkspaceAccessTest extends TestCase
         $this->assertContains('editor', $user->getRoles());
         $this->assertTrue($user->hasPermission('edit identity'));
         $this->assertTrue($user->hasPermission('edit documents'));
+        $this->assertTrue($user->hasPermission('edit drive'));
         $this->assertFalse($user->hasPermission('administer identity'));
         $this->assertFalse($user->hasPermission('administer documents'));
+        $this->assertFalse($user->hasPermission('administer drive'));
     }
 
     #[Test]
@@ -122,11 +126,13 @@ final class WorkspaceAccessTest extends TestCase
     public function admin_and_editor_may_write_all_three_entities(): void
     {
         $handler = WorkspaceAccess::handler();
-        foreach (['administrator role' => $this->account(true, [], ['administrator']), 'editor perms' => $this->account(true, ['edit identity', 'edit documents'])] as $who => $account) {
+        foreach (['administrator role' => $this->account(true, [], ['administrator']), 'editor perms' => $this->account(true, ['edit identity', 'edit documents', 'edit drive'])] as $who => $account) {
             $this->assertTrue($handler->check(new Pillar(), 'update', $account)->isAllowed(), "$who pillar update");
             $this->assertTrue($handler->check(new Document(), 'update', $account)->isAllowed(), "$who document update");
             $this->assertTrue($handler->checkCreateAccess('document', '', $account)->isAllowed(), "$who document create");
             $this->assertTrue($handler->checkCreateAccess('document_note', '', $account)->isAllowed(), "$who note create");
+            $this->assertTrue($handler->check(new DriveFile(), 'update', $account)->isAllowed(), "$who drive update");
+            $this->assertTrue($handler->checkCreateAccess('drive_asset', '', $account)->isAllowed(), "$who drive upload");
         }
     }
 
@@ -139,10 +145,26 @@ final class WorkspaceAccessTest extends TestCase
         // May read.
         $this->assertTrue($handler->check(new Pillar(), 'view', $viewer)->isAllowed());
         $this->assertTrue($handler->check(new Document(), 'view', $viewer)->isAllowed());
+        $this->assertTrue($handler->check(new DriveFile(), 'view', $viewer)->isAllowed());
         // May not write.
         $this->assertFalse($handler->check(new Pillar(), 'update', $viewer)->isAllowed());
         $this->assertFalse($handler->check(new Document(), 'update', $viewer)->isAllowed());
         $this->assertFalse($handler->checkCreateAccess('document_note', '', $viewer)->isAllowed());
+        $this->assertFalse($handler->checkCreateAccess('drive_asset', '', $viewer)->isAllowed());
+    }
+
+    #[Test]
+    public function editor_can_edit_drive_but_not_delete(): void
+    {
+        $handler = WorkspaceAccess::handler();
+        $editor = $this->account(true, ['edit identity', 'edit documents', 'edit drive']);
+        $admin = $this->account(true, [], ['administrator']);
+
+        // Editor uploads/edits Drive, but Drive deletes are the administer tier.
+        $this->assertTrue($handler->checkCreateAccess('drive_asset', '', $editor)->isAllowed());
+        $this->assertTrue($handler->check(new DriveFile(), 'update', $editor)->isAllowed());
+        $this->assertFalse($handler->check(new DriveFile(), 'delete', $editor)->isAllowed(), 'editor cannot delete Drive files');
+        $this->assertTrue($handler->check(new DriveFile(), 'delete', $admin)->isAllowed(), 'admin can delete Drive files');
     }
 
     #[Test]

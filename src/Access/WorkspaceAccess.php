@@ -39,6 +39,8 @@ final class WorkspaceAccess
     public const string ADMINISTER_IDENTITY = 'administer identity';
     public const string EDIT_DOCUMENTS = 'edit documents';
     public const string ADMINISTER_DOCUMENTS = 'administer documents';
+    public const string EDIT_DRIVE = 'edit drive';
+    public const string ADMINISTER_DRIVE = 'administer drive';
 
     /** @return list<string> every workspace permission */
     public static function allPermissions(): array
@@ -48,6 +50,8 @@ final class WorkspaceAccess
             self::ADMINISTER_IDENTITY,
             self::EDIT_DOCUMENTS,
             self::ADMINISTER_DOCUMENTS,
+            self::EDIT_DRIVE,
+            self::ADMINISTER_DRIVE,
         ];
     }
 
@@ -62,7 +66,7 @@ final class WorkspaceAccess
     {
         return [
             self::ROLE_ADMIN => ['label' => 'Admin', 'permissions' => self::allPermissions()],
-            self::ROLE_EDITOR => ['label' => 'Editor', 'permissions' => [self::EDIT_IDENTITY, self::EDIT_DOCUMENTS]],
+            self::ROLE_EDITOR => ['label' => 'Editor', 'permissions' => [self::EDIT_IDENTITY, self::EDIT_DOCUMENTS, self::EDIT_DRIVE]],
             self::ROLE_VIEWER => ['label' => 'Viewer', 'permissions' => []],
         ];
     }
@@ -102,6 +106,7 @@ final class WorkspaceAccess
             new IdentityPillarAccessPolicy(),
             new DocumentAccessPolicy(),
             new DocumentNoteAccessPolicy(),
+            new DriveFileAccessPolicy(),
         ]);
     }
 }

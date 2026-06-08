@@ -5,21 +5,23 @@ declare(strict_types=1);
 namespace App\Tests\Integration;
 
 use App\Anokii\Modules;
-use App\Drive\DriveRepository;
-use App\Drive\DriveStorage;
-use App\Drive\FileSchema;
-use App\Drive\FileTypes;
+use App\Entity\DriveFile;
 use App\Provider\AnokiiServiceProvider;
+use App\Drive\DriveStorage;
+use App\Drive\FileTypes;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Waaseyaa\Database\DatabaseInterface;
-use Waaseyaa\Database\DBALDatabase;
+use Waaseyaa\Entity\EntityType;
+use Waaseyaa\Entity\RevisionableEntityInterface;
 use Waaseyaa\Routing\WaaseyaaRouter;
 use Waaseyaa\SSR\SsrServiceProvider;
 
 /**
- * Drive (tool #3): routing, the file index repository, sovereign storage via
- * the media layer, type/size helpers, and the template render.
+ * Drive (tool #3), entity-native rebuild. Covers routing, the type/size helpers,
+ * sovereign storage via the media layer, the registered entity type, the
+ * DriveFile entity, and the template render. The framework revision suite covers
+ * listRevisions / _data round-trips; the live Pi check covers the migration of
+ * the real files.
  */
 final class DriveTest extends TestCase
 {
@@ -28,14 +30,6 @@ final class DriveTest extends TestCase
         $provider = new SsrServiceProvider();
         $provider->setKernelContext(dirname(__DIR__, 2), [], []);
         $provider->boot();
-    }
-
-    private function db(): DatabaseInterface
-    {
-        $db = DBALDatabase::createSqlite(':memory:');
-        new FileSchema($db)->ensure();
-
-        return $db;
     }
 
     private function tempDir(): string
@@ -53,7 +47,6 @@ final class DriveTest extends TestCase
         $this->assertNotNull($drive);
         $this->assertTrue($drive['live']);
         $this->assertSame('/anokii/drive', $drive['href']);
-        $this->assertSame('', $drive['badge']);
     }
 
     #[Test]
@@ -64,6 +57,52 @@ final class DriveTest extends TestCase
 
         $this->assertSame('anokii.drive', $router->match('/anokii/drive')['_route'] ?? null);
         $this->assertSame('anokii.drive.file', $router->match('/anokii/drive/file/abc')['_route'] ?? null);
+    }
+
+    #[Test]
+    public function entity_types_register_a_revisionable_drive_asset(): void
+    {
+        /** @var list<EntityType> $types */
+        $types = require dirname(__DIR__, 2) . '/config/entity-types.php';
+        $byId = [];
+        foreach ($types as $type) {
+            $byId[$type->id()] = $type;
+        }
+
+        $this->assertArrayHasKey('drive_asset', $byId);
+        $this->assertTrue($byId['drive_asset']->isRevisionable(), 'drive_asset must be revisionable');
+        $this->assertSame('revision_id', $byId['drive_asset']->getKeys()['revision'] ?? null);
+        $this->assertSame(DriveFile::class, $byId['drive_asset']->getClass());
+    }
+
+    #[Test]
+    public function drive_file_entity_is_revisionable_and_carries_fields(): void
+    {
+        $file = new DriveFile();
+        $file->fill(
+            name: 'China-2011.jpg',
+            mimeType: 'image/jpeg',
+            kind: 'img',
+            sizeBytes: 2_201_000,
+            ownerUid: 7,
+            ownerLabel: 'Matthew Owl',
+            folder: 'Global relationships',
+            storageUri: 'public://drive/china_ab12cd34.jpg',
+            uploadedAt: '2026-06-07 12:00:00',
+            editorUid: 7,
+            editorLabel: 'Matthew Owl',
+            updatedAt: '2026-06-07 12:00:00',
+        );
+        $file->recordEdit('Imported from prototype');
+
+        $this->assertInstanceOf(RevisionableEntityInterface::class, $file);
+        $this->assertSame('China-2011.jpg', $file->getName());
+        $this->assertSame('img', $file->getKind());
+        $this->assertSame('Matthew Owl', $file->getOwnerLabel());
+        $this->assertSame('Global relationships', $file->getFolder());
+        $this->assertSame('public://drive/china_ab12cd34.jpg', $file->getStorageUri());
+        $this->assertSame('2026-06-07 12:00:00', $file->getUploadedAt());
+        $this->assertSame('Imported from prototype', $file->getRevisionLog());
     }
 
     #[Test]
@@ -82,37 +121,6 @@ final class DriveTest extends TestCase
         $this->assertSame('512 B', FileTypes::humanSize(512));
         $this->assertSame('1.0 KB', FileTypes::humanSize(1024));
         $this->assertSame('2.1 MB', FileTypes::humanSize(2_201_000));
-    }
-
-    #[Test]
-    public function repository_creates_lists_and_deletes_with_attribution(): void
-    {
-        $repo = new DriveRepository($this->db());
-
-        $row = $repo->create(
-            name: 'China-2011.jpg',
-            mimeType: 'image/jpeg',
-            sizeBytes: 2_201_000,
-            ownerId: 7,
-            ownerLabel: 'Matthew Owl',
-            folder: 'Global relationships',
-            storageUri: 'public://drive/china_ab12cd34.jpg',
-        );
-
-        $this->assertSame('Matthew Owl', $row['owner_label']);
-        $this->assertSame('Global relationships', $row['folder']);
-        $this->assertSame('img', $row['kind']);
-        $this->assertSame('2.1 MB', $row['size_human']);
-        $this->assertTrue($row['is_image']);
-        $this->assertSame(1, $row['version']);
-
-        $all = $repo->all();
-        $this->assertCount(1, $all);
-        $this->assertContains('Global relationships', $repo->folders());
-
-        $uri = $repo->delete((string) $row['uuid']);
-        $this->assertSame('public://drive/china_ab12cd34.jpg', $uri);
-        $this->assertCount(0, $repo->all());
     }
 
     #[Test]
@@ -152,8 +160,14 @@ final class DriveTest extends TestCase
     #[Test]
     public function drive_template_renders_files_and_folders(): void
     {
-        $repo = new DriveRepository($this->db());
-        $repo->create('China-2011.jpg', 'image/jpeg', 2_201_000, 7, 'Matthew Owl', 'Global relationships', 'public://drive/china.jpg');
+        // Build a presented row in the controller's shape (no database needed).
+        $row = [
+            'uuid' => 'abc-uuid', 'name' => 'China-2011.jpg', 'mime_type' => 'image/jpeg',
+            'kind' => 'img', 'size_bytes' => 2_201_000, 'size_human' => '2.1 MB', 'is_image' => true,
+            'owner_label' => 'Matthew Owl', 'folder' => 'Global relationships',
+            'uploaded_at' => '2026-06-07 12:00:00', 'version' => 1,
+            'view_url' => '/anokii/drive/file/abc-uuid', 'download_url' => '/anokii/drive/file/abc-uuid?dl=1',
+        ];
 
         $twig = SsrServiceProvider::getTwigEnvironment();
         $html = $twig->render('anokii/drive.html.twig', [
@@ -162,8 +176,8 @@ final class DriveTest extends TestCase
             'user_label' => 'Russell',
             'user_role' => 'Editor',
             'user_initials' => 'RU',
-            'files' => $repo->all(),
-            'folders' => $repo->folders(),
+            'files' => [$row],
+            'folders' => ['Global relationships'],
         ]);
 
         $this->assertStringContainsString('China-2011.jpg', $html);

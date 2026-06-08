@@ -14,10 +14,30 @@ declare(strict_types=1);
 
 use App\Entity\Document;
 use App\Entity\DocumentNote;
+use App\Entity\DriveFile;
 use App\Entity\Pillar;
 use Waaseyaa\Entity\EntityType;
 
 return [
+    // Drive file. Revisionable, entity-native rebuild of the raw `drive_file`
+    // table. The id is `drive_asset` (the legacy table is `drive_file`, so a
+    // distinct id avoids a schema-sync collision); bytes stay in the media
+    // layer, only metadata + storage_uri ride the revisioned _data blob.
+    // Tables drive_asset + drive_asset_revision land via db:init --sync-schema.
+    new EntityType(
+        id: 'drive_asset',
+        label: 'Drive file',
+        class: DriveFile::class,
+        keys: [
+            'id' => 'id',
+            'uuid' => 'uuid',
+            'label' => 'name',
+            'revision' => 'revision_id',
+        ],
+        revisionable: true,
+        revisionDefault: true,
+    ),
+
     // Identity Workspace pillar. Revisionable: each edit (status / notes) is one
     // revision, so identity content carries full history. The entity-native
     // rebuild of the raw `pillar` prototype; tables identity_pillar +

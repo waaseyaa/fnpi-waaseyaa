@@ -15,6 +15,7 @@ use App\CoIntelligence\ConversationRepository;
 use App\CoIntelligence\DocChunkRepository;
 use App\CoIntelligence\Retriever;
 use App\Command\IngestKnowledgeCommand;
+use App\Command\MigrateDriveCommand;
 use App\Command\MigratePillarsCommand;
 use App\Command\SeedDocumentsCommand;
 use App\Command\SeedDriveCommand;
@@ -26,9 +27,8 @@ use App\Controller\IdentityController;
 use App\Documents\DocumentService;
 use App\Documents\DocumentStorage;
 use App\Documents\GotenbergClient;
-use App\Drive\DriveRepository;
+use App\Drive\DriveFileService;
 use App\Drive\DriveStorage;
-use App\Drive\FileSchema;
 use App\Identity\PillarService;
 use App\Support\Db;
 use Symfony\Component\HttpFoundation\Request;
@@ -79,10 +79,10 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
             $db = $this->db();
             new SetupTokenSchema($db)->ensure();
             new ChatSchema($db)->ensure();
-            new FileSchema($db)->ensure();
-            // Identity pillars are an entity now (identity_pillar): their tables
-            // are materialized by db:init --sync-schema and populated once via
-            // app:migrate-pillars, not ensured/seeded at boot.
+            // Identity pillars and Drive files are entities now (identity_pillar,
+            // drive_asset): their tables are materialized by db:init
+            // --sync-schema and populated once via app:migrate-pillars /
+            // app:migrate-drive, not ensured/seeded at boot.
         } catch (\Throwable) {
             // best effort; the tool surfaces an empty state rather than 500ing
         }
@@ -116,16 +116,18 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
             $configured,
         );
 
-        // Drive (tool #3): file storage on the sovereign volume via the media
-        // layer, with a queryable index table for the listing + attribution.
+        // Drive (tool #3): entity-native file storage. Bytes go to the sovereign
+        // volume via the media layer; the revisionable `drive_asset` entity
+        // carries metadata + attribution and falls under the same AccessPolicy.
         $drive = new DriveController(
             $entityTypeManager,
-            new DriveRepository($this->db()),
+            new DriveFileService($entityTypeManager),
             new DriveStorage(
                 $this->filesDir(),
                 $this->allowedUploadMimeTypes(),
                 $this->uploadMaxBytes(),
             ),
+            $access,
         );
 
         // Documents (tool #4): the first entity-native tool. Bytes go to the
@@ -234,17 +236,14 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
                 new OptionDefinition(name: 'owner-label', mode: OptionMode::Required, description: 'Fallback display name (default "Matthew Owl").'),
             ],
             handler: function (CliIO $io): int {
-                $db = $this->db();
-                new FileSchema($db)->ensure();
-                $etm = null;
-                try {
-                    $resolved = $this->resolve(\Waaseyaa\Entity\EntityTypeManagerInterface::class);
-                    $etm = $resolved instanceof \Waaseyaa\Entity\EntityTypeManagerInterface ? $resolved : null;
-                } catch (\Throwable) {
-                    // owner-email lookup unavailable; the command falls back to id/label
+                $etm = $this->entityTypeManager();
+                if ($etm === null) {
+                    $io->error('Drive seed requires a booted kernel (EntityTypeManager).');
+
+                    return 1;
                 }
                 $command = new SeedDriveCommand(
-                    new DriveRepository($db),
+                    new DriveFileService($etm),
                     new DriveStorage($this->filesDir(), $this->allowedUploadMimeTypes(), $this->uploadMaxBytes()),
                     $etm,
                 );
@@ -298,6 +297,22 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
                     return 1;
                 }
                 $command = new MigratePillarsCommand(new PillarService($etm), $this->db());
+
+                return $command->run($io);
+            },
+        );
+
+        yield new CommandDefinition(
+            name: 'app:migrate-drive',
+            description: 'Migrate Drive from the raw drive_file table to the entity-native drive_asset entity, verbatim. One-time and idempotent.',
+            handler: function (CliIO $io): int {
+                $etm = $this->entityTypeManager();
+                if ($etm === null) {
+                    $io->error('Drive migration requires a booted kernel (EntityTypeManager).');
+
+                    return 1;
+                }
+                $command = new MigrateDriveCommand(new DriveFileService($etm), $this->db());
 
                 return $command->run($io);
             },

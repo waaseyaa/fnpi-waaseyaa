@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Drive\DriveRepository;
+use App\Drive\DriveFileService;
 use App\Drive\DriveStorage;
+use App\Drive\FileTypes;
+use App\Entity\DriveFile;
 use App\Support\AnokiiShell;
 use App\Support\Auth;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -15,25 +17,27 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Waaseyaa\Access\EntityAccessHandler;
 use Waaseyaa\Entity\EntityTypeManager;
 use Waaseyaa\SSR\SsrServiceProvider;
 
 /**
- * Drive: Nation-shared file storage. Lists files with type icons and a detail
- * side panel, accepts uploads, and streams downloads. Bytes live on the
- * sovereign storage volume via the Waaseyaa media layer (DriveStorage); the
- * drive_file index table carries the listing metadata and per-file attribution.
+ * Drive: Nation-shared file storage, entity-native rebuild. Files are
+ * revisionable `drive_asset` entities (bytes stay in the media layer via
+ * DriveStorage); the controller consults the workspace AccessPolicy for writes,
+ * the same single source of truth as Identity and Documents.
  *
- * Like the other Anokii tools, routes are registered ->allowAll() and this
- * controller enforces the session itself: page requests redirect to
- * /anokii/login, JSON/file actions return 401.
+ * Routes are registered ->allowAll() and this controller enforces the session:
+ * page requests redirect to /anokii/login, JSON/file actions return 401, and
+ * writes the account is not permitted return 403.
  */
 final class DriveController
 {
     public function __construct(
         private readonly ?EntityTypeManager $entityTypeManager,
-        private readonly DriveRepository $files,
+        private readonly DriveFileService $files,
         private readonly DriveStorage $storage,
+        private readonly EntityAccessHandler $access,
     ) {}
 
     public function index(Request $request): Response
@@ -48,8 +52,13 @@ final class DriveController
             return new Response('Anokii unavailable: Twig is not initialised.', 500);
         }
 
+        $rows = [];
+        foreach ($this->files->listFiles() as $file) {
+            $rows[] = $this->present($file);
+        }
+
         $context = AnokiiShell::context($user, 'drive') + [
-            'files' => $this->files->all(),
+            'files' => $rows,
             'folders' => $this->files->folders(),
         ];
 
@@ -71,6 +80,9 @@ final class DriveController
         if (!$uploaded instanceof UploadedFile || !$uploaded->isValid()) {
             return new JsonResponse(['ok' => false, 'error' => 'No valid file was uploaded.'], 422);
         }
+        if (!$this->access->checkCreateAccess('drive_asset', '', $user)->isAllowed()) {
+            return new JsonResponse(['ok' => false, 'error' => 'You do not have permission to upload to Drive.'], 403);
+        }
 
         $originalName = $uploaded->getClientOriginalName();
         $folder = trim((string) $request->request->get('folder', ''));
@@ -83,17 +95,24 @@ final class DriveController
             return new JsonResponse(['ok' => false, 'error' => 'Could not store the file.'], 500);
         }
 
-        $row = $this->files->create(
+        $now = gmdate('Y-m-d H:i:s');
+        $entity = $this->files->createFile(
             name: $originalName,
             mimeType: $file->mimeType,
+            kind: FileTypes::kind($file->mimeType, $originalName),
             sizeBytes: $file->size,
-            ownerId: $user->id(),
+            ownerUid: $user->id(),
             ownerLabel: Auth::label($user),
             folder: $folder,
             storageUri: $file->uri,
+            uploadedAt: $now,
+            editorUid: $user->id(),
+            editorLabel: Auth::label($user),
+            updatedAt: $now,
+            revisionLog: 'Uploaded',
         );
 
-        return new JsonResponse(['ok' => true, 'file' => $this->present($row)]);
+        return new JsonResponse(['ok' => true, 'file' => $this->present($entity)]);
     }
 
     /**
@@ -107,22 +126,22 @@ final class DriveController
             return new RedirectResponse('/anokii/login');
         }
 
-        $row = $this->files->find($id);
-        if ($row === null) {
+        $file = $this->files->findByUuid($id);
+        if ($file === null) {
             return new Response('Not found', 404);
         }
 
-        $path = $this->storage->pathForUri((string) $row['storage_uri']);
+        $path = $this->storage->pathForUri($file->getStorageUri());
         if ($path === null) {
             return new Response('File is missing from storage.', 404);
         }
 
         $response = new BinaryFileResponse($path);
-        $response->headers->set('Content-Type', (string) $row['mime_type']);
+        $response->headers->set('Content-Type', $file->getMimeType());
         $disposition = $request->query->getBoolean('dl')
             ? ResponseHeaderBag::DISPOSITION_ATTACHMENT
             : ResponseHeaderBag::DISPOSITION_INLINE;
-        $response->setContentDisposition($disposition, (string) $row['name']);
+        $response->setContentDisposition($disposition, $file->getName());
 
         return $response;
     }
@@ -141,27 +160,48 @@ final class DriveController
             return new JsonResponse(['ok' => false, 'error' => 'Missing file id.'], 422);
         }
 
-        $uri = $this->files->delete($uuid);
-        if ($uri === null) {
+        $file = $this->files->findByUuid($uuid);
+        if ($file === null) {
             return new JsonResponse(['ok' => false, 'error' => 'Unknown file.'], 404);
         }
-        $this->storage->delete($uri);
+        if (!$this->access->check($file, 'delete', $user)->isAllowed()) {
+            return new JsonResponse(['ok' => false, 'error' => 'You do not have permission to delete Drive files.'], 403);
+        }
+
+        $uri = $this->files->delete($uuid);
+        if ($uri !== null) {
+            $this->storage->delete($uri);
+        }
 
         return new JsonResponse(['ok' => true]);
     }
 
     /**
-     * Shape a row for the client (add the view/download URLs).
+     * Shape a DriveFile entity for the listing template and detail panel,
+     * preserving the keys the prototype used so the template is unchanged.
      *
-     * @param array<string,mixed> $row
      * @return array<string,mixed>
      */
-    private function present(array $row): array
+    private function present(DriveFile $file): array
     {
-        $uuid = (string) ($row['uuid'] ?? '');
-        $row['view_url'] = '/anokii/drive/file/' . $uuid;
-        $row['download_url'] = '/anokii/drive/file/' . $uuid . '?dl=1';
+        $uuid = (string) ($file->get('uuid') ?? '');
 
-        return $row;
+        return [
+            'uuid' => $uuid,
+            'name' => $file->getName(),
+            'mime_type' => $file->getMimeType(),
+            'kind' => $file->getKind(),
+            'size_bytes' => $file->getSizeBytes(),
+            'size_human' => FileTypes::humanSize($file->getSizeBytes()),
+            'is_image' => $file->getKind() === 'img',
+            'owner_label' => $file->getOwnerLabel(),
+            'folder' => $file->getFolder(),
+            'uploaded_at' => $file->getUploadedAt(),
+            // Drive files carry one revision today; the count surfaces in the UI
+            // as the version label.
+            'version' => 1,
+            'view_url' => '/anokii/drive/file/' . $uuid,
+            'download_url' => '/anokii/drive/file/' . $uuid . '?dl=1',
+        ];
     }
 }
