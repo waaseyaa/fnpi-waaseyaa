@@ -70,6 +70,42 @@
   .hist .sum{color:var(--ink)}
   .hist .cur{color:var(--cyan2);font-weight:700}
   .hist .empty{color:var(--muted);font-size:13px}
+  /* identity assistant chat dock */
+  .idock-toggle{position:fixed;right:22px;bottom:22px;z-index:40;display:inline-flex;align-items:center;gap:8px;background:var(--cyan2);color:#fff;border:none;border-radius:24px;padding:11px 18px;font-family:"Oswald",sans-serif;font-weight:600;font-size:14px;letter-spacing:.02em;cursor:pointer;box-shadow:0 6px 20px rgba(19,134,159,.35)}
+  .idock-toggle:hover{background:#0f6f85}
+  .idock{position:fixed;right:22px;bottom:22px;z-index:41;width:380px;max-width:calc(100vw - 32px);height:520px;max-height:calc(100vh - 90px);display:none;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 50px rgba(10,14,18,.22);overflow:hidden}
+  .idock.open{display:flex}
+  .idock-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line);background:#f7fbfc}
+  .idock-head b{font-family:"Oswald",sans-serif;font-size:14px;color:var(--ink)}
+  .idock-head small{display:block;font-size:11.5px;color:var(--muted)}
+  .idock-x{background:none;border:none;font-size:21px;line-height:1;color:var(--muted);cursor:pointer;padding:0 6px}
+  .idock-stream{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;background:var(--bg)}
+  .imsg{display:flex;gap:9px;align-items:flex-start}
+  .imsg .av{flex:0 0 auto;width:26px;height:26px;border-radius:7px;font-family:"Oswald",sans-serif;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#fff}
+  .imsg.user .av{background:var(--ink)} .imsg.ai .av{background:var(--cyan2)}
+  .ibub{background:#fff;border:1px solid var(--line);border-radius:11px;padding:9px 11px;font-size:14px;line-height:1.55;color:var(--ink);max-width:84%;overflow-wrap:anywhere}
+  .imsg.user .ibub{background:#eef6f9;border-color:#d3e9f0}
+  .ibub p{margin:0 0 7px} .ibub p:last-child{margin:0} .ibub strong{font-weight:700}
+  .idock-foot{border-top:1px solid var(--line);padding:10px;display:flex;gap:8px}
+  .idock-foot textarea{flex:1;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font:inherit;font-size:14px;resize:none;height:40px;max-height:120px;color:var(--ink)}
+  .idock-foot textarea:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(31,182,214,.14)}
+  .idock-send{background:var(--cyan2);color:#fff;border:none;border-radius:9px;padding:0 16px;font-family:"Oswald",sans-serif;font-weight:600;cursor:pointer}
+  .idock-send:disabled{opacity:.5;cursor:default}
+  .iwork{display:inline-flex;align-items:center;gap:7px;color:var(--muted);font-size:13px}
+  .iwork .d{width:6px;height:6px;border-radius:50%;background:var(--cyan2);animation:ipulse 1s infinite}
+  @keyframes ipulse{0%,100%{opacity:.3}50%{opacity:1}}
+  .iprop{margin-top:8px;border:1px solid var(--cyan);border-radius:10px;background:#f2fafd;overflow:hidden}
+  .iprop.danger{border-color:#d98b5f;background:#fdf3ec}
+  .iprop .ph{font-family:"Oswald",sans-serif;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--cyan2);padding:7px 11px;border-bottom:1px solid #d7ecf3}
+  .iprop.danger .ph{color:#c4631f}
+  .iprop .ps{padding:8px 11px 3px;font-weight:600;font-size:13.5px;color:var(--ink)}
+  .iprop ul.pd{list-style:none;margin:0;padding:3px 11px 7px;display:flex;flex-direction:column;gap:4px}
+  .iprop ul.pd li{font-size:12.5px;line-height:1.4;display:flex;flex-wrap:wrap;gap:5px;align-items:baseline}
+  .iprop .f{font-family:"Oswald",sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);min-width:70px}
+  .iprop .b{color:#9a4242;text-decoration:line-through;opacity:.85;overflow-wrap:anywhere} .iprop .a{color:#138a55;font-weight:600;overflow-wrap:anywhere}
+  .iprop .pact{display:flex;gap:7px;padding:7px 11px 10px}
+  .ipb{font-family:"Oswald",sans-serif;font-size:12.5px;font-weight:600;border-radius:7px;padding:5px 14px;cursor:pointer;border:1px solid transparent}
+  .ipb.ok{background:var(--cyan);color:#06303a} .ipb.no{background:#fff;color:#5b6172;border-color:var(--line)} .ipb:disabled{opacity:.5;cursor:default}
 {% endblock %}
 
 {% block anokii_content %}
@@ -143,6 +179,21 @@
   </section>
   {% endif %}
 {% endfor %}
+
+<button type="button" class="idock-toggle" id="idockToggle" aria-label="Open the Identity assistant">Ask Co-Intelligence</button>
+<div class="idock" id="idock" aria-hidden="true">
+  <div class="idock-head">
+    <div><b>Identity assistant</b><small>Ask it to update a pillar. You approve every change.</small></div>
+    <button type="button" class="idock-x" id="idockClose" aria-label="Close">&times;</button>
+  </div>
+  <div class="idock-stream" id="idockStream">
+    <div class="imsg ai"><div class="av">CI</div><div class="ibub">Aanii. Tell me what to change on a pillar, for example: "set the Purpose pillar status to defined and add a note that we reviewed it." I will show you the exact change to approve before anything is written.</div></div>
+  </div>
+  <div class="idock-foot">
+    <textarea id="idockInput" rows="1" placeholder="Ask the assistant to update a pillar..."></textarea>
+    <button type="button" class="idock-send" id="idockSend">Send</button>
+  </div>
+</div>
 
 <script>
 (function(){
@@ -229,6 +280,58 @@
       if(open){ loadHistory(pid); }
     });
   });
+})();
+
+// Identity assistant chat dock: talks to the live agent endpoints
+// (/anokii/cointelligence/send + /apply) with confirm-before-apply. On an
+// applied change it reloads so the pillar grid + maturity bar reflect it.
+(function(){
+  var toggle=document.getElementById('idockToggle'), dock=document.getElementById('idock');
+  var closeBtn=document.getElementById('idockClose'), stream=document.getElementById('idockStream');
+  var input=document.getElementById('idockInput'), sendBtn=document.getElementById('idockSend');
+  if(!toggle||!dock) return;
+  var cid=0, busy=false, didApply=false;
+
+  toggle.addEventListener('click', function(){ dock.classList.add('open'); dock.setAttribute('aria-hidden','false'); toggle.style.display='none'; input.focus(); });
+  closeBtn.addEventListener('click', function(){ dock.classList.remove('open'); dock.setAttribute('aria-hidden','true'); toggle.style.display=''; });
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function fmt(t){ var h=esc(t).replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>'); return h.split(/\n\n+/).map(function(p){return '<p>'+p.replace(/\n/g,'<br>')+'</p>';}).join(''); }
+  function fmtVal(v){ if(v===null||v===undefined||v==='') return '(none)'; if(typeof v==='object') return JSON.stringify(v); var s=String(v); return s.length>120?s.slice(0,117)+'...':s; }
+  function addMsg(role){ var m=document.createElement('div'); m.className='imsg '+(role==='user'?'user':'ai'); var a=document.createElement('div'); a.className='av'; a.textContent=role==='user'?'YOU':'CI'; var b=document.createElement('div'); b.className='ibub'; m.appendChild(a); m.appendChild(b); stream.appendChild(m); stream.scrollTop=stream.scrollHeight; return b; }
+  function frames(buf,on){ var parts=buf.split('\n\n'); var rest=parts.pop(); parts.forEach(function(bl){ var ev='message',data=''; bl.split('\n').forEach(function(l){ if(l.indexOf('event:')===0)ev=l.slice(6).trim(); else if(l.indexOf('data:')===0)data+=l.slice(5).trim(); }); if(data){ try{ on(ev,JSON.parse(data)); }catch(e){} } }); return rest; }
+
+  function send(){ var q=(input.value||'').trim(); if(!q||busy) return; input.value=''; addMsg('user').textContent=q; var bub=addMsg('ai'); bub.innerHTML='<span class="iwork"><span class="d"></span>Thinking...</span>'; consume('/anokii/cointelligence/send',{question:q,conversation_id:cid},bub); }
+
+  function consume(url,body,bub){
+    busy=true; sendBtn.disabled=true; var raw='',proposed=false,started=false;
+    fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Accept':'text/event-stream'},credentials:'same-origin',body:JSON.stringify(body)})
+    .then(function(r){ if(!r.ok||!r.body) throw new Error('bad'); var rd=r.body.getReader(),dec=new TextDecoder(),buf='';
+      function pump(){ return rd.read().then(function(res){ if(res.done){ fin(); return; } buf+=dec.decode(res.value,{stream:true}); buf=frames(buf,function(ev,d){
+        if(ev==='meta'){ if(d.conversation_id) cid=d.conversation_id; }
+        else if(ev==='delta'){ if(!started){ bub.textContent=''; started=true; } raw+=d.text||''; bub.textContent=raw; stream.scrollTop=stream.scrollHeight; }
+        else if(ev==='proposal'){ proposed=true; card(bub,raw,d); }
+        else if(ev==='applied'){ if(d.ok) didApply=true; }
+      }); return pump(); }); }
+      function fin(){ if(!proposed){ bub.innerHTML=fmt(raw)||'<p>Done.</p>'; } busy=false; sendBtn.disabled=false; stream.scrollTop=stream.scrollHeight; if(didApply){ var n=addMsg('ai'); n.innerHTML='<span class="iwork"><span class="d"></span>Change applied. Refreshing the pillars...</span>'; setTimeout(function(){ location.reload(); },1400); } }
+      return pump();
+    }).catch(function(){ if(!proposed) bub.innerHTML='<p>Sorry, something went wrong. Please try again.</p>'; busy=false; sendBtn.disabled=false; });
+  }
+
+  function card(bub,lead,d){
+    var h=lead?fmt(lead):''; h+='<div class="iprop'+(d.destructive?' danger':'')+'"><div class="ph">Proposed change'+(d.destructive?' (delete)':'')+'</div><div class="ps">'+esc(d.summary||'')+'</div>';
+    if(d.diff&&d.diff.length){ h+='<ul class="pd">'; d.diff.forEach(function(x){ h+='<li><span class="f">'+esc(x.field)+'</span><span class="b">'+esc(fmtVal(x.before))+'</span><span>&rarr;</span><span class="a">'+esc(fmtVal(x.after))+'</span></li>'; }); h+='</ul>'; }
+    h+='<div class="pact"><button class="ipb ok">Approve</button><button class="ipb no">Reject</button></div></div>';
+    bub.innerHTML=h; busy=false; sendBtn.disabled=false;
+    var c=bub.querySelector('.iprop');
+    c.querySelector('.ok').addEventListener('click',function(){ decide(c,d.token,'approve'); });
+    c.querySelector('.no').addEventListener('click',function(){ decide(c,d.token,'reject'); });
+    stream.scrollTop=stream.scrollHeight;
+  }
+  function decide(c,token,decision){ if(busy) return; [].slice.call(c.querySelectorAll('.ipb')).forEach(function(b){ b.disabled=true; }); var bub=addMsg('ai'); bub.innerHTML='<span class="iwork"><span class="d"></span>'+(decision==='approve'?'Applying...':'Cancelling...')+'</span>'; consume('/anokii/cointelligence/apply',{token:token,decision:decision},bub); }
+
+  sendBtn.addEventListener('click', send);
+  input.addEventListener('keydown', function(e){ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send(); } });
 })();
 </script>
 {% endblock %}
