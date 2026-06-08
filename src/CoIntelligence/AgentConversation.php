@@ -223,7 +223,11 @@ final class AgentConversation
                 $values = (array) ($input['values'] ?? []);
                 $diff = [];
                 foreach ($values as $field => $after) {
-                    $diff[] = ['field' => (string) $field, 'before' => $current[$field] ?? null, 'after' => $after];
+                    $before = $current[$field] ?? null;
+                    if (self::sameScalar($before, $after)) {
+                        continue; // Don't show fields the approval leaves unchanged.
+                    }
+                    $diff[] = ['field' => (string) $field, 'before' => $before, 'after' => $after];
                 }
                 // Surface the auto-clear of the Decide prompt that approval applies.
                 if ($type === 'identity_pillar'
@@ -304,10 +308,22 @@ final class AgentConversation
         }
         $input = $toolUse->input;
         $values = is_array($input['values'] ?? null) ? $input['values'] : [];
+        $type = (string) ($input['entity_type'] ?? '');
+        $current = $this->loadValues($type, (string) ($input['id'] ?? ''), $account);
+
+        // Approving a pillar also resolves its open "Decide" prompt, and clearing
+        // that is a real change. So an "approve as-is" on an already-defined pillar
+        // (no field changed by the model) is NOT a no-op when a Decide note exists.
+        $clearsDecide = $type === 'identity_pillar'
+            && !array_key_exists('decision', $values)
+            && trim((string) ($current['decision'] ?? '')) !== '';
+        if ($clearsDecide) {
+            return null; // The decide-clear is the change; proceed to propose.
+        }
+
         if ($values === []) {
             return 'No fields were given to update, so nothing would change. Ask the user what they want changed.';
         }
-        $current = $this->loadValues((string) ($input['entity_type'] ?? ''), (string) ($input['id'] ?? ''), $account);
         if ($current === []) {
             return null; // Cannot confirm current state; let it propose.
         }
