@@ -322,7 +322,10 @@
   function forgetCid(){ cid=0; try{ localStorage.removeItem(CIDKEY); }catch(e){} }
 
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
-  function fmt(t){ var h=esc(t).replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>'); return h.split(/\n\n+/).map(function(p){return '<p>'+p.replace(/\n/g,'<br>')+'</p>';}).join(''); }
+  // Render the agent's markdown through the shared renderer (/js/anokii-md.js:
+  // tables, rules, lists, headings, pillar-status pills). Falls back to escaped
+  // text with line breaks if the shared script is unavailable.
+  function fmt(t){ if(window.AnokiiMd && window.AnokiiMd.render){ return window.AnokiiMd.render(t); } return '<p>'+esc(t).replace(/\n/g,'<br>')+'</p>'; }
   function fmtVal(v){ if(v===null||v===undefined||v==='') return '(none)'; if(typeof v==='object') return JSON.stringify(v); var s=String(v); return s.length>140?s.slice(0,137)+'...':s; }
   function fullVal(v){ if(v===null||v===undefined||v==='') return '(empty)'; if(typeof v==='object') return JSON.stringify(v); return String(v); }
   function addMsg(role){ var m=document.createElement('div'); m.className='imsg '+(role==='user'?'user':'ai'); var a=document.createElement('div'); a.className='av'; a.textContent=role==='user'?'YOU':'CI'; var b=document.createElement('div'); b.className='ibub'; m.appendChild(a); m.appendChild(b); stream.appendChild(m); stream.scrollTop=stream.scrollHeight; return b; }

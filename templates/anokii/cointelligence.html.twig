@@ -138,28 +138,12 @@
 
   function esc(s){var d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;}
 
-  // Minimal, safe markdown: escape, then **bold**, [text](url) links, "- " bullet
-  // lists, and blank-line paragraphs. Mirrors oiatc's client renderer.
-  function inlineMd(s){
-    s=s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,function(m,t,u){
-      if(!/^https?:\/\//.test(u) && u.charAt(0)!=='/') return t;
-      return '<a href="'+u+'" target="_blank" rel="noopener">'+t+'</a>';
-    });
-    return s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
-  }
+  // Render the agent's markdown through the shared renderer (/js/anokii-md.js:
+  // tables, rules, lists, headings, status pills). Falls back to escaped text
+  // with line breaks if the shared script is somehow unavailable.
   function fmt(text){
-    var lines=esc(text).split(/\n/);
-    var html='', para=[], list=[];
-    function flushP(){ if(para.length){ html+='<p>'+inlineMd(para.join(' '))+'</p>'; para=[]; } }
-    function flushL(){ if(list.length){ html+='<ul>'+list.map(function(i){return '<li>'+inlineMd(i)+'</li>';}).join('')+'</ul>'; list=[]; } }
-    lines.forEach(function(ln){
-      var t=ln.trim();
-      if(t===''){ flushL(); flushP(); return; }
-      if(/^[-*]\s+/.test(t)){ flushP(); list.push(t.replace(/^[-*]\s+/,'')); return; }
-      flushL(); para.push(t);
-    });
-    flushL(); flushP();
-    return html||'<p>'+inlineMd(esc(text))+'</p>';
+    if(window.AnokiiMd && window.AnokiiMd.render){ return window.AnokiiMd.render(text); }
+    return '<p>'+esc(String(text==null?'':text)).replace(/\n/g,'<br>')+'</p>';
   }
   function srcLine(sources){
     if(!sources||!sources.length) return '';

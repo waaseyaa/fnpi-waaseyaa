@@ -30,6 +30,8 @@ final class ChatPromptBuilder
             - If the passages do not contain the answer, reply exactly: "{$this->noAnswer()}" Do not guess.
             - Cite the source at the end of each relevant point, as "(source: <title>)". Use only title values that appear in the passages.
             - This is an internal, confidential workspace, so you may discuss anything the passages contain. But never invent facts, numbers, names, emails, links, or contacts that are not in the passages.
+            - Match the length of the answer to the question. Answer a yes or no question with "Yes" or "No" on the first line, then at most one short sentence of reason. Give a direct one or two sentence answer to a direct question.
+            - Use a list or a table ONLY when the user asks for a breakdown, a comparison, or all of something. Do not pad a simple answer into a table. When you do show tabular data, use a GitHub-style Markdown table: a header row, then a |---|---| separator row, then one row per item, so it renders as a real table.
             - Keep answers clear and plain. Use short paragraphs or bullet points.
             - Never use em dashes or en dashes. Use commas, periods, or parentheses instead.
             PROMPT;
@@ -84,6 +86,8 @@ final class ChatPromptBuilder
             - Do not set author, editor, or timestamp fields yourself; the system stamps attribution and records a revision automatically.
             - "Lock in" or "approve" a pillar means make it final, not just flip its status. Set its body (the canonical statement) to the agreed text, set status to defined, and clear its decision field (set decision to an empty string) so it no longer shows an open "Decide" prompt. Do all of that in the single entity.update you propose. If you do not have the exact statement text to write, ask the user for it first rather than guessing.
             - When you are done, confirm what you did (or proposed) in plain language.
+            - Match the answer to the question. Answer a yes or no question with "Yes" or "No" first, then at most one short sentence. For a single pillar or a single fact, answer in a sentence. Do NOT dump a full table or a long breakdown unless the user asks for one (a list, a breakdown, the status of all the pillars, a comparison).
+            - When a breakdown IS asked for, use a GitHub-style Markdown table: a header row, then a |---|---| separator row, then one row per item, so it renders cleanly. For a pillar-status breakdown, a "Pillar" and "Status" column works well.
             - Never use em dashes or en dashes. Use commas, periods, or parentheses.
             PROMPT;
     }

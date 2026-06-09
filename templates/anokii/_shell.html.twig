@@ -64,6 +64,29 @@
   .ahead h1{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.01em;font-size:34px;margin:0;color:var(--ink)}
   .ahead p.sub{color:var(--muted);margin:8px 0 0;max-width:72ch;font-size:15px;line-height:1.6}
   @media(max-width:880px){.aapp{grid-template-columns:1fr}.aside{position:static;height:auto}.asub{display:none}}
+  /* Shared markdown rendering for chat replies (Co-Intelligence + Identity).
+     Output of /js/anokii-md.js is wrapped in .amd; these style its blocks. */
+  .amd>*:first-child{margin-top:0} .amd>*:last-child{margin-bottom:0}
+  .amd p{margin:0 0 9px}
+  .amd ul,.amd ol{margin:7px 0;padding-left:20px} .amd li{margin:3px 0}
+  .amd h4,.amd h5,.amd h6{font-family:"Oswald",sans-serif;font-weight:700;color:var(--ink);line-height:1.25;margin:12px 0 6px}
+  .amd h4{font-size:15.5px} .amd h5{font-size:14px}
+  .amd h6{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .amd hr{border:0;border-top:1px solid var(--line);margin:13px 0}
+  .amd code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;background:#f1f3f4;border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+  .amd a{color:var(--cyan2);text-decoration:underline} .amd strong{font-weight:700}
+  /* tables: a clean bordered card, header in the Oswald label style */
+  .amd .amt{border-collapse:separate;border-spacing:0;width:100%;margin:9px 0;font-size:13.5px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .amd .amt th,.amd .amt td{text-align:left;padding:7px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+  .amd .amt th{background:var(--bg);font-family:"Oswald",sans-serif;font-weight:600;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+  .amd .amt tbody tr:last-child td{border-bottom:none}
+  .amd .amt tbody tr:hover{background:#fafbfb}
+  /* pillar-status cells render as pills matching the Identity rail */
+  .amd .stp{display:inline-block;font-family:"Oswald",sans-serif;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;border-radius:20px;padding:2px 9px;line-height:1.6}
+  .amd .stp-defined{background:var(--green-soft,#e4f7ee);color:var(--green,#138a55)}
+  .amd .stp-draft{background:var(--amber-soft,#fff3df);color:var(--amber,#a96a00)}
+  .amd .stp-work{background:var(--orange-soft,#fbe9da);color:var(--orange,#c4631f)}
+  .amd .stp-gap{background:var(--grey-soft,#eef0f4);color:var(--grey,#5b6172)}
   {% block anokii_styles %}{% endblock %}
 {% endblock %}
 
@@ -71,6 +94,7 @@
 {% block sitefooter %}{% endblock %}
 
 {% block content %}
+<script src="/js/anokii-md.js"></script>
 <div class="aapp">
   <aside class="aside">
     <a class="abrand" href="/anokii" style="text-decoration:none">
