@@ -32,7 +32,7 @@ final class PageSeedData
      */
     public static function all(): array
     {
-        return [
+        $pages = [
             '/' => [
                 'title' => 'First Nations Procurement Inc., Service &amp; Sourcing Solutions',
                 'meta_description' => null,
@@ -317,5 +317,19 @@ final class PageSeedData
                 ],
             ],
         ];
+
+        // Normalize head_styles line endings to LF. The CSS is authored here as
+        // a PHP heredoc, so on a CRLF checkout (Windows autocrlf) it would carry
+        // \r\n, while Twig normalizes its template sources to \n on load. Forcing
+        // LF here keeps the seeded render byte-identical to the original template
+        // regardless of how the source files are checked out.
+        foreach ($pages as &$page) {
+            if (\is_string($page['head_styles'])) {
+                $page['head_styles'] = str_replace("\r\n", "\n", $page['head_styles']);
+            }
+        }
+        unset($page);
+
+        return $pages;
     }
 }
