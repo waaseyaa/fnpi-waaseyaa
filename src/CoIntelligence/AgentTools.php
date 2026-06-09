@@ -34,7 +34,7 @@ use Waaseyaa\Entity\EntityTypeManager;
 final class AgentTools
 {
     /** The only entity types the agent may name. */
-    public const array WORKSPACE_TYPES = ['identity_pillar', 'document', 'document_note', 'drive_asset'];
+    public const array WORKSPACE_TYPES = ['identity_pillar', 'document', 'document_note', 'drive_asset', 'page'];
 
     /** Tools advertised to the model, in a sensible order. */
     public const array TOOLS = [

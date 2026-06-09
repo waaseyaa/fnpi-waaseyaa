@@ -106,11 +106,26 @@ final class AgentToolsTest extends TestCase
     }
 
     #[Test]
-    public function the_workspace_types_are_the_four_entities(): void
+    public function the_workspace_types_include_the_page_for_agent_drafting(): void
     {
+        // The agent may draft public website copy (page) in addition to the
+        // identity / documents / drive entities — drafts only, never publish.
         $this->assertSame(
-            ['identity_pillar', 'document', 'document_note', 'drive_asset'],
+            ['identity_pillar', 'document', 'document_note', 'drive_asset', 'page'],
             AgentTools::WORKSPACE_TYPES,
         );
+    }
+
+    #[Test]
+    public function a_page_update_passes_the_workspace_scope_guard(): void
+    {
+        // `page` is in scope now, so an update on it is NOT refused as
+        // out_of_scope (it gets past the guard; without a kernel it then reports
+        // the tool is unavailable, which is a different, expected outcome).
+        $tools = new AgentTools(null);
+
+        $result = $tools->execute('entity.update', ['entity_type' => 'page', 'id' => 1, 'values' => ['blocks' => []]], $this->account());
+
+        $this->assertNotSame('out_of_scope', $result->summary, 'page must be a permitted agent target');
     }
 }

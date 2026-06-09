@@ -166,6 +166,25 @@ final class IngestKnowledgeCommand
             foreach ($this->chunker->chunkText($text, '/anokii/identity', 'Identity Workspace: ' . $heading, $heading) as $c) {
                 $chunks[] = $c;
             }
+
+            // Peer-language (Anishinaabemowin) pillar content, so the knowledge
+            // base is bilingual: the agent can ground a page's Anishinaabemowin
+            // copy in the pillar's own translation, and the chat can answer in
+            // both languages. Only languages actually translated are ingested.
+            foreach (PillarService::TRANSLATIONS as $langcode => $endonym) {
+                $translation = $this->pillars->getTranslation($pillar->getPid(), $langcode);
+                if ($translation === null) {
+                    continue;
+                }
+                $ojText = trim($translation->getTitle() . '. ' . $translation->getBody());
+                if (trim($ojText, " .\t\n") === '') {
+                    continue;
+                }
+                $ojHeading = $endonym . ': ' . $translation->getTitle();
+                foreach ($this->chunker->chunkText($ojText, '/anokii/identity', 'Identity Workspace (' . $endonym . '): ' . $heading, $ojHeading) as $c) {
+                    $chunks[] = $c;
+                }
+            }
         }
 
         return $chunks;
