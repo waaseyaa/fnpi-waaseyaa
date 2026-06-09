@@ -8,11 +8,20 @@ use App\Entity\Pillar;
 use Symfony\Component\Uid\Uuid;
 use Waaseyaa\Entity\EntityTypeManager;
 use Waaseyaa\Entity\Repository\EntityRepositoryInterface;
+use Waaseyaa\EntityStorage\EntityRepository;
 
 /**
  * Orchestrates the entity-native Identity Workspace over the framework revision
  * system. A pillar is a revisionable `identity_pillar` entity; each status or
  * notes edit records a new revision (listRevisions() is the history).
+ *
+ * Two-axis (Phase 2): the pillar is translatable. English is the default-language
+ * base row; Anishinaabemowin (`oj`) is a true `(id, langcode)` peer row with its
+ * own independent revision history. The translatable fields are `title` and
+ * `body` (the moat); everything else is non-translatable workspace state on the
+ * English row. Translation edits flow through the framework's unified two-axis
+ * save (EntityRepository::saveTranslation — peer base row + per-language
+ * revision, atomic).
  *
  * This replaces the raw-table PillarRepository: the same read/edit surface, now
  * on registered entities with full per-pillar history and attribution.
@@ -22,13 +31,26 @@ final class PillarService
     /** Editable maturity statuses. */
     public const STATUSES = Pillar::STATUSES;
 
+    /** The default (canonical) language: English owns the base rows. */
+    public const DEFAULT_LANGCODE = 'en';
+
+    /**
+     * Peer languages, in display order: langcode => endonym. Anishinaabemowin is
+     * the first peer; the moat is told in the language first.
+     *
+     * @var array<string, string>
+     */
+    public const TRANSLATIONS = ['oj' => 'Anishinaabemowin'];
+
     public function __construct(private readonly ?EntityTypeManager $entityTypeManager) {}
 
     /** @return list<Pillar> all pillars, ordered by sort_order ascending */
     public function listPillars(): array
     {
         $pillars = [];
-        foreach ($this->pillars()->findBy([]) as $entity) {
+        // Canonical (default-language) rows only — peer-language rows are
+        // overlays addressed per-pillar, not separate pillars in the workspace.
+        foreach ($this->pillars()->findBy(['langcode' => self::DEFAULT_LANGCODE]) as $entity) {
             if ($entity instanceof Pillar) {
                 $pillars[] = $entity;
             }
@@ -201,6 +223,100 @@ final class PillarService
         return 'Status set to ' . $pillar->getStatus() . ', notes updated';
     }
 
+    /** Whether a langcode is a supported peer language (not the default). */
+    public function isTranslationLangcode(string $langcode): bool
+    {
+        return array_key_exists($langcode, self::TRANSLATIONS);
+    }
+
+    /**
+     * The current peer-language value of a pillar (its `(id, langcode)` row), or
+     * null when that language has not been translated yet.
+     */
+    public function getTranslation(string $pid, string $langcode): ?Pillar
+    {
+        if (!$this->isTranslationLangcode($langcode)) {
+            return null;
+        }
+        $pillar = $this->findByPid($pid);
+        if ($pillar === null) {
+            return null;
+        }
+        $translated = $this->translatablePillars()->loadTranslation((string) $pillar->id(), $langcode);
+
+        return $translated instanceof Pillar ? $translated : null;
+    }
+
+    /**
+     * Save a peer-language translation of a pillar's moat fields (title + body):
+     * upsert the `(id, langcode)` peer row and record a per-language revision,
+     * atomically. Non-translatable workspace state (status, notes, ...) stays on
+     * the English row and is untouched. Returns the attribution stamp, or null
+     * when the pid is unknown or the langcode is not a supported peer language.
+     *
+     * @return array{editor_label:string, updated_at:string, revision:int}|null
+     */
+    public function saveTranslation(
+        string $pid,
+        string $langcode,
+        string $title,
+        string $body,
+        int $editorUid,
+        string $editorLabel,
+    ): ?array {
+        if (!$this->isTranslationLangcode($langcode)) {
+            return null;
+        }
+        $pillar = $this->findByPid($pid);
+        if ($pillar === null) {
+            return null;
+        }
+
+        $updatedAt = gmdate('Y-m-d\TH:i:s\Z');
+        $revision = $this->translatablePillars()->saveTranslation(
+            (string) $pillar->id(),
+            $langcode,
+            [
+                // The translatable moat fields, plus per-language attribution so
+                // the peer row carries its own editor stamp.
+                'title' => $title,
+                'body' => $body,
+                'pid' => $pillar->getPid(),
+                'editor_uid' => $editorUid,
+                'editor_label' => $editorLabel,
+                'updated_at' => $updatedAt,
+            ],
+            $editorLabel !== '' ? $editorLabel . ' edited ' . self::TRANSLATIONS[$langcode] : 'Translation updated',
+        );
+
+        return ['editor_label' => $editorLabel, 'updated_at' => $updatedAt, 'revision' => $revision];
+    }
+
+    /**
+     * Per-language revision history for a pillar's translation, newest first
+     * (an independent timeline from the English single-axis history).
+     *
+     * @return list<Pillar>
+     */
+    public function listTranslationHistory(string $pid, string $langcode): array
+    {
+        if (!$this->isTranslationLangcode($langcode)) {
+            return [];
+        }
+        $pillar = $this->findByPid($pid);
+        if ($pillar === null) {
+            return [];
+        }
+        $history = [];
+        foreach ($this->translatablePillars()->listTranslationRevisions((string) $pillar->id(), $langcode) as $rev) {
+            if ($rev instanceof Pillar) {
+                $history[] = $rev;
+            }
+        }
+
+        return $history;
+    }
+
     private function pillars(): EntityRepositoryInterface
     {
         if ($this->entityTypeManager === null) {
@@ -208,5 +324,22 @@ final class PillarService
         }
 
         return $this->entityTypeManager->getRepository('identity_pillar');
+    }
+
+    /**
+     * The pillar repository narrowed to the concrete framework `EntityRepository`,
+     * which exposes the two-axis translation API (`saveTranslation`,
+     * `loadTranslation`, `listTranslationRevisions`). Promoting that API onto
+     * `EntityRepositoryInterface` is a framework follow-up; until then the
+     * registered repository is always the concrete class.
+     */
+    private function translatablePillars(): EntityRepository
+    {
+        $repository = $this->pillars();
+        if (!$repository instanceof EntityRepository) {
+            throw new \LogicException('identity_pillar translation requires the framework EntityRepository.');
+        }
+
+        return $repository;
     }
 }

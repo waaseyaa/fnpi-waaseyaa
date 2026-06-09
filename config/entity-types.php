@@ -43,6 +43,17 @@ return [
     // revision, so identity content carries full history. The entity-native
     // rebuild of the raw `pillar` prototype; tables identity_pillar +
     // identity_pillar_revision are materialized by db:init --sync-schema.
+    //
+    // Translatable (two-axis): English is the default-language base row; each
+    // peer language (Anishinaabemowin, `oj`) is a true `(id, langcode)` row with
+    // its OWN independent revision history. The translatable fields are `title`
+    // and `body` (the pillar name + its canonical "Now" statement — the moat);
+    // status, notes, decision and the rest are non-translatable workspace state
+    // that stays on the English row. Edits flow through
+    // EntityRepository::saveTranslation() (peer base row + per-language revision,
+    // atomic — framework alpha.198). Adds the langcode / default_langcode
+    // columns and widens the primary key to (id, langcode); db:init
+    // --sync-schema materializes identity_pillar__translation__revision.
     new EntityType(
         id: 'identity_pillar',
         label: 'Identity pillar',
@@ -52,9 +63,12 @@ return [
             'uuid' => 'uuid',
             'label' => 'title',
             'revision' => 'revision_id',
+            'langcode' => 'langcode',
+            'default_langcode' => 'default_langcode',
         ],
         revisionable: true,
         revisionDefault: true,
+        translatable: true,
     ),
 
     // Revisionable: each version of a document is one revision. revisionDefault

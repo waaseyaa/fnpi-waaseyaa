@@ -137,6 +137,74 @@ final class IdentityController
         return new JsonResponse(['ok' => true, 'revisions' => $revisions]);
     }
 
+    /**
+     * Save (or update) a peer-language translation of a pillar's moat fields
+     * (title + body). Gated by the same edit permission as an English edit; the
+     * peer `(id, langcode)` row and its per-language revision are written
+     * atomically by the framework.
+     */
+    public function saveTranslation(Request $request): Response
+    {
+        $user = Auth::currentUser($this->entityTypeManager);
+        if ($user === null) {
+            return new JsonResponse(['ok' => false, 'error' => 'Not signed in.'], 401);
+        }
+
+        $decoded = json_decode((string) $request->getContent(), true);
+        $data = is_array($decoded) ? $decoded : [];
+
+        $pid = trim((string) ($data['pid'] ?? ''));
+        $langcode = trim((string) ($data['langcode'] ?? ''));
+        if ($pid === '' || $langcode === '') {
+            return new JsonResponse(['ok' => false, 'error' => 'Missing pillar id or language.'], 422);
+        }
+        if (!$this->pillars->isTranslationLangcode($langcode)) {
+            return new JsonResponse(['ok' => false, 'error' => 'Unsupported language.'], 422);
+        }
+
+        $pillar = $this->pillars->findByPid($pid);
+        if ($pillar === null) {
+            return new JsonResponse(['ok' => false, 'error' => 'Unknown pillar.'], 422);
+        }
+        if (!$this->access->check($pillar, 'update', $user)->isAllowed()) {
+            return new JsonResponse(['ok' => false, 'error' => 'You do not have permission to edit the Identity Workspace.'], 403);
+        }
+
+        $title = trim((string) ($data['title'] ?? ''));
+        $body = (string) ($data['body'] ?? '');
+
+        $result = $this->pillars->saveTranslation($pid, $langcode, $title, $body, $user->id(), Auth::label($user));
+        if ($result === null) {
+            return new JsonResponse(['ok' => false, 'error' => 'Could not save the translation.'], 422);
+        }
+
+        return new JsonResponse([
+            'ok' => true,
+            'langcode' => $langcode,
+            'last_edited_by' => $result['editor_label'],
+            'last_edited_at' => $this->humanStamp($result['updated_at']),
+        ]);
+    }
+
+    /** Per-language revision history for one pillar translation (independent timeline). */
+    public function translationHistory(Request $request, string $pid, string $langcode): Response
+    {
+        $user = Auth::currentUser($this->entityTypeManager);
+        if ($user === null) {
+            return new JsonResponse(['ok' => false, 'error' => 'Not signed in.'], 401);
+        }
+        if (!$this->pillars->isTranslationLangcode($langcode)) {
+            return new JsonResponse(['ok' => false, 'error' => 'Unsupported language.'], 422);
+        }
+
+        $revisions = [];
+        foreach ($this->pillars->listTranslationHistory($pid, $langcode) as $rev) {
+            $revisions[] = $this->presentTranslationRevision($rev);
+        }
+
+        return new JsonResponse(['ok' => true, 'langcode' => $langcode, 'revisions' => $revisions]);
+    }
+
     /** @return array<string,mixed> */
     private function presentPillar(Pillar $pillar): array
     {
@@ -155,6 +223,50 @@ final class IdentityController
             'is_full' => $pillar->isFull(),
             'last_edited_by' => $pillar->getEditorLabel(),
             'last_edited_at' => $this->humanStamp($pillar->getUpdatedAt()),
+            'translations' => $this->presentTranslations($pillar),
+        ];
+    }
+
+    /**
+     * The peer-language translations of a pillar: for each supported language,
+     * its current title/body + attribution, or an untranslated placeholder.
+     *
+     * @return list<array<string,mixed>>
+     */
+    private function presentTranslations(Pillar $pillar): array
+    {
+        $out = [];
+        foreach (PillarService::TRANSLATIONS as $langcode => $endonym) {
+            $translation = $this->pillars->getTranslation($pillar->getPid(), $langcode);
+            $out[] = [
+                'langcode' => $langcode,
+                'endonym' => $endonym,
+                'translated' => $translation !== null,
+                'title' => $translation?->getTitle() ?? '',
+                'body' => $translation?->getBody() ?? '',
+                'last_edited_by' => $translation?->getEditorLabel() ?? '',
+                'last_edited_at' => $translation !== null ? $this->humanStamp($translation->getUpdatedAt()) : '',
+            ];
+        }
+
+        return $out;
+    }
+
+    /** @return array<string,mixed> */
+    private function presentTranslationRevision(Pillar $rev): array
+    {
+        $created = $rev->getRevisionCreatedAt();
+        $when = $rev->getUpdatedAt() !== ''
+            ? $this->humanStamp($rev->getUpdatedAt())
+            : ($created?->format('M j, Y g:i A') . ' UTC');
+
+        return [
+            'vid' => (int) $rev->getRevisionId(),
+            'title' => $rev->getTitle(),
+            'summary' => $rev->getRevisionLog(),
+            'editor' => $rev->getEditorLabel() !== '' ? $rev->getEditorLabel() : 'System',
+            'when' => $when,
+            'is_current' => $rev->isCurrentRevision(),
         ];
     }
 

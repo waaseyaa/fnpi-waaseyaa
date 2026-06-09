@@ -99,6 +99,36 @@
   .hist .sum{color:var(--ink)}
   .hist .cur{color:var(--cyan2);font-weight:700}
   .hist .empty{color:var(--muted);font-size:13px}
+  /* Anishinaabemowin (peer-language) panel */
+  .oj{border-top:1px dashed var(--line);padding-top:11px;margin-top:1px}
+  .oj-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .oj-lbl{font-family:"Oswald",sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.13em;color:var(--cyan2)}
+  .oj-edit{font-family:"Oswald",sans-serif;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--cyan2);background:none;border:none;cursor:pointer;padding:2px 4px}
+  .oj-edit:hover{text-decoration:underline}
+  .oj-view{margin-top:6px}
+  .oj-title{font-family:"Oswald",sans-serif;font-weight:600;font-size:15px;color:var(--ink);letter-spacing:.01em}
+  .oj-body{font-size:13.5px;line-height:1.5;color:var(--ink);margin-top:3px}
+  .oj-stamp{font-size:11.5px;color:var(--muted);font-family:"Oswald",sans-serif;letter-spacing:.02em;margin-top:5px;min-height:14px}
+  .oj-empty{font-size:13px;color:var(--muted);font-style:italic;margin-top:6px}
+  .oj-form{margin-top:8px;display:flex;flex-direction:column;gap:8px}
+  .oj-in-title,.oj-in-body{width:100%;box-sizing:border-box;font-family:inherit;font-size:14px;color:var(--ink);border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:var(--bg)}
+  .oj-in-body{resize:vertical;line-height:1.5}
+  .oj-in-title:focus,.oj-in-body:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(31,182,214,.16)}
+  .oj-actions{display:flex;align-items:center;gap:8px}
+  .oj-save{font-family:"Oswald",sans-serif;font-size:13px;font-weight:600;letter-spacing:.03em;color:#fff;background:var(--cyan2);border:none;border-radius:8px;padding:6px 14px;cursor:pointer}
+  .oj-save:hover{filter:brightness(1.05)}
+  .oj-save:disabled{opacity:.55;cursor:default}
+  .oj-cancel,.oj-hist{font-family:"Oswald",sans-serif;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--cyan2);background:none;border:none;cursor:pointer;padding:4px 6px}
+  .oj-cancel:hover,.oj-hist:hover{text-decoration:underline}
+  .oj-hist{margin-left:auto}
+  .oj-history{display:none;border-top:1px dashed var(--line);padding-top:9px;margin-top:8px}
+  .oj-history.open{display:block}
+  .oj-history ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+  .oj-history li{font-size:13px;line-height:1.45}
+  .oj-history .meta{color:var(--muted);font-family:"Oswald",sans-serif;font-size:11.5px;letter-spacing:.02em}
+  .oj-history .ttl{color:var(--ink)}
+  .oj-history .cur{color:var(--cyan2);font-weight:700}
+  .oj-history .empty{color:var(--muted);font-size:13px}
   /* Co-Intelligence companion panel */
   .cw-head{display:flex;align-items:center;gap:11px;padding:14px 16px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#f7fbfc,#fff)}
   .cw-ava{flex:0 0 auto;width:34px;height:34px;border-radius:10px;background:var(--cyan2);color:#fff;display:flex;align-items:center;justify-content:center;font-family:"Anton",sans-serif;font-size:15px;letter-spacing:.02em}
@@ -219,6 +249,30 @@
             {% if p.decision is not empty %}
             <div class="decide"><span class="dl">{{ p.decide_label }}</span>{{ p.decision }}</div>
             {% endif %}
+            {% for t in p.translations %}
+            <div class="oj" data-pid="{{ p.pid }}" data-lang="{{ t.langcode }}">
+              <div class="oj-top">
+                <span class="oj-lbl">{{ t.endonym }}</span>
+                <button type="button" class="oj-edit" aria-expanded="false">{{ t.translated ? 'Edit' : 'Add' }}</button>
+              </div>
+              <div class="oj-view"{{ t.translated ? '' : ' hidden' }}>
+                <div class="oj-title">{{ t.title }}</div>
+                {% if t.body is not empty %}<div class="oj-body">{{ t.body }}</div>{% endif %}
+                <div class="oj-stamp">{%- if t.last_edited_by is not empty -%}{{ t.endonym }} &middot; {{ t.last_edited_by }} &middot; {{ t.last_edited_at }}{%- endif -%}</div>
+              </div>
+              <div class="oj-empty"{{ t.translated ? ' hidden' : '' }}>Not yet in {{ t.endonym }}.</div>
+              <div class="oj-form" hidden>
+                <input class="oj-in-title" type="text" placeholder="{{ t.endonym }} title" value="{{ t.title }}">
+                <textarea class="oj-in-body" rows="3" placeholder="{{ t.endonym }} statement">{{ t.body }}</textarea>
+                <div class="oj-actions">
+                  <button type="button" class="oj-save">Save</button>
+                  <button type="button" class="oj-cancel">Cancel</button>
+                  <button type="button" class="oj-hist" aria-expanded="false">History</button>
+                </div>
+              </div>
+              <div class="oj-history" hidden></div>
+            </div>
+            {% endfor %}
             <div class="cfoot">
               <div class="edited" data-pid="{{ p.pid }}">
                 {%- if p.last_edited_by is not empty -%}Last edited by {{ p.last_edited_by }} &middot; {{ p.last_edited_at }}{%- endif -%}
@@ -302,6 +356,59 @@
       btn.setAttribute('aria-expanded',open?'true':'false');
       btn.textContent=open?'Hide history':'History';
       if(open){ loadHistory(pid); }
+    });
+  });
+
+  // Anishinaabemowin (peer-language) panel: edit title + body, saved as a
+  // per-language revision; per-language history is an independent timeline.
+  function ojRenderHistory(panel, revisions){
+    if(!revisions || !revisions.length){ panel.innerHTML='<p class="empty">No history yet.</p>'; return; }
+    var html='<ol>';
+    revisions.forEach(function(r){
+      html+='<li><div class="ttl">'+escapeHtml(r.title||'(untitled)')+(r.is_current?' <span class="cur">(current)</span>':'')+'</div>'
+        +'<div class="meta">'+escapeHtml(r.editor)+' · '+escapeHtml(r.when)+'</div></li>';
+    });
+    html+='</ol>'; panel.innerHTML=html;
+  }
+  document.querySelectorAll('.oj').forEach(function(box){
+    var pid=box.getAttribute('data-pid'), lang=box.getAttribute('data-lang');
+    var view=box.querySelector('.oj-view'), empty=box.querySelector('.oj-empty'),
+        form=box.querySelector('.oj-form'), editBtn=box.querySelector('.oj-edit'),
+        lbl=box.querySelector('.oj-lbl'), titleEl=box.querySelector('.oj-title'),
+        bodyEl=box.querySelector('.oj-body'), stamp=box.querySelector('.oj-stamp'),
+        hist=box.querySelector('.oj-history'), inTitle=box.querySelector('.oj-in-title'),
+        inBody=box.querySelector('.oj-in-body'), saveBtn=box.querySelector('.oj-save'),
+        cancelBtn=box.querySelector('.oj-cancel'), histBtn=box.querySelector('.oj-hist');
+    function openForm(o){ form.hidden=!o; editBtn.setAttribute('aria-expanded',o?'true':'false'); editBtn.textContent=o?'Close':(titleEl.textContent.trim()?'Edit':'Add'); if(o){ inTitle.focus(); } }
+    editBtn.addEventListener('click',function(){ openForm(form.hidden); });
+    cancelBtn.addEventListener('click',function(){ openForm(false); });
+    function loadOjHistory(){
+      hist.innerHTML='<p class="empty">Loading...</p>';
+      return fetch('/anokii/identity/'+encodeURIComponent(pid)+'/'+encodeURIComponent(lang)+'/history',{credentials:'same-origin'})
+        .then(function(r){ return r.json().catch(function(){return {ok:false};}); })
+        .then(function(d){ ojRenderHistory(hist, d&&d.ok?d.revisions:[]); });
+    }
+    saveBtn.addEventListener('click',function(){
+      var title=(inTitle.value||'').trim(), body=inBody.value||'';
+      if(!title){ inTitle.focus(); return; }
+      saveBtn.disabled=true;
+      fetch('/anokii/identity/translate',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({pid:pid,langcode:lang,title:title,body:body})})
+        .then(function(r){ return r.json().catch(function(){return {ok:false};}); })
+        .then(function(d){
+          saveBtn.disabled=false;
+          if(!d||!d.ok){ alert((d&&d.error)||'Could not save the translation.'); return; }
+          titleEl.textContent=title;
+          if(!bodyEl && body){ bodyEl=document.createElement('div'); bodyEl.className='oj-body'; titleEl.insertAdjacentElement('afterend',bodyEl); }
+          if(bodyEl){ if(body){ bodyEl.textContent=body; } else { bodyEl.remove(); bodyEl=null; } }
+          stamp.innerHTML = d.last_edited_by ? (escapeHtml(lbl.textContent)+' · '+escapeHtml(d.last_edited_by)+' · '+escapeHtml(d.last_edited_at)) : '';
+          view.hidden=false; empty.hidden=true; openForm(false);
+          if(hist.classList.contains('open')){ loadOjHistory(); }
+        });
+    });
+    histBtn.addEventListener('click',function(){
+      var open=hist.classList.toggle('open'); hist.hidden=!open;
+      histBtn.setAttribute('aria-expanded',open?'true':'false'); histBtn.textContent=open?'Hide history':'History';
+      if(open){ loadOjHistory(); }
     });
   });
 })();

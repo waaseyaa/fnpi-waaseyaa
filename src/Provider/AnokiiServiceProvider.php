@@ -20,6 +20,7 @@ use App\CoIntelligence\Retriever;
 use App\Command\IngestKnowledgeCommand;
 use App\Command\MigrateDriveCommand;
 use App\Command\MigratePillarsCommand;
+use App\Command\WidenPillarsCommand;
 use App\Command\SeedDocumentsCommand;
 use App\Command\SeedDriveCommand;
 use App\Controller\AnokiiController;
@@ -186,6 +187,8 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
         $get('anokii.identity', '/anokii/identity', fn(Request $r) => $identity->index($r));
         $post('anokii.identity.save', '/anokii/identity/save', fn(Request $r) => $identity->save($r));
         $get('anokii.identity.history', '/anokii/identity/{pid}/history', fn(Request $r, string $pid) => $identity->history($r, $pid));
+        $post('anokii.identity.translate', '/anokii/identity/translate', fn(Request $r) => $identity->saveTranslation($r));
+        $get('anokii.identity.translation_history', '/anokii/identity/{pid}/{langcode}/history', fn(Request $r, string $pid, string $langcode) => $identity->translationHistory($r, $pid, $langcode));
         $get('anokii.cointelligence', '/anokii/cointelligence', fn(Request $r) => $cointel->index($r));
         $post('anokii.cointelligence.send', '/anokii/cointelligence/send', fn(Request $r) => $cointel->send($r));
         $post('anokii.cointelligence.apply', '/anokii/cointelligence/apply', fn(Request $r) => $cointel->apply($r));
@@ -352,6 +355,21 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
                 $command = new MigratePillarsCommand(new PillarService($etm), $this->db());
 
                 return $command->run($io);
+            },
+        );
+
+        yield new CommandDefinition(
+            name: 'app:widen-pillars',
+            description: 'Migrate identity_pillar to the two-axis (id, langcode) primary key for Anishinaabemowin peers. Preserves English history; idempotent; keeps a backup table.',
+            handler: function (CliIO $io): int {
+                $etm = $this->entityTypeManager();
+                if ($etm === null) {
+                    $io->error('Widening identity_pillar requires a booted kernel (EntityTypeManager).');
+
+                    return 1;
+                }
+
+                return new WidenPillarsCommand($etm, $this->db())->run($io);
             },
         );
 
