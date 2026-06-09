@@ -1,0 +1,29 @@
+<section class="contact"><div class="wrap"><div class="grid">
+  {# Posts to email via a mailto: action for now (matches the homepage pattern),
+     with the field structure ready to point at a real handler later. #}
+  <form action="mailto:info@fnprocure.ca" method="post" enctype="text/plain">
+    <div class="field"><label>Name</label><input type="text" name="name" placeholder="Your name"></div>
+    <div class="field"><label>Organization (Nation or company)</label><input type="text" name="organization" placeholder="Your Nation or organization"></div>
+    <div class="field"><label>Email</label><input type="email" name="email" placeholder="you@email.com"></div>
+    <div class="field">
+      <label>What can we help with?</label>
+      <select name="topic">
+        <option value="technology">Technology and sovereign platform</option>
+        <option value="sourcing">Sourcing and services</option>
+        <option value="protection">Privacy and protection (Faraday)</option>
+        <option value="partnership">Partnership or funding</option>
+      </select>
+    </div>
+    <div class="field"><label>Message</label><textarea name="message" rows="4" placeholder="Tell us a little about what you need, and we'll come back with a quote."></textarea></div>
+    <button class="btn cyan" type="submit">Request a quote</button>
+  </form>
+  <div class="info">
+    <p><b>First Nations Procurement Inc.</b></p>
+    <p>100% First Nations-owned since 2017</p>
+    <p>91 River Rd, Sagamok Anishnawbek First Nation</p>
+    <p><a href="mailto:info@fnprocure.ca">info@fnprocure.ca</a></p>
+    <span class="cond">Hours</span>
+    <p>Open today 9:00 a.m. to 5:00 p.m.</p>
+    <div class="funders">For funders and partners: we welcome conversations about supporting Nation-owned digital sovereignty. Choose "Partnership or funding" above.</div>
+  </div>
+</div></div></section>

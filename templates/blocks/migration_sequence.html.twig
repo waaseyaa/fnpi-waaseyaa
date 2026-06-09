@@ -1,0 +1,8 @@
+<section class="band"><div class="wrap">
+  <p class="sec-h">{{ blk.sec_h|raw }}</p>
+  <h2 class="display">{{ blk.h2|raw }}</h2>
+  <p class="sec-sub" style="margin-left:0">{{ blk.sec_sub|raw }}</p>
+  <ul class="seq">
+{% for item in blk.items %}    <li{% if item.last is defined %} class="last"{% endif %}><span class="k">{{ item.k|raw }}</span> {{ item.text|raw }}</li>
+{% endfor %}  </ul>
+</div></section>

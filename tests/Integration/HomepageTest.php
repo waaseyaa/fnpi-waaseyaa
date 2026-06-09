@@ -6,8 +6,10 @@ namespace App\Tests\Integration;
 
 use App\Controller\PageController;
 use App\Provider\SiteServiceProvider;
+use App\Tests\Support\SeededPages;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Waaseyaa\Entity\Repository\EntityRepositoryInterface;
 use Waaseyaa\Routing\WaaseyaaRouter;
 use Waaseyaa\SSR\SsrServiceProvider;
 
@@ -19,11 +21,14 @@ use Waaseyaa\SSR\SsrServiceProvider;
  */
 final class HomepageTest extends TestCase
 {
+    private static EntityRepositoryInterface $pages;
+
     public static function setUpBeforeClass(): void
     {
         $provider = new SsrServiceProvider();
         $provider->setKernelContext(dirname(__DIR__, 2), [], []);
         $provider->boot();
+        self::$pages = SeededPages::repository();
     }
 
     #[Test]
@@ -38,7 +43,7 @@ final class HomepageTest extends TestCase
     #[Test]
     public function homepage_renders_the_fnpi_concept(): void
     {
-        $response = new PageController()->home();
+        $response = new PageController(self::$pages)->home();
         $html = (string) $response->getContent();
 
         $this->assertSame(200, $response->getStatusCode());

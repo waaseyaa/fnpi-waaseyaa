@@ -1,0 +1,10 @@
+<section id="about" class="center"><div class="wrap">
+  <p class="sec-h">{{ blk.sec_h|raw }}</p>
+  <h2 class="sec-t display" style="margin-bottom:34px">{{ blk.sec_t|raw }}</h2>
+  <div class="vm-wrap">
+{% for vm in blk.items %}    <div class="vm">
+      <p class="lbl">{{ vm.lbl|raw }}</p>
+      <p>{{ vm.body|raw }}</p>
+    </div>
+{% endfor %}  </div>
+</div></section>

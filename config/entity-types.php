@@ -15,6 +15,7 @@ declare(strict_types=1);
 use App\Entity\Document;
 use App\Entity\DocumentNote;
 use App\Entity\DriveFile;
+use App\Entity\Page;
 use App\Entity\Pillar;
 use Waaseyaa\Entity\EntityType;
 
@@ -62,6 +63,25 @@ return [
         id: 'document',
         label: 'Document',
         class: Document::class,
+        keys: [
+            'id' => 'id',
+            'uuid' => 'uuid',
+            'label' => 'title',
+            'revision' => 'revision_id',
+        ],
+        revisionable: true,
+        revisionDefault: true,
+    ),
+
+    // Public marketing page (Anokii Pages). Revisionable: the route renders the
+    // published revision while edits create newer draft revisions, and Publish
+    // moves the framework's published-revision pointer (alpha.195). Tables page +
+    // page_revision land via db:init --sync-schema; the base table carries the
+    // published_revision_id pointer column from the same release.
+    new EntityType(
+        id: 'page',
+        label: 'Page',
+        class: Page::class,
         keys: [
             'id' => 'id',
             'uuid' => 'uuid',

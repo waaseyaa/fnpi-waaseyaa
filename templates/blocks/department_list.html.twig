@@ -1,0 +1,8 @@
+<section class="band"><div class="wrap">
+  <p class="sec-h">{{ blk.sec_h|raw }}</p>
+  <h2 class="display">{{ blk.h2|raw }}</h2>
+  <p class="sec-sub" style="margin-left:0">{{ blk.sec_sub|raw }}</p>
+  <ul class="checks" style="text-align:left">
+{% for item in blk.items %}    <li>{{ item|raw }}</li>
+{% endfor %}  </ul>
+</div></section>

@@ -1,0 +1,16 @@
+<section class="hero">
+  <div class="grid-bg"></div><div class="glow"></div>
+  <div class="wrap">
+    <p class="eyebrow">{{ blk.eyebrow|raw }}</p>
+{% if blk.pre is defined %}    <p class="pre">{{ blk.pre|raw }}</p>
+{% endif %}    <h1 class="display">{{ blk.h1|raw }}</h1>
+    <p class="oneline">{{ blk.oneline|raw }}</p>
+{% if blk.cta is defined %}    <div class="cta">
+      <a class="btn cyan" href="{{ blk.cta.primary.href }}">{{ blk.cta.primary.label|raw }}</a>
+      <a class="btn ghost" href="{{ blk.cta.secondary.href }}">{{ blk.cta.secondary.label|raw }}</a>
+    </div>
+{% endif %}{% if blk.trust is defined %}    <div class="trust">
+{% for t in blk.trust %}      <span><b>{{ t.value|raw }}</b> {{ t.label|raw }}</span>
+{% endfor %}    </div>
+{% endif %}  </div>
+</section>

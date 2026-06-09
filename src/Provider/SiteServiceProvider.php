@@ -45,7 +45,18 @@ final class SiteServiceProvider extends ServiceProvider
 
     public function routes(WaaseyaaRouter $router, ?\Waaseyaa\Entity\EntityTypeManager $entityTypeManager = null): void
     {
-        $controller = new PageController();
+        // Render public pages from the published revision of `page` entities.
+        // Resolve the repository defensively: routing-only unit tests (no kernel)
+        // pass a null EntityTypeManager and only assert route registration.
+        $pages = null;
+        if ($entityTypeManager !== null) {
+            try {
+                $pages = $entityTypeManager->getRepository('page');
+            } catch (\Throwable) {
+                $pages = null;
+            }
+        }
+        $controller = new PageController($pages);
 
         $router->addRoute(
             'home',

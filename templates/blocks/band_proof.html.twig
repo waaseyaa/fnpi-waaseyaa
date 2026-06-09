@@ -1,0 +1,11 @@
+<section class="band"><div class="wrap"><div class="grid">
+  <div>
+    <p class="sec-h">{{ blk.sec_h|raw }}</p>
+    <h2 class="display">{{ blk.h2|raw }}</h2>
+    <p>{{ blk.body|raw }}</p>
+    <p style="margin-top:18px"><a class="btn cyan" href="{{ blk.cta.href }}">{{ blk.cta.label|raw }}</a></p>
+  </div>
+  <div class="proof">
+{% for p in blk.proof %}    <div class="p"><b>{{ p.value|raw }}</b><span>{{ p.label|raw }}</span></div>
+{% endfor %}  </div>
+</div></div></section>

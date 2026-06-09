@@ -6,9 +6,11 @@ namespace App\Tests\Integration;
 
 use App\Controller\PageController;
 use App\Provider\SiteServiceProvider;
+use App\Tests\Support\SeededPages;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Waaseyaa\Entity\Repository\EntityRepositoryInterface;
 use Waaseyaa\Routing\WaaseyaaRouter;
 use Waaseyaa\SSR\SsrServiceProvider;
 
@@ -18,11 +20,14 @@ use Waaseyaa\SSR\SsrServiceProvider;
  */
 final class PagesTest extends TestCase
 {
+    private static EntityRepositoryInterface $pages;
+
     public static function setUpBeforeClass(): void
     {
         $provider = new SsrServiceProvider();
         $provider->setKernelContext(dirname(__DIR__, 2), [], []);
         $provider->boot();
+        self::$pages = SeededPages::repository();
     }
 
     #[Test]
@@ -55,8 +60,8 @@ final class PagesTest extends TestCase
     #[Test]
     public function technology_page_leads_with_sovereignty_and_anokii(): void
     {
-        $html = (string) new PageController()->technology()->getContent();
-        $this->assertSame(200, new PageController()->technology()->getStatusCode());
+        $html = (string) new PageController(self::$pages)->technology()->getContent();
+        $this->assertSame(200, new PageController(self::$pages)->technology()->getStatusCode());
         $this->assertStringContainsString('Owned, not rented', $html);
         $this->assertStringContainsString('Anokii', $html);
         $this->assertStringContainsString('Co-Intelligence', $html);
@@ -72,7 +77,7 @@ final class PagesTest extends TestCase
     #[Test]
     public function how_it_works_shows_the_ladder_and_ai_operator(): void
     {
-        $html = (string) new PageController()->howItWorks()->getContent();
+        $html = (string) new PageController(self::$pages)->howItWorks()->getContent();
         $this->assertStringContainsString('Start where it shows', $html);
         foreach (['Land', 'Prove', 'Expand', 'Own'] as $stage) {
             $this->assertStringContainsString($stage, $html);
@@ -106,14 +111,14 @@ final class PagesTest extends TestCase
     #[DataProvider('pageHtmlProvider')]
     public function no_page_links_to_proof(string $method): void
     {
-        $html = (string) new PageController()->{$method}()->getContent();
+        $html = (string) new PageController(self::$pages)->{$method}()->getContent();
         $this->assertStringNotContainsString('href="/proof"', $html, sprintf('Page "%s" must not link to the disabled /proof.', $method));
     }
 
     #[Test]
     public function contact_page_has_quote_form_to_mailto(): void
     {
-        $html = (string) new PageController()->contact()->getContent();
+        $html = (string) new PageController(self::$pages)->contact()->getContent();
         $this->assertStringContainsString('Tell us what your Nation needs', $html);
         $this->assertStringContainsString('mailto:info@fnprocure.ca', $html);
         $this->assertStringContainsString('name="organization"', $html);
@@ -139,7 +144,7 @@ final class PagesTest extends TestCase
     #[DataProvider('pageHtmlProvider')]
     public function no_defense_or_drones_anywhere_public(string $method): void
     {
-        $html = strtolower((string) new PageController()->{$method}()->getContent());
+        $html = strtolower((string) new PageController(self::$pages)->{$method}()->getContent());
         foreach (['drone', 'military', 'defense', 'defence', 'weapon', ' isr', 'autonomous monitoring'] as $banned) {
             $this->assertStringNotContainsString($banned, $html, sprintf('Public page "%s" must not mention "%s".', $method, trim($banned)));
         }
@@ -149,7 +154,7 @@ final class PagesTest extends TestCase
     #[DataProvider('pageHtmlProvider')]
     public function no_published_pricing_anywhere_public(string $method): void
     {
-        $html = (string) new PageController()->{$method}()->getContent();
+        $html = (string) new PageController(self::$pages)->{$method}()->getContent();
         // No dollar figures on public pages; pricing lives behind "request a quote".
         $this->assertDoesNotMatchRegularExpression('/\$\s*[0-9]/', $html, sprintf('Public page "%s" must not publish pricing.', $method));
         // The pitch is ownership/sovereignty, not price: no pricing language at all.
@@ -164,7 +169,7 @@ final class PagesTest extends TestCase
     public function no_em_or_en_dashes_in_rendered_copy(string $method): void
     {
         // House style: no em dashes or en dashes in visible site copy.
-        $html = (string) new PageController()->{$method}()->getContent();
+        $html = (string) new PageController(self::$pages)->{$method}()->getContent();
         $this->assertStringNotContainsString("\u{2014}", $html, sprintf('Public page "%s" must not contain an em dash.', $method));
         $this->assertStringNotContainsString("\u{2013}", $html, sprintf('Public page "%s" must not contain an en dash.', $method));
     }

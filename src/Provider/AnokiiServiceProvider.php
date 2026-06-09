@@ -309,6 +309,37 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
         );
 
         yield new CommandDefinition(
+            name: 'app:seed-pages',
+            description: 'Seed the four public pages (home, technology, how-it-works, contact) into published `page` entities. Idempotent.',
+            handler: function (CliIO $io): int {
+                $etm = $this->entityTypeManager();
+                if ($etm === null) {
+                    $io->error('Pages seed requires a booted kernel (EntityTypeManager).');
+
+                    return 1;
+                }
+
+                try {
+                    $seeded = new \App\Pages\PageSeeder($etm->getRepository('page'))->seed();
+                } catch (\Throwable $e) {
+                    $io->error('Pages seed failed: ' . $e->getMessage());
+
+                    return 1;
+                }
+
+                if ($seeded === []) {
+                    $io->writeln('  skip   all pages already exist. Nothing to do.');
+                } else {
+                    foreach ($seeded as $path) {
+                        $io->writeln(sprintf('  seed   %s published', $path));
+                    }
+                }
+
+                return 0;
+            },
+        );
+
+        yield new CommandDefinition(
             name: 'app:migrate-pillars',
             description: 'Migrate the Identity Workspace from the raw pillar table to the entity-native identity_pillar entity, verbatim. One-time and idempotent.',
             handler: function (CliIO $io): int {

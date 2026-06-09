@@ -1,0 +1,8 @@
+<section class="center"><div class="wrap">
+  <p class="sec-h">{{ blk.sec_h|raw }}</p>
+  <h2 class="sec-t display">{{ blk.sec_t|raw }}</h2>
+  <p class="sec-sub">{{ blk.sec_sub|raw }}</p>
+  <div class="ladder" style="text-align:left">
+{% for r in blk.rungs %}    <div class="rung"><div class="n">{{ r.n|raw }}</div><h3 class="display">{{ r.h3|raw }}</h3><p>{{ r.body|raw }}</p></div>
+{% endfor %}  </div>
+</div></section>
