@@ -46,6 +46,11 @@ final class Modules
                 'icon' => '<path d="M5 5h14v10H8l-3 3V5Z" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="12" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/>',
             ],
             [
+                'id' => 'pages', 'label' => 'Pages', 'group' => 'Workspace', 'live' => true,
+                'href' => '/anokii/pages', 'desc' => 'Edit and publish the public website, with full revision history.', 'badge' => '', 'tile' => true,
+                'icon' => '<rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M4 9h16" stroke="currentColor" stroke-width="1.7"/><path d="M8 13h8M8 16h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
+            ],
+            [
                 'id' => 'rooms', 'label' => 'Data Rooms', 'group' => 'Workspace', 'live' => false,
                 'href' => '/anokii/m/rooms', 'desc' => 'Secure, time-bound spaces with full audit trails.', 'badge' => 'Soon', 'tile' => true,
                 'icon' => '<rect x="4" y="5" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M4 9h16" stroke="currentColor" stroke-width="1.7"/><circle cx="15" cy="14" r="2" stroke="currentColor" stroke-width="1.6" fill="none"/>',

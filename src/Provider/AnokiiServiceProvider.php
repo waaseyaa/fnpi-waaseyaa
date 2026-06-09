@@ -28,12 +28,14 @@ use App\Controller\CoIntelligenceController;
 use App\Controller\DocumentsController;
 use App\Controller\DriveController;
 use App\Controller\IdentityController;
+use App\Controller\PagesController;
 use App\Documents\DocumentService;
 use App\Documents\DocumentStorage;
 use App\Documents\GotenbergClient;
 use App\Drive\DriveFileService;
 use App\Drive\DriveStorage;
 use App\Identity\PillarService;
+use App\Pages\PagesService;
 use App\Support\Db;
 use Symfony\Component\HttpFoundation\Request;
 use Waaseyaa\AI\Agent\Provider\AnthropicProvider;
@@ -167,6 +169,12 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
             $access,
         );
 
+        // Pages (tool #5): the workspace editor for the public marketing `page`
+        // entities. Draft/preview/publish/rollback over the revision +
+        // published-pointer model; gated by the same AccessPolicy (edit pages /
+        // publish pages).
+        $pages = new PagesController($entityTypeManager, new PagesService($entityTypeManager), $access);
+
         $get = static fn(string $name, string $path, callable $c) => $router->addRoute(
             $name,
             RouteBuilder::create($path)->controller($c)->allowAll()->methods('GET')->build(),
@@ -189,6 +197,13 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
         $get('anokii.identity.history', '/anokii/identity/{pid}/history', fn(Request $r, string $pid) => $identity->history($r, $pid));
         $post('anokii.identity.translate', '/anokii/identity/translate', fn(Request $r) => $identity->saveTranslation($r));
         $get('anokii.identity.translation_history', '/anokii/identity/{pid}/{langcode}/history', fn(Request $r, string $pid, string $langcode) => $identity->translationHistory($r, $pid, $langcode));
+        $get('anokii.pages', '/anokii/pages', fn(Request $r) => $pages->index($r));
+        $get('anokii.pages.edit', '/anokii/pages/{id}', fn(Request $r, string $id) => $pages->edit($r, $id));
+        $get('anokii.pages.preview', '/anokii/pages/{id}/preview', fn(Request $r, string $id) => $pages->preview($r, $id));
+        $get('anokii.pages.history', '/anokii/pages/{id}/history', fn(Request $r, string $id) => $pages->history($r, $id));
+        $post('anokii.pages.save', '/anokii/pages/{id}/save', fn(Request $r, string $id) => $pages->save($r, $id));
+        $post('anokii.pages.publish', '/anokii/pages/{id}/publish', fn(Request $r, string $id) => $pages->publish($r, $id));
+        $post('anokii.pages.rollback', '/anokii/pages/{id}/rollback', fn(Request $r, string $id) => $pages->rollback($r, $id));
         $get('anokii.cointelligence', '/anokii/cointelligence', fn(Request $r) => $cointel->index($r));
         $post('anokii.cointelligence.send', '/anokii/cointelligence/send', fn(Request $r) => $cointel->send($r));
         $post('anokii.cointelligence.apply', '/anokii/cointelligence/apply', fn(Request $r) => $cointel->apply($r));

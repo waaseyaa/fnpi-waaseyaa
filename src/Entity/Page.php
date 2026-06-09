@@ -138,4 +138,18 @@ final class Page extends ContentEntityBase
 
         return $this;
     }
+
+    /** Write a short summary into the revision log (what this edit changed). */
+    public function recordEdit(string $summary): static
+    {
+        $this->setRevisionLog($summary);
+
+        return $this;
+    }
+
+    /** When this revision was created, from the revision metadata. */
+    public function getRevisionCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->revisionMetadata()?->revisionCreatedAt;
+    }
 }
