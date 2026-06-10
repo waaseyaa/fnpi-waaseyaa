@@ -8,7 +8,6 @@ use App\Entity\Pillar;
 use Symfony\Component\Uid\Uuid;
 use Waaseyaa\Entity\EntityTypeManager;
 use Waaseyaa\Entity\Repository\EntityRepositoryInterface;
-use Waaseyaa\EntityStorage\EntityRepository;
 
 /**
  * Orchestrates the entity-native Identity Workspace over the framework revision
@@ -20,8 +19,8 @@ use Waaseyaa\EntityStorage\EntityRepository;
  * own independent revision history. The translatable fields are `title` and
  * `body` (the moat); everything else is non-translatable workspace state on the
  * English row. Translation edits flow through the framework's unified two-axis
- * save (EntityRepository::saveTranslation — peer base row + per-language
- * revision, atomic).
+ * save (EntityRepositoryInterface::saveTranslation — peer base row +
+ * per-language revision, atomic).
  *
  * This replaces the raw-table PillarRepository: the same read/edit surface, now
  * on registered entities with full per-pillar history and attribution.
@@ -242,7 +241,7 @@ final class PillarService
         if ($pillar === null) {
             return null;
         }
-        $translated = $this->translatablePillars()->loadTranslation((string) $pillar->id(), $langcode);
+        $translated = $this->pillars()->loadTranslation((string) $pillar->id(), $langcode);
 
         return $translated instanceof Pillar ? $translated : null;
     }
@@ -273,7 +272,7 @@ final class PillarService
         }
 
         $updatedAt = gmdate('Y-m-d\TH:i:s\Z');
-        $revision = $this->translatablePillars()->saveTranslation(
+        $revision = $this->pillars()->saveTranslation(
             (string) $pillar->id(),
             $langcode,
             [
@@ -308,7 +307,7 @@ final class PillarService
             return [];
         }
         $history = [];
-        foreach ($this->translatablePillars()->listTranslationRevisions((string) $pillar->id(), $langcode) as $rev) {
+        foreach ($this->pillars()->listTranslationRevisions((string) $pillar->id(), $langcode) as $rev) {
             if ($rev instanceof Pillar) {
                 $history[] = $rev;
             }
@@ -324,22 +323,5 @@ final class PillarService
         }
 
         return $this->entityTypeManager->getRepository('identity_pillar');
-    }
-
-    /**
-     * The pillar repository narrowed to the concrete framework `EntityRepository`,
-     * which exposes the two-axis translation API (`saveTranslation`,
-     * `loadTranslation`, `listTranslationRevisions`). Promoting that API onto
-     * `EntityRepositoryInterface` is a framework follow-up; until then the
-     * registered repository is always the concrete class.
-     */
-    private function translatablePillars(): EntityRepository
-    {
-        $repository = $this->pillars();
-        if (!$repository instanceof EntityRepository) {
-            throw new \LogicException('identity_pillar translation requires the framework EntityRepository.');
-        }
-
-        return $repository;
     }
 }
