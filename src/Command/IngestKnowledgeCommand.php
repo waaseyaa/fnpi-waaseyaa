@@ -8,7 +8,7 @@ use App\CoIntelligence\ChunkData;
 use App\CoIntelligence\DocChunkRepository;
 use App\CoIntelligence\KnowledgeChunker;
 use App\Identity\PillarService;
-use Twig\Environment;
+use App\Pages\PublishedPageRenderer;
 use Waaseyaa\CLI\CliIO;
 
 /**
@@ -20,14 +20,17 @@ use Waaseyaa\CLI\CliIO;
  *
  * Three sources:
  *   1. The bundled FNPI documents in resources/knowledge/ (markdown).
- *   2. The public site copy (home, technology, how-it-works, contact), rendered
- *      from the retired hand-coded page templates. These matched the served
- *      pages byte-for-byte until the parity gate was retired; the site now
- *      serves published `page` entities (PageController), so repoint this at
- *      the entity render before any copy refresh lands, or the index will
- *      silently drift from what the site serves.
+ *   2. The live public site copy: the PUBLISHED revision of each public `page`
+ *      entity, rendered through the same page.html.twig the public routes
+ *      serve (PublishedPageRenderer, shared with PageController). Draft
+ *      revisions never reach the index — unpublished copy cannot leak into
+ *      Co-Intelligence answers.
  *   3. The live Identity Workspace pillars from the database (so the assistant
  *      is grounded in the current pillar state, not a snapshot).
+ *
+ * If any public page has no published revision (a fresh or half-seeded
+ * database), the run aborts non-zero BEFORE writing: a prune against a partial
+ * corpus would silently delete the live page knowledge from the index.
  */
 final class IngestKnowledgeCommand
 {
@@ -40,18 +43,18 @@ final class IngestKnowledgeCommand
         'procurement-vendor-narrative.md' => ['knowledge/procurement-vendor-narrative', 'FNPI Procurement and Vendor Narrative'],
     ];
 
-    /** Live public pages: source_url => [template, title]. */
+    /** Live public pages: source_url (the entity `path`) => title. */
     private const PAGES = [
-        '/' => ['home.html.twig', 'FNPI Home (public site)'],
-        '/technology' => ['technology.html.twig', 'FNPI Technology (public site)'],
-        '/how-it-works' => ['how-it-works.html.twig', 'FNPI How It Works (public site)'],
-        '/contact' => ['contact.html.twig', 'FNPI Contact (public site)'],
+        '/' => 'FNPI Home (public site)',
+        '/technology' => 'FNPI Technology (public site)',
+        '/how-it-works' => 'FNPI How It Works (public site)',
+        '/contact' => 'FNPI Contact (public site)',
     ];
 
     public function __construct(
         private readonly DocChunkRepository $chunks,
         private readonly PillarService $pillars,
-        private readonly Environment $twig,
+        private readonly PublishedPageRenderer $pages,
         private readonly string $knowledgeDir,
         private readonly KnowledgeChunker $chunker = new KnowledgeChunker(),
     ) {}
@@ -62,8 +65,17 @@ final class IngestKnowledgeCommand
         $pruneOption = $io->option('prune');
         $prune = $pruneOption === null ? true : (bool) $pruneOption;
 
-        [$chunks, $sources] = $this->collect($io);
+        [$chunks, $sources, $missingPages] = $this->collect($io);
         $io->writeln(sprintf('Extracted %d chunks from %d sources.', count($chunks), $sources));
+
+        if ($missingPages !== []) {
+            $io->error(sprintf(
+                'Aborting without writing: no published page copy at %s. Seed and publish the pages (app:seed-pages) before ingesting; pruning a partial corpus would drop live page knowledge from the index.',
+                implode(', ', $missingPages),
+            ));
+
+            return 1;
+        }
 
         if ($dryRun) {
             foreach (array_slice($chunks, 0, 10) as $c) {
@@ -92,12 +104,13 @@ final class IngestKnowledgeCommand
     }
 
     /**
-     * @return array{0: list<ChunkData>, 1: int}
+     * @return array{0: list<ChunkData>, 1: int, 2: list<string>}
      */
     private function collect(CliIO $io): array
     {
         $chunks = [];
         $sources = 0;
+        $missingPages = [];
 
         // 1. Bundled FNPI documents.
         foreach (self::DOCS as $file => [$sourceUrl, $title]) {
@@ -116,12 +129,18 @@ final class IngestKnowledgeCommand
             }
         }
 
-        // 2. Live public site copy.
-        foreach (self::PAGES as $sourceUrl => [$template, $title]) {
+        // 2. Live public site copy: published page-entity revisions only.
+        foreach (self::PAGES as $sourceUrl => $title) {
             try {
-                $html = $this->twig->render($template);
+                $html = $this->pages->render($sourceUrl);
             } catch (\Throwable $e) {
-                $io->error(sprintf('Skipped %s: could not render %s (%s).', $title, $template, $e->getMessage()));
+                $io->error(sprintf('%s: could not render %s (%s).', $title, $sourceUrl, $e->getMessage()));
+                $missingPages[] = $sourceUrl;
+                continue;
+            }
+            if ($html === null) {
+                $io->error(sprintf('%s: no page or no published revision at %s.', $title, $sourceUrl));
+                $missingPages[] = $sourceUrl;
                 continue;
             }
             $pageChunks = $this->chunker->chunkHtml($html, $sourceUrl, $title);
@@ -142,7 +161,7 @@ final class IngestKnowledgeCommand
             $chunks[] = $c;
         }
 
-        return [$chunks, $sources];
+        return [$chunks, $sources, $missingPages];
     }
 
     /**

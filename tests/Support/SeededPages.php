@@ -27,6 +27,19 @@ final class SeededPages
 {
     public static function repository(): EntityRepositoryInterface
     {
+        $repository = self::emptyRepository();
+        new PageSeeder($repository)->seed();
+
+        return $repository;
+    }
+
+    /**
+     * The same wiring with nothing seeded: a fresh database where no page (and
+     * so no published revision) exists yet — what app:ingest-knowledge sees
+     * when it runs before app:seed-pages.
+     */
+    public static function emptyRepository(): EntityRepositoryInterface
+    {
         $db = DBALDatabase::createSqlite();
 
         $entityType = new EntityType(
@@ -43,16 +56,13 @@ final class SeededPages
         $handler->ensureRevisionTable();
 
         $resolver = new SingleConnectionResolver($db);
-        $repository = new EntityRepository(
+
+        return new EntityRepository(
             $entityType,
             new SqlStorageDriver($resolver),
             new EventDispatcher(),
             new RevisionableStorageDriver($resolver, $entityType),
             $db,
         );
-
-        new PageSeeder($repository)->seed();
-
-        return $repository;
     }
 }

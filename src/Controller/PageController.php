@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Entity\Page;
+use App\Pages\PublishedPageRenderer;
 use Symfony\Component\HttpFoundation\Response;
 use Waaseyaa\Entity\Repository\EntityRepositoryInterface;
 use Waaseyaa\SSR\SsrServiceProvider;
@@ -62,7 +62,9 @@ final class PageController
     }
 
     /**
-     * Render the published revision of the `page` entity at the given path.
+     * Render the published revision of the `page` entity at the given path,
+     * via the shared PublishedPageRenderer (the same render app:ingest-knowledge
+     * feeds to the Co-Intelligence knowledge base).
      */
     private function renderPath(string $path): Response
     {
@@ -70,52 +72,16 @@ final class PageController
             return new Response('Page unavailable: page storage is not configured.', 500);
         }
 
-        $page = $this->loadPublishedByPath($path);
-        if ($page === null) {
-            return new Response('Page not found.', 404);
-        }
-
         $twig = SsrServiceProvider::getTwigEnvironment();
         if ($twig === null) {
             return new Response('Page unavailable: Twig is not initialised.', 500);
         }
 
-        $html = $twig->render('page.html.twig', [
-            'path' => $path,
-            'page' => [
-                'title' => $page->getTitle(),
-                'meta_description' => $page->getMetaDescription(),
-                'meta_robots' => $page->getMetaRobots(),
-                'head_styles' => $page->getHeadStyles(),
-                'blocks' => $page->getBlocks(),
-            ],
-        ]);
+        $html = new PublishedPageRenderer($this->pages, $twig)->render($path);
+        if ($html === null) {
+            return new Response('Page not found.', 404);
+        }
 
         return new Response($html, 200, ['Content-Type' => 'text/html; charset=UTF-8']);
-    }
-
-    /**
-     * Find the page whose `path` matches, then load its published revision.
-     * Returns null when no page is seeded for the path or nothing is published.
-     */
-    private function loadPublishedByPath(string $path): ?Page
-    {
-        \assert($this->pages !== null);
-
-        $entityId = null;
-        foreach ($this->pages->findBy(['path' => $path]) as $candidate) {
-            if ($candidate instanceof Page) {
-                $entityId = (string) $candidate->id();
-                break;
-            }
-        }
-
-        if ($entityId === null) {
-            return null;
-        }
-
-        $published = $this->pages->loadPublishedRevision($entityId);
-
-        return $published instanceof Page ? $published : null;
     }
 }

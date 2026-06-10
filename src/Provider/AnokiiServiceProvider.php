@@ -36,6 +36,7 @@ use App\Drive\DriveFileService;
 use App\Drive\DriveStorage;
 use App\Identity\PillarService;
 use App\Pages\PagesService;
+use App\Pages\PublishedPageRenderer;
 use App\Support\Db;
 use Symfony\Component\HttpFoundation\Request;
 use Waaseyaa\AI\Agent\Provider\AnthropicProvider;
@@ -251,13 +252,19 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
                 new OptionDefinition(name: 'prune', mode: OptionMode::Negatable, description: 'Delete stored chunks no longer present (use --no-prune to keep).', default: true),
             ],
             handler: function (CliIO $io): int {
+                $etm = $this->entityTypeManager();
+                if ($etm === null) {
+                    $io->error('Knowledge ingest requires a booted kernel (EntityTypeManager).');
+
+                    return 1;
+                }
                 $db = $this->db();
                 new ChatSchema($db)->ensure();
                 $twig = SsrServiceProvider::createTwigEnvironment($this->projectRoot, $this->config);
                 $command = new IngestKnowledgeCommand(
                     new DocChunkRepository($db),
-                    new PillarService($this->entityTypeManager()),
-                    $twig,
+                    new PillarService($etm),
+                    new PublishedPageRenderer($etm->getRepository('page'), $twig),
                     $this->projectRoot . '/resources/knowledge',
                 );
 

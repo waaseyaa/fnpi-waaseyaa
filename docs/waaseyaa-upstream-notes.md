@@ -42,3 +42,18 @@ release step ever wrote it; the real version lives in git tags. A cold clone of
 `waaseyaa/framework` therefore misreported its version (use `git describe --tags`,
 not the file). Fixed in `release-cut.yml` (and the `scripts/release.sh` fallback):
 the cut now stamps `VERSION` to match the tag, starting at alpha.195.
+
+## 2026-06-10 — SSR path resolver: unrouted `/` falls back to `page.html.twig` as an empty 200 shell
+
+The framework's `RenderController::renderPath('/')` tries `home.html.twig` then
+`page.html.twig` as template candidates (the candidate chain is hardcoded
+upstream), and the SSR Twig env runs with `strict_variables=false`. With FNPI's
+hand-coded `home.html.twig` deleted (pages render from published `page`
+entities via the routed `PageController`), an UNROUTED `/` would render
+`page.html.twig` with no `page` variable: an HTTP 200 empty shell rather than
+a 404. Only reachable if the `home` route fails to register (provider
+discovery broken) — the routed path is unaffected. The other public paths
+(`/technology` etc.) correctly 404 when unrouted now that their hand-coded
+templates are gone; this also closed the /proof-style stale-fallback hole for
+those URLs. Nothing the app can change; would need an upstream option to
+disable the path-template fallback (or strict candidates) per app.
