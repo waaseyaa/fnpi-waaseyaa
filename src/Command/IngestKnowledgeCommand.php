@@ -20,8 +20,12 @@ use Waaseyaa\CLI\CliIO;
  *
  * Three sources:
  *   1. The bundled FNPI documents in resources/knowledge/ (markdown).
- *   2. The live public site copy (home, technology, how-it-works, contact),
- *      rendered through the same Twig the site serves.
+ *   2. The public site copy (home, technology, how-it-works, contact), rendered
+ *      from the retired hand-coded page templates. These matched the served
+ *      pages byte-for-byte until the parity gate was retired; the site now
+ *      serves published `page` entities (PageController), so repoint this at
+ *      the entity render before any copy refresh lands, or the index will
+ *      silently drift from what the site serves.
  *   3. The live Identity Workspace pillars from the database (so the assistant
  *      is grounded in the current pillar state, not a snapshot).
  */

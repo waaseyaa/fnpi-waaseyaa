@@ -6,5 +6,6 @@
 {% block head_styles %}{% if page.head_styles is not null %}{{ page.head_styles|raw }}{% else %}{{ parent() }}{% endif %}{% endblock %}
 
 {% block content %}
-{% for blk in page.blocks %}{{ include('blocks/' ~ blk.type ~ '.html.twig', { blk: blk }, false)|trim|raw }}{{ loop.last ? "\n" : "\n\n" }}{% endfor %}
+{% for blk in page.blocks %}<!-- blk:{{ blk.type }} -->
+{{ include('blocks/' ~ blk.type ~ '.html.twig', { blk: blk }, false)|trim|raw }}{{ loop.last ? "\n" : "\n\n" }}{% endfor %}
 {% endblock %}

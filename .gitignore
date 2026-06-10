@@ -5,6 +5,7 @@
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal
+/storage/*.bak
 .env
 composer.local.json
 /storage/*.log

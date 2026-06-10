@@ -64,6 +64,7 @@
   .trust b{color:#fff;font-weight:600}
   /* lanes */
   .lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .lanes.lanes-4{grid-template-columns:repeat(4,1fr)}
   .lane{background:#fff;border:1px solid var(--line);border-radius:4px;padding:26px;display:flex;flex-direction:column;gap:13px;transition:.15s}
   .lane:hover{border-color:var(--cyan);box-shadow:0 14px 34px rgba(10,14,18,.10);transform:translateY(-3px)}
   .lane .ic{width:44px;height:44px;color:var(--ink)}
@@ -98,7 +99,7 @@
   .faraday h2{color:#fff}
   .faraday .sec-sub{margin-left:0;color:#aeb8bd}
   /* vision mission */
-  .vm-wrap{display:grid;grid-template-columns:1fr 1fr;gap:50px;max-width:980px;margin:0 auto}
+  .vm-wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:50px;max-width:980px;margin:0 auto}
   .vm{ text-align:center}
   .vm .lbl{font-family:"Oswald",sans-serif;font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan2);margin:0 0 12px}
   .vm p{font-size:18px;color:#33373a;margin:0;line-height:1.5}
@@ -120,8 +121,9 @@
   footer.f .foot-meta a{color:#c4ccd0}
   footer.f .foot-meta a:hover{color:var(--cyan)}
   @media(max-width:760px){footer.f .foot-meta{text-align:left}}
+  @media(max-width:1100px){.lanes.lanes-4{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:880px){
-    .lanes,.band .grid,.faraday .grid,.vm-wrap,.contact .grid{grid-template-columns:1fr}
+    .lanes,.lanes.lanes-4,.band .grid,.faraday .grid,.vm-wrap,.contact .grid{grid-template-columns:1fr}
     .hero h1{font-size:48px}.nav .links{display:none}.brand img.wm{display:none}
   }
   {% block head_styles %}{% endblock %}

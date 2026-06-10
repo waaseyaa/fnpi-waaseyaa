@@ -16,8 +16,10 @@ use Waaseyaa\SSR\SsrServiceProvider;
  * matching `page` entity (looked up by its `path`) through the shared block
  * renderer (templates/page.html.twig + templates/blocks/*), instead of a
  * hardcoded per-page template. The published revision is what the public sees;
- * later draft revisions stay private until published. The output is
- * byte-identical to the old templates (see PageParityTest).
+ * later draft revisions stay private until published. Each page's status and
+ * block order are pinned by PageStructureTest (the byte-parity gate against the
+ * retired hand-coded templates did its job and was removed once the migration
+ * was proven lossless).
  *
  * The page repository is injected (SiteServiceProvider passes
  * EntityTypeManager::getRepository('page')); tests pass a seeded repository.

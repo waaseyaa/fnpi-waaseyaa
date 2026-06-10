@@ -9,15 +9,15 @@ namespace App\Pages;
  * blocks (Anokii Pages, increment 1).
  *
  * This is the single source of truth the migration seeds into `page` entities
- * and that the parity test renders against the original templates. Each entry is
+ * (block order per page is pinned by PageStructureTest). Each entry is
  * keyed by route path and carries the page's <title>, optional SEO meta, optional
  * per-page head CSS, and an ordered list of blocks. Every block's `type` names a
  * partial in templates/blocks/; its remaining keys are that block type's content.
  *
  * Text is stored exactly as it appears in the source markup, including HTML
  * entities (&amp;, &middot;, &nbsp;, &rarr;), because the partials emit content
- * with |raw for byte-identical output. `meta_description` / `head_styles` are
- * null when the page does not override the layout default.
+ * with |raw, preserving the copy exactly as authored. `meta_description` /
+ * `head_styles` are null when the page does not override the layout default.
  */
 final class PageSeedData
 {
