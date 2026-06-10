@@ -57,3 +57,22 @@ discovery broken) — the routed path is unaffected. The other public paths
 templates are gone; this also closed the /proof-style stale-fallback hole for
 those URLs. Nothing the app can change; would need an upstream option to
 disable the path-template fallback (or strict candidates) per app.
+
+## 2026-06-10 — SecurityHeadersMiddleware is spec'd into the pipeline but never wired (X-Frame-Options DENY, dormant)
+
+The framework ships `packages/foundation/src/Middleware/SecurityHeadersMiddleware.php`
+(`X-Frame-Options: DENY` on every response, `#[AsMiddleware(pipeline: 'http',
+priority: 100)]`), and both `docs/specs/middleware-pipeline.md` and
+`docs/specs/security-defaults.md` document it as part of the HTTP pipeline —
+but `HttpKernel` (vendored alpha.202) builds the pipeline only from its
+hardcoded middlewares plus `HasMiddlewareInterface` providers, so the class is
+compiled into the manifest and never instantiated. Consequence: every response
+is frameable today, which the Anokii workspace RELIES on (the Documents inline
+PDF iframe, and the planned right-rail preview panel that will iframe the
+Pages draft preview). If an upstream cut ever closes this spec-vs-kernel
+drift, `DENY` lands on every response and silently breaks all in-workspace
+iframes. Before that happens, the wiring needs an embed-route exemption hook
+(planned as part of the workspace preview-panel framework increment, F3 in the
+shell-redesign track). Until then: do not "fix" the drift upstream without the
+exemption, and treat any framework release note touching SecurityHeaders as a
+deploy blocker for the workspace.
