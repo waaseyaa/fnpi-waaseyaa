@@ -79,6 +79,7 @@ final class PageStructureTest extends TestCase
                 'hero',
                 'faraday_feature',
                 'faraday_feature',
+                'faraday_feature',
                 'cta_band_center',
                 'photo_strip',
                 'text_center',
