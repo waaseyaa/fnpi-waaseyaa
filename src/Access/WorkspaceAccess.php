@@ -42,6 +42,7 @@ final class WorkspaceAccess
     public const string EDIT_DRIVE = 'edit drive';
     public const string ADMINISTER_DRIVE = 'administer drive';
     public const string EDIT_PAGES = 'edit pages';
+    public const string MANAGE_INBOX = 'manage inbox';
     public const string PUBLISH_PAGES = 'publish pages';
     public const string ADMINISTER_PAGES = 'administer pages';
 
@@ -76,6 +77,7 @@ final class WorkspaceAccess
             self::EDIT_PAGES,
             self::PUBLISH_PAGES,
             self::ADMINISTER_PAGES,
+            self::MANAGE_INBOX,
             ...self::AGENT_TOOL_CAPABILITIES,
         ];
     }
@@ -91,7 +93,7 @@ final class WorkspaceAccess
     {
         return [
             self::ROLE_ADMIN => ['label' => 'Admin', 'permissions' => self::allPermissions()],
-            self::ROLE_EDITOR => ['label' => 'Editor', 'permissions' => [self::EDIT_IDENTITY, self::EDIT_DOCUMENTS, self::EDIT_DRIVE, self::EDIT_PAGES, self::PUBLISH_PAGES, ...self::AGENT_TOOL_CAPABILITIES]],
+            self::ROLE_EDITOR => ['label' => 'Editor', 'permissions' => [self::EDIT_IDENTITY, self::EDIT_DOCUMENTS, self::EDIT_DRIVE, self::EDIT_PAGES, self::PUBLISH_PAGES, self::MANAGE_INBOX, ...self::AGENT_TOOL_CAPABILITIES]],
             self::ROLE_VIEWER => ['label' => 'Viewer', 'permissions' => [...self::AGENT_TOOL_CAPABILITIES]],
         ];
     }
@@ -133,6 +135,7 @@ final class WorkspaceAccess
             new DocumentNoteAccessPolicy(),
             new DriveFileAccessPolicy(),
             new PageAccessPolicy(),
+            new ContactSubmissionAccessPolicy(),
         ]);
     }
 }

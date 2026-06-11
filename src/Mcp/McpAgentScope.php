@@ -20,7 +20,12 @@ use Waaseyaa\AI\Tools\AgentToolResult;
  */
 final class McpAgentScope
 {
-    /** Entity types the MCP agent may read (the Anokii workspace surface). */
+    /**
+     * Entity types the MCP agent may read (the Anokii workspace surface).
+     * contact_submission is DELIBERATELY absent from both allowlists: public
+     * contact submissions carry personal contact data and the agent has no
+     * business reading them (pinned by McpAgentScopeTest).
+     */
     public const array READ_TYPES = ['page', 'identity_pillar', 'document', 'document_note', 'drive_asset'];
 
     /**

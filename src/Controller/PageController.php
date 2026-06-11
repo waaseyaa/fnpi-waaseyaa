@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Pages\PublishedPageRenderer;
+use App\Support\CsrfTokenValue;
 use Symfony\Component\HttpFoundation\Response;
 use Waaseyaa\Entity\Repository\EntityRepositoryInterface;
 use Waaseyaa\SSR\SsrServiceProvider;
@@ -80,6 +81,18 @@ final class PageController
         $twig = SsrServiceProvider::getTwigEnvironment();
         if ($twig === null) {
             return new Response('Page unavailable: Twig is not initialised.', 500);
+        }
+
+        // The contact form prints {{ csrf_token }} (the framework session
+        // token as a hidden field); register it lazily so it resolves at
+        // render time, after SessionMiddleware has run. Re-setting an
+        // already-registered global is permitted; first-time registration
+        // after a render is not, hence the guard.
+        try {
+            $twig->addGlobal('csrf_token', new CsrfTokenValue());
+        } catch (\LogicException) {
+            // A template rendered before the global existed (test edge); the
+            // form falls back to default('') there.
         }
 
         $html = new PublishedPageRenderer($this->pages, $twig)->render($path);
