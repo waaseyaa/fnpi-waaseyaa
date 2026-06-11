@@ -43,9 +43,47 @@ final class PublishedPageRenderer
                 'meta_description' => $page->getMetaDescription(),
                 'meta_robots' => $page->getMetaRobots(),
                 'head_styles' => $page->getHeadStyles(),
-                'blocks' => $page->getBlocks(),
+                'blocks' => $this->enrichPhotoStrips($page->getBlocks()),
             ],
         ]);
+    }
+
+    /**
+     * Render-time enrichment for photo_strip blocks: measure each photo's
+     * intrinsic dimensions from the shipped file so the template can emit the
+     * aspect ratio as a CSS custom property (the equal-height row math).
+     * Computed per render, never stored — page content stays untouched. A
+     * missing or unreadable file simply gets no ratio (the CSS falls back).
+     *
+     * @param list<array<string, mixed>> $blocks
+     * @return list<array<string, mixed>>
+     */
+    private function enrichPhotoStrips(array $blocks): array
+    {
+        $publicDir = dirname(__DIR__, 2) . '/public';
+        foreach ($blocks as $bi => $block) {
+            if (($block['type'] ?? '') !== 'photo_strip' || !is_array($block['photos'] ?? null)) {
+                continue;
+            }
+            foreach ($block['photos'] as $pi => $photo) {
+                $src = (string) ($photo['src'] ?? '');
+                if ($src === '' || !str_starts_with($src, '/')) {
+                    continue;
+                }
+                $file = $publicDir . $src;
+                if (!is_file($file)) {
+                    continue;
+                }
+                $size = @getimagesize($file);
+                if ($size === false || $size[0] < 1 || $size[1] < 1) {
+                    continue;
+                }
+                $blocks[$bi]['photos'][$pi]['_w'] = $size[0];
+                $blocks[$bi]['photos'][$pi]['_h'] = $size[1];
+            }
+        }
+
+        return $blocks;
     }
 
     /**

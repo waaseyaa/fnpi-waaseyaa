@@ -1,14 +1,18 @@
 {# One to three captioned photos on the dark band: optional eyebrow + heading,
-   then the strip. Side by side on desktop, stacked from the 880px breakpoint.
-   Alt text is required per photo (the template renders it unconditionally;
-   the block-template test pins it). Images keep their natural aspect ratio:
-   no object-fit cropping, no stretching. #}
+   then the strip. Desktop: every image in the row shares ONE height (target
+   420px, capped at 70vh), each width proportional to its aspect ratio, no
+   cropping or distortion, row centred. The math: figures flex-grow by aspect
+   ratio with flex-basis 0, so heights are equal at any container width, and
+   the per-figure max-width (target-height x ratio) binds all figures at the
+   same threshold. The ratio arrives as --ar, measured at render time by
+   PublishedPageRenderer from the shipped file (never stored). Stacked from
+   the 880px breakpoint. Alt text is required per photo. #}
 <section class="photo-strip"><div class="wrap">
 {% if blk.sec_h is defined and blk.sec_h %}  <p class="sec-h" style="color:#7fd6e8">{{ blk.sec_h|raw }}</p>
 {% endif %}{% if blk.h2 is defined and blk.h2 %}  <h2 class="sec-t display">{{ blk.h2|raw }}</h2>
 {% endif %}  <div class="strip strip-{{ blk.photos|length }}">
-{% for p in blk.photos %}    <figure>
-      <img src="{{ p.src }}" alt="{{ p.alt }}" loading="lazy">
+{% for p in blk.photos %}    <figure{% if p._w is defined and p._h is defined and p._h > 0 %} style="--ar:{{ (p._w / p._h)|round(6) }}"{% endif %}>
+      <img src="{{ p.src }}" alt="{{ p.alt }}" loading="lazy"{% if p._w is defined and p._h is defined %} width="{{ p._w }}" height="{{ p._h }}"{% endif %}>
       <figcaption>{{ p.caption|raw }}</figcaption>
     </figure>
 {% endfor %}  </div>
