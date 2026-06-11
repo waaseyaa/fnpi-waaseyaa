@@ -4,7 +4,10 @@
   <div class="vm-wrap">
 {% for vm in blk.items %}    <div class="vm">
       <p class="lbl">{{ vm.lbl|raw }}</p>
-      <p>{{ vm.body|raw }}</p>
-    </div>
+{# A list-valued body renders as discrete paragraphs (e.g. the four values);
+   a string body renders as the single paragraph it always was. #}
+{% if vm.body is iterable %}{% for para in vm.body %}      <p>{{ para|raw }}</p>
+{% endfor %}{% else %}      <p>{{ vm.body|raw }}</p>
+{% endif %}    </div>
 {% endfor %}  </div>
 </div></section>

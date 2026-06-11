@@ -114,6 +114,33 @@ final class BlockTemplatesTest extends TestCase
     }
 
     #[Test]
+    public function vision_mission_renders_a_list_body_as_discrete_paragraphs(): void
+    {
+        // The four values render as four discrete items when the body is a
+        // list; a string body stays the single paragraph it always was.
+        $html = self::$twig->render('blocks/vision_mission.html.twig', ['blk' => [
+            'type' => 'vision_mission',
+            'sec_h' => 'About',
+            'sec_t' => 'A trusted partner',
+            'items' => [
+                ['lbl' => 'Our Purpose', 'body' => 'One paragraph.'],
+                ['lbl' => 'Our Values', 'body' => [
+                    'Inclusion: first value.',
+                    'Transparency: second value.',
+                    'Accountability: third value.',
+                    'Collaboration: fourth value.',
+                ]],
+            ],
+        ]]);
+
+        $this->assertSame(2, substr_count($html, '<div class="vm">'));
+        $this->assertStringContainsString('<p>One paragraph.</p>', $html);
+        foreach (['Inclusion: first value.', 'Transparency: second value.', 'Accountability: third value.', 'Collaboration: fourth value.'] as $value) {
+            $this->assertStringContainsString('<p>' . $value . '</p>', $html);
+        }
+    }
+
+    #[Test]
     public function no_public_template_references_draft_side_anishinaabemowin_fields(): void
     {
         // The public render surface: the root templates (base/page/404 and the
@@ -154,5 +181,31 @@ final class BlockTemplatesTest extends TestCase
         $this->assertStringContainsString('Four layers. Only FNPI has all four.', $html);
         $this->assertStringNotContainsString('Niiwin', $html, 'h1_oj must not render publicly until oj output is deliberately designed.');
         $this->assertStringNotContainsString('Oneline oj.', $html);
+    }
+
+    #[Test]
+    public function hero_and_hero_cta_render_a_single_button_when_secondary_is_absent(): void
+    {
+        // A CTA without a secondary renders one button and no empty ghost
+        // (the defence page drops its platform CTA).
+        $hero = self::$twig->render('blocks/hero.html.twig', ['blk' => [
+            'type' => 'hero',
+            'eyebrow' => 'E',
+            'h1' => 'H',
+            'oneline' => 'O',
+            'cta' => ['primary' => ['label' => 'Contact us', 'href' => '/contact']],
+        ]]);
+        $this->assertStringContainsString('Contact us', $hero);
+        $this->assertStringNotContainsString('btn ghost', $hero);
+        $this->assertStringNotContainsString('href=""', $hero);
+
+        $band = self::$twig->render('blocks/hero_cta.html.twig', ['blk' => [
+            'type' => 'hero_cta',
+            'h2' => 'H2',
+            'cta_primary' => ['label' => 'Contact us', 'href' => '/contact'],
+        ]]);
+        $this->assertStringContainsString('Contact us', $band);
+        $this->assertStringNotContainsString('btn ghost', $band);
+        $this->assertStringNotContainsString('href=""', $band);
     }
 }

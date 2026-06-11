@@ -2,6 +2,6 @@
   <h2 class="display" style="font-size:44px;color:#fff;margin:0 0 22px">{{ blk.h2|raw }}</h2>
   <div class="cta" style="justify-content:center">
     <a class="btn cyan" href="{{ blk.cta_primary.href }}">{{ blk.cta_primary.label|raw }}</a>
-    <a class="btn ghost" href="{{ blk.cta_secondary.href }}">{{ blk.cta_secondary.label|raw }}</a>
-  </div>
+{% if blk.cta_secondary is defined %}    <a class="btn ghost" href="{{ blk.cta_secondary.href }}">{{ blk.cta_secondary.label|raw }}</a>
+{% endif %}  </div>
 </div></section>
