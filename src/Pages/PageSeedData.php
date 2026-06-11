@@ -111,6 +111,9 @@ final class PageSeedData
                     [
                         'type' => 'faraday_feature',
                         'panel_label' => 'Grounded on your files',
+                        'image' => '/img/anokii-cointelligence.jpg',
+                        'image_fit' => 'natural',
+                        'image_alt' => 'A Co-Intelligence chat in the Anokii workspace: the question "What does our defence page say about data jurisdiction?" answered with a grounded reply that quotes the defence page and cites it with source chips.',
                         'sec_h' => 'Sovereign AI',
                         'sec_t' => 'AI that lives where your data lives.',
                         'sec_sub' => 'Co-Intelligence is the assistant inside Anokii, grounded on your own records and running on Canadian-controlled infrastructure. Answers come from your files, and your files go nowhere.',
@@ -193,6 +196,16 @@ final class PageSeedData
                             ['h4' => 'Workspaces', 'body' => 'Department workspaces that share one source of truth.'],
                             ['h4' => 'Governance', 'body' => 'Council records, motions, and decisions in one place.'],
                             ['h4' => 'Vault', 'body' => 'Encrypted storage for the records that matter most.'],
+                        ],
+                    ],
+                    [
+                        'type' => 'photo_strip',
+                        'photos' => [
+                            [
+                                'src' => '/img/anokii-dashboard.jpg',
+                                'alt' => 'The Anokii workspace dashboard: a greeting banner and a grid of module cards including Identity Workspace, Drive, Documents, Co-Intelligence, Pages, Inbox, and Analytics, with Data Rooms, Workspaces, Portal, Vault, and Governance marked coming soon.',
+                                'caption' => 'FNPI&#039;s own Anokii workspace. The platform we deploy is the platform we run.',
+                            ],
                         ],
                     ],
                     [

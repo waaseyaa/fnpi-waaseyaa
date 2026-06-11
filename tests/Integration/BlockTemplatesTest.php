@@ -342,6 +342,33 @@ final class BlockTemplatesTest extends TestCase
     }
 
     #[Test]
+    public function faraday_feature_renders_a_natural_fit_image_with_a_caption(): void
+    {
+        // image_fit natural keeps the image aspect (a screenshot) and shows the
+        // panel_label as a caption; cover (default) fills the fixed panel and
+        // shows no label.
+        $natural = self::$twig->render('blocks/faraday_feature.html.twig', ['blk' => [
+            'type' => 'faraday_feature', 'sec_h' => 'Sovereign AI', 'sec_t' => 'T', 'sec_sub' => 'S',
+            'cta' => ['label' => 'Go', 'href' => '/technology'],
+            'panel_label' => 'Grounded on your files',
+            'image' => '/img/chat.jpg', 'image_fit' => 'natural', 'image_alt' => 'A chat.',
+        ]]);
+        $this->assertStringContainsString('panel-natural', $natural);
+        $this->assertStringContainsString('src="/img/chat.jpg" alt="A chat."', $natural);
+        $this->assertStringContainsString('<span class="panel-cap">Grounded on your files</span>', $natural);
+        $this->assertStringNotContainsString('object-fit', $natural);
+
+        $cover = self::$twig->render('blocks/faraday_feature.html.twig', ['blk' => [
+            'type' => 'faraday_feature', 'sec_h' => 'H', 'sec_t' => 'T', 'sec_sub' => 'S',
+            'cta' => ['label' => 'Go', 'href' => '/contact'],
+            'panel_label' => 'Phone case', 'image' => '/img/p.jpg',
+        ]]);
+        $this->assertStringContainsString('object-fit:cover', $cover);
+        $this->assertStringNotContainsString('panel-cap', $cover);
+        $this->assertStringNotContainsString('panel-natural', $cover);
+    }
+
+    #[Test]
     public function module_grid_omits_an_absent_subline_instead_of_an_empty_paragraph(): void
     {
         // The defence capability grid drops its subline (the intro already

@@ -107,6 +107,11 @@
   .faraday .panel .g{position:absolute;inset:0;opacity:.5;
     background-image:linear-gradient(rgba(31,182,214,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(31,182,214,.16) 1px,transparent 1px);background-size:24px 24px}
   .faraday .panel span{position:relative;font-family:"Oswald",sans-serif;font-size:13px;letter-spacing:.28em;text-transform:uppercase;color:#7fd6e8}
+  /* natural-fit panel: the image keeps its aspect (a portrait screenshot) and
+     the panel grows to it, with the label as a caption below. */
+  .faraday .panel.panel-natural{display:block;min-height:0;padding:0;background:#0a0e12}
+  .faraday .panel.panel-natural img{width:100%;height:auto;display:block}
+  .faraday .panel .panel-cap{position:static;display:block;font-family:"Oswald",sans-serif;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#7fd6e8;padding:9px 10px;text-align:center;border-top:1px solid #1b2a30}
   .faraday h2{color:#fff}
   .faraday .sec-sub{margin-left:0;color:#aeb8bd}
   /* vision mission: three parallel left-aligned columns; a structured values
