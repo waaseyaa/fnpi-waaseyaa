@@ -116,6 +116,12 @@
   .vm .lbl{font-family:"Oswald",sans-serif;font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan2);margin:0 0 12px}
   .vm p{font-size:18px;color:#33373a;margin:0;line-height:1.5}
   .vm--values{max-width:980px;margin:48px auto 0;border-top:1px solid var(--line);padding-top:38px}
+  /* two-door closing band: equal panels, tops aligned, buttons bottom-aligned */
+  .doors{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:880px;margin:8px auto 0;text-align:left}
+  .door{background:#fff;border:1px solid var(--line);border-radius:4px;padding:26px;display:flex;flex-direction:column;gap:12px}
+  .door .lbl{font-family:"Oswald",sans-serif;font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan2);margin:0}
+  .door .door-text{margin:0;color:var(--muted);font-size:16px;line-height:1.55}
+  .door .btn{margin-top:auto;align-self:flex-start}
   .vm-values{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 28px}
   .vm-value{font-size:16px;color:var(--muted);line-height:1.55;text-align:left}
   .vm-value b{color:var(--ink)}
@@ -146,6 +152,7 @@
   @media(max-width:880px){
     .lanes,.lanes.lanes-4,.band .grid,.faraday .grid,.vm-wrap,.contact .grid{grid-template-columns:1fr}
     .vm-values{grid-template-columns:1fr 1fr}
+    .doors{grid-template-columns:1fr}
     .hero h1{font-size:48px}.brand img.wm{display:none}
     /* mobile menu: the burger replaces the inline links; the panel drops from
        the sticky header in the house dark theme */
@@ -159,7 +166,7 @@
       font-family:"Oswald",sans-serif;font-weight:600;font-size:12.5px;letter-spacing:.1em}
   }
   @media(max-width:520px){
-    .nav .wrap>a.btn{display:none} /* the quote CTA lives in the menu panel (and the hero) at phone widths */
+    .nav .wrap>a.btn{display:none} /* the assessment CTA lives in the menu panel (and the hero) at phone widths */
     .vm-values{grid-template-columns:1fr}
     .hero h1{font-size:38px}
     .sec-t{font-size:32px}
@@ -179,10 +186,10 @@
   </a>
   <nav class="links" id="site-nav">
     <a href="/technology">Technology</a><a href="/defence">Defence &amp; Security</a><a href="/contact">Contact</a>
-    <a class="menu-cta" href="/contact">Get a free quote</a>
+    <a class="menu-cta" href="/contact">Book an assessment</a>
   </nav>
   <span class="spacer"></span>
-  <a class="btn" href="/contact">Get a free quote</a>
+  <a class="btn" href="/contact">Book an assessment</a>
   <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
     <span class="bars" aria-hidden="true"><span></span><span></span><span></span></span>
   </button>

@@ -237,6 +237,48 @@ final class BlockTemplatesTest extends TestCase
     }
 
     #[Test]
+    public function cta_band_center_renders_structured_doors_as_equal_panels(): void
+    {
+        // The two-door closing band: each door is a labelled panel with its own
+        // button; the first door is the cyan primary, the second the ink button.
+        $html = self::$twig->render('blocks/cta_band_center.html.twig', ['blk' => [
+            'type' => 'cta_band_center',
+            'sec_h' => 'Get in touch',
+            'sec_t' => 'Tell us what you need.',
+            'doors' => [
+                ['label' => 'For Nations', 'text' => 'Door one text.', 'cta' => ['label' => 'Book an assessment', 'href' => '/contact']],
+                ['label' => 'For governments & industry', 'text' => 'Door two text.', 'cta' => ['label' => 'Defence & Security', 'href' => '/defence']],
+            ],
+        ]]);
+
+        $this->assertSame(2, substr_count($html, '<div class="door">'));
+        $this->assertStringContainsString('<a class="btn cyan" href="/contact">Book an assessment</a>', $html);
+        $this->assertStringContainsString('<a class="btn" href="/defence">Defence & Security</a>', $html);
+        $this->assertStringContainsString('For Nations', $html);
+        $this->assertStringContainsString('For governments & industry', $html);
+        $this->assertStringNotContainsString('sec-sub', $html, 'doors replace the sec_sub paragraph');
+    }
+
+    #[Test]
+    public function cta_band_center_without_doors_renders_the_original_contract(): void
+    {
+        // The general-case guard: sec_sub + the two-button row, exactly as today.
+        $html = self::$twig->render('blocks/cta_band_center.html.twig', ['blk' => [
+            'type' => 'cta_band_center',
+            'sec_h' => 'H',
+            'sec_t' => 'T',
+            'sec_sub' => 'Sub text.',
+            'cta_primary' => ['label' => 'P', 'href' => '/contact'],
+            'cta_secondary' => ['label' => 'S', 'href' => '/defence'],
+        ]]);
+
+        $this->assertStringContainsString('<p class="sec-sub">Sub text.</p>', $html);
+        $this->assertStringContainsString('<a class="btn cyan" href="/contact">P</a>', $html);
+        $this->assertStringContainsString('<a class="btn" href="/defence">S</a>', $html);
+        $this->assertStringNotContainsString('class="door"', $html);
+    }
+
+    #[Test]
     public function module_grid_omits_an_absent_subline_instead_of_an_empty_paragraph(): void
     {
         // The defence capability grid drops its subline (the intro already
