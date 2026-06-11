@@ -92,6 +92,23 @@ final class PageSeedData
                         ],
                     ],
                     [
+                        'type' => 'photo_strip',
+                        'sec_h' => 'Track record',
+                        'h2' => 'Ten years in the room.',
+                        'photos' => [
+                            [
+                                'src' => '/img/tmx-market-open.jpg',
+                                'alt' => 'Matthew Owl standing at the Toronto Stock Exchange market-open board.',
+                                'caption' => 'Matthew Owl, FNPI President, at the TMX market open for National Indigenous History Month.',
+                            ],
+                            [
+                                'src' => '/img/xian-trade-mission-2011.jpg',
+                                'alt' => "Two delegates walking on the Xi'an city wall.",
+                                'caption' => 'Trade mission, Xi&#039;an, China, 2011. The supply-chain relationships predate the company.',
+                            ],
+                        ],
+                    ],
+                    [
                         'type' => 'faraday_feature',
                         'panel_label' => 'Grounded on your files',
                         'sec_h' => 'Sovereign AI',

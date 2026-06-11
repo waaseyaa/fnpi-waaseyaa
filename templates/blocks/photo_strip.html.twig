@@ -1,0 +1,15 @@
+{# One to three captioned photos on the dark band: optional eyebrow + heading,
+   then the strip. Side by side on desktop, stacked from the 880px breakpoint.
+   Alt text is required per photo (the template renders it unconditionally;
+   the block-template test pins it). Images keep their natural aspect ratio:
+   no object-fit cropping, no stretching. #}
+<section class="photo-strip"><div class="wrap">
+{% if blk.sec_h is defined and blk.sec_h %}  <p class="sec-h" style="color:#7fd6e8">{{ blk.sec_h|raw }}</p>
+{% endif %}{% if blk.h2 is defined and blk.h2 %}  <h2 class="sec-t display">{{ blk.h2|raw }}</h2>
+{% endif %}  <div class="strip strip-{{ blk.photos|length }}">
+{% for p in blk.photos %}    <figure>
+      <img src="{{ p.src }}" alt="{{ p.alt }}" loading="lazy">
+      <figcaption>{{ p.caption|raw }}</figcaption>
+    </figure>
+{% endfor %}  </div>
+</div></section>

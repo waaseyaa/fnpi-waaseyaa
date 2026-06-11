@@ -237,6 +237,47 @@ final class BlockTemplatesTest extends TestCase
     }
 
     #[Test]
+    public function photo_strip_renders_captioned_figures_with_required_alt_text(): void
+    {
+        $html = self::$twig->render('blocks/photo_strip.html.twig', ['blk' => [
+            'type' => 'photo_strip',
+            'sec_h' => 'Track record',
+            'h2' => 'Ten years in the room.',
+            'photos' => [
+                ['src' => '/img/a.jpg', 'alt' => 'Alt one.', 'caption' => 'Caption one.'],
+                ['src' => '/img/b.jpg', 'alt' => 'Alt two.', 'caption' => 'Caption two.'],
+            ],
+        ]]);
+
+        $this->assertSame(2, substr_count($html, '<figure>'));
+        $this->assertStringContainsString('class="strip strip-2"', $html);
+        $this->assertStringContainsString('src="/img/a.jpg" alt="Alt one."', $html);
+        $this->assertStringContainsString('src="/img/b.jpg" alt="Alt two."', $html);
+        $this->assertStringContainsString('<figcaption>Caption one.</figcaption>', $html);
+        $this->assertStringContainsString('loading="lazy"', $html);
+    }
+
+    #[Test]
+    public function the_home_seed_photo_strip_references_shipped_image_files(): void
+    {
+        // Every image the seed places must exist as an optimized derivative in
+        // public/img (approved images only; originals stay in the Drive).
+        $home = \App\Pages\PageSeedData::all()['/'];
+        $strip = null;
+        foreach ($home['blocks'] as $block) {
+            if ($block['type'] === 'photo_strip') {
+                $strip = $block;
+            }
+        }
+        $this->assertNotNull($strip, 'home seed carries the photo strip');
+        $this->assertNotEmpty($strip['photos']);
+        foreach ($strip['photos'] as $photo) {
+            $this->assertNotSame('', trim($photo['alt'] ?? ''), 'alt text is required per photo');
+            $this->assertFileExists(dirname(__DIR__, 2) . '/public' . $photo['src']);
+        }
+    }
+
+    #[Test]
     public function cta_band_center_renders_structured_doors_as_equal_panels(): void
     {
         // The two-door closing band: each door is a labelled panel with its own

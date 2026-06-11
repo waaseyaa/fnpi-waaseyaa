@@ -43,6 +43,7 @@ final class PageStructureTest extends TestCase
                 'hero',
                 'feature_lanes',
                 'band_proof',
+                'photo_strip', // the Track record strip
                 'faraday_feature', // the sovereign-AI band
                 'faraday_feature', // the Faraday product band
                 'vision_mission',
