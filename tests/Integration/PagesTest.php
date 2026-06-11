@@ -137,6 +137,7 @@ final class PagesTest extends TestCase
             ['technology'],
             ['howItWorks'],
             ['contact'],
+            ['defence'],
         ];
     }
 
@@ -144,8 +145,13 @@ final class PagesTest extends TestCase
     #[DataProvider('pageHtmlProvider')]
     public function no_defense_or_drones_anywhere_public(string $method): void
     {
+        // Posture change 2026-06-10 (Russell, DAF EOI filed): the defence lane is
+        // public via /defence and the word appears site-wide (nav, home band), so
+        // 'defense'/'defence' left the banned list. The private side stays banned
+        // EVERYWHERE, including the /defence page itself: drones, the military
+        // network, weapons, ISR, autonomous monitoring.
         $html = strtolower((string) new PageController(self::$pages)->{$method}()->getContent());
-        foreach (['drone', 'military', 'defense', 'defence', 'weapon', ' isr', 'autonomous monitoring'] as $banned) {
+        foreach (['drone', 'military', 'weapon', ' isr', 'autonomous monitoring'] as $banned) {
             $this->assertStringNotContainsString($banned, $html, sprintf('Public page "%s" must not mention "%s".', $method, trim($banned)));
         }
     }

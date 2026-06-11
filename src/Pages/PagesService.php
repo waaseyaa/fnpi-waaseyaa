@@ -24,7 +24,10 @@ use Waaseyaa\Entity\Repository\EntityRepositoryInterface;
  */
 final class PagesService
 {
-    public function __construct(private readonly ?EntityTypeManager $entityTypeManager) {}
+    public function __construct(
+        private readonly ?EntityTypeManager $entityTypeManager,
+        private readonly ?CloudflareCachePurger $purger = null,
+    ) {}
 
     /**
      * All pages with their publish status, ordered by path.
@@ -121,6 +124,7 @@ final class PagesService
         }
         $rev = (int) $page->getRevisionId();
         $this->pages()->setPublishedRevision($id, $rev);
+        $this->purgeEdgeCache();
 
         return $rev;
     }
@@ -136,8 +140,23 @@ final class PagesService
             return null;
         }
         $this->pages()->setPublishedRevision($id, $revisionId);
+        $this->purgeEdgeCache();
 
         return $revisionId;
+    }
+
+    /**
+     * Edge-cache hygiene after the published pointer moves. Fail-soft: the
+     * publish/rollback has already happened; a missing token or a Cloudflare
+     * error must never surface as a publish failure.
+     */
+    private function purgeEdgeCache(): void
+    {
+        try {
+            $this->purger?->purgeAll();
+        } catch (\Throwable) {
+            // Swallowed deliberately; app:purge-cache exists for manual retry.
+        }
     }
 
     /**

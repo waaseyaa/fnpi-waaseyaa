@@ -7,8 +7,8 @@
     <p class="oneline">{{ blk.oneline|raw }}</p>
 {% if blk.cta is defined %}    <div class="cta">
       <a class="btn cyan" href="{{ blk.cta.primary.href }}">{{ blk.cta.primary.label|raw }}</a>
-      <a class="btn ghost" href="{{ blk.cta.secondary.href }}">{{ blk.cta.secondary.label|raw }}</a>
-    </div>
+{% if blk.cta.secondary is defined %}      <a class="btn ghost" href="{{ blk.cta.secondary.href }}">{{ blk.cta.secondary.label|raw }}</a>
+{% endif %}    </div>
 {% endif %}{% if blk.trust is defined %}    <div class="trust">
 {% for t in blk.trust %}      <span><b>{{ t.value|raw }}</b> {{ t.label|raw }}</span>
 {% endfor %}    </div>

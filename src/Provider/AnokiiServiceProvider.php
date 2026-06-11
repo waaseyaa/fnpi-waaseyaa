@@ -35,6 +35,7 @@ use App\Documents\GotenbergClient;
 use App\Drive\DriveFileService;
 use App\Drive\DriveStorage;
 use App\Identity\PillarService;
+use App\Pages\CloudflareCachePurger;
 use App\Pages\PagesService;
 use App\Pages\PublishedPageRenderer;
 use App\Support\Db;
@@ -174,7 +175,7 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
         // entities. Draft/preview/publish/rollback over the revision +
         // published-pointer model; gated by the same AccessPolicy (edit pages /
         // publish pages).
-        $pages = new PagesController($entityTypeManager, new PagesService($entityTypeManager), $access);
+        $pages = new PagesController($entityTypeManager, new PagesService($entityTypeManager, new CloudflareCachePurger()), $access);
 
         $get = static fn(string $name, string $path, callable $c) => $router->addRoute(
             $name,
@@ -359,6 +360,27 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
                         $io->writeln(sprintf('  seed   %s published', $path));
                     }
                 }
+
+                return 0;
+            },
+        );
+
+        yield new CommandDefinition(
+            name: 'app:purge-cache',
+            description: 'Purge the Cloudflare edge cache for the site zone (CLOUDFLARE_PURGE_TOKEN + CLOUDFLARE_ZONE_ID from the container env). No-op with a notice when unconfigured.',
+            handler: static function (CliIO $io): int {
+                $result = new CloudflareCachePurger()->purgeAll();
+                if ($result === null) {
+                    $io->writeln('  skip   purge not configured (set CLOUDFLARE_PURGE_TOKEN and CLOUDFLARE_ZONE_ID in fnpi.env); purge manually in the Cloudflare dashboard if needed.');
+
+                    return 0;
+                }
+                if ($result === false) {
+                    $io->error('Cloudflare purge FAILED (API error). Purge manually: dashboard > Caching > Configuration > Purge Everything.');
+
+                    return 1;
+                }
+                $io->writeln('  ok     Cloudflare edge cache purged (purge_everything).');
 
                 return 0;
             },
