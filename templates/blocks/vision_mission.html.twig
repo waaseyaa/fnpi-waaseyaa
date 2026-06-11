@@ -1,13 +1,24 @@
 <section id="about" class="center"><div class="wrap">
   <p class="sec-h">{{ blk.sec_h|raw }}</p>
   <h2 class="sec-t display" style="margin-bottom:34px">{{ blk.sec_t|raw }}</h2>
+{# Three body shapes per item:
+     string                  -> one paragraph (the original contract)
+     list of strings         -> discrete paragraphs
+     list of {lbl, text}     -> the item leaves the column grid and renders as a
+                                full-width band of labelled entries (the values
+                                row), so four About items never orphan a column.
+   Plain items always render in the grid exactly as before. #}
   <div class="vm-wrap">
-{% for vm in blk.items %}    <div class="vm">
+{% for vm in blk.items %}{% if not (vm.body is iterable and vm.body|first is iterable) %}    <div class="vm">
       <p class="lbl">{{ vm.lbl|raw }}</p>
-{# A list-valued body renders as discrete paragraphs (e.g. the four values);
-   a string body renders as the single paragraph it always was. #}
 {% if vm.body is iterable %}{% for para in vm.body %}      <p>{{ para|raw }}</p>
 {% endfor %}{% else %}      <p>{{ vm.body|raw }}</p>
 {% endif %}    </div>
-{% endfor %}  </div>
-</div></section>
+{% endif %}{% endfor %}  </div>
+{% for vm in blk.items %}{% if vm.body is iterable and vm.body|first is iterable %}  <div class="vm vm--values">
+    <p class="lbl">{{ vm.lbl|raw }}</p>
+    <div class="vm-values">
+{% for v in vm.body %}      <div class="vm-value"><b>{{ v.lbl|raw }}:</b> {{ v.text|raw }}</div>
+{% endfor %}    </div>
+  </div>
+{% endif %}{% endfor %}</div></section>

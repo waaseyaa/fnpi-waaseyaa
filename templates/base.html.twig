@@ -109,11 +109,16 @@
   .faraday .panel span{position:relative;font-family:"Oswald",sans-serif;font-size:13px;letter-spacing:.28em;text-transform:uppercase;color:#7fd6e8}
   .faraday h2{color:#fff}
   .faraday .sec-sub{margin-left:0;color:#aeb8bd}
-  /* vision mission */
-  .vm-wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:50px;max-width:980px;margin:0 auto}
-  .vm{ text-align:center}
+  /* vision mission: three parallel left-aligned columns; a structured values
+     item renders as a full-width labelled band below (never an orphaned cell) */
+  .vm-wrap{display:grid;grid-template-columns:repeat(3,1fr);gap:40px 50px;max-width:980px;margin:0 auto}
+  .vm{text-align:left}
   .vm .lbl{font-family:"Oswald",sans-serif;font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan2);margin:0 0 12px}
   .vm p{font-size:18px;color:#33373a;margin:0;line-height:1.5}
+  .vm--values{max-width:980px;margin:48px auto 0;border-top:1px solid var(--line);padding-top:38px}
+  .vm-values{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 28px}
+  .vm-value{font-size:16px;color:var(--muted);line-height:1.55;text-align:left}
+  .vm-value b{color:var(--ink)}
   /* contact */
   .contact .grid{display:grid;grid-template-columns:1fr 1fr;gap:46px}
   .field{margin-bottom:13px}
@@ -140,6 +145,7 @@
   @media(max-width:1100px){.lanes.lanes-4{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:880px){
     .lanes,.lanes.lanes-4,.band .grid,.faraday .grid,.vm-wrap,.contact .grid{grid-template-columns:1fr}
+    .vm-values{grid-template-columns:1fr 1fr}
     .hero h1{font-size:48px}.brand img.wm{display:none}
     /* mobile menu: the burger replaces the inline links; the panel drops from
        the sticky header in the house dark theme */
@@ -154,6 +160,7 @@
   }
   @media(max-width:520px){
     .nav .wrap>a.btn{display:none} /* the quote CTA lives in the menu panel (and the hero) at phone widths */
+    .vm-values{grid-template-columns:1fr}
     .hero h1{font-size:38px}
     .sec-t{font-size:32px}
     .band h2{font-size:28px}

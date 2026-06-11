@@ -184,6 +184,59 @@ final class BlockTemplatesTest extends TestCase
     }
 
     #[Test]
+    public function vision_mission_renders_structured_values_as_a_full_width_band(): void
+    {
+        // A body of {lbl, text} entries leaves the column grid and renders as
+        // the full-width values band: four discrete labelled items, no
+        // orphaned grid cell. Rendered text stays 'Label: clause'.
+        $html = self::$twig->render('blocks/vision_mission.html.twig', ['blk' => [
+            'type' => 'vision_mission',
+            'sec_h' => 'About',
+            'sec_t' => 'A trusted partner',
+            'items' => [
+                ['lbl' => 'Our Purpose', 'body' => 'P.'],
+                ['lbl' => 'Our Vision', 'body' => 'V.'],
+                ['lbl' => 'Our Mission', 'body' => 'M.'],
+                ['lbl' => 'Our Values', 'body' => [
+                    ['lbl' => 'Inclusion', 'text' => 'first clause.'],
+                    ['lbl' => 'Transparency', 'text' => 'second clause.'],
+                    ['lbl' => 'Accountability', 'text' => 'third clause.'],
+                    ['lbl' => 'Collaboration', 'text' => 'fourth clause.'],
+                ]],
+            ],
+        ]]);
+
+        $this->assertSame(3, substr_count($html, '<div class="vm">'), 'only the plain items sit in the column grid');
+        $this->assertSame(1, substr_count($html, 'vm--values'));
+        $this->assertSame(4, substr_count($html, 'class="vm-value"'));
+        $this->assertStringContainsString('<b>Inclusion:</b> first clause.', $html);
+        $this->assertStringContainsString('<b>Collaboration:</b> fourth clause.', $html);
+        $this->assertStringContainsString('Our Values', $html);
+    }
+
+    #[Test]
+    public function vision_mission_without_structured_values_renders_no_band(): void
+    {
+        // The general-case guard: 2-3 plain items (string or list-of-string
+        // bodies) keep today's markup exactly: every item in the grid, no band.
+        $html = self::$twig->render('blocks/vision_mission.html.twig', ['blk' => [
+            'type' => 'vision_mission',
+            'sec_h' => 'About',
+            'sec_t' => 'A trusted partner',
+            'items' => [
+                ['lbl' => 'Our Vision', 'body' => 'V.'],
+                ['lbl' => 'Our Mission', 'body' => ['M one.', 'M two.']],
+            ],
+        ]]);
+
+        $this->assertSame(2, substr_count($html, '<div class="vm">'));
+        $this->assertStringNotContainsString('vm--values', $html);
+        $this->assertStringNotContainsString('vm-value', $html);
+        $this->assertStringContainsString('<p>M one.</p>', $html);
+        $this->assertStringContainsString('<p>M two.</p>', $html);
+    }
+
+    #[Test]
     public function module_grid_omits_an_absent_subline_instead_of_an_empty_paragraph(): void
     {
         // The defence capability grid drops its subline (the intro already
