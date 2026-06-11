@@ -1,13 +1,14 @@
 {# Dark feature band: panel left, copy right. The panel renders, in order of
-   preference: an HTML5 video (when blk.video is set: mp4 URI + optional
-   blk.video_poster image, native controls, no autoplay), a still image (when
-   blk.image is set), else the labelled decorative panel. Built for the
-   Faraday product sections: tomorrow's stills and video drop into the same
-   block by adding the field, no restructuring. #}
+   preference: an HTML5 video (blk.video mp4 + optional blk.video_poster,
+   native controls, no autoplay), a still image (blk.image), else the labelled
+   decorative panel. blk.image_fit: 'cover' (default, fills the fixed panel,
+   for product stills) or 'natural' (keeps the image aspect and grows the
+   panel, with blk.panel_label as a caption below, for screenshots). #}
+{% set fit = blk.image_fit|default('cover') %}
 <section class="faraday"><div class="wrap"><div class="grid">
-  <div class="panel">{% if blk.video is defined and blk.video %}<video controls preload="metadata"{% if blk.video_poster is defined and blk.video_poster %} poster="{{ blk.video_poster }}"{% endif %} style="width:100%;height:100%;object-fit:cover;display:block">
+  <div class="panel{% if blk.image is defined and blk.image and fit != 'cover' %} panel-natural{% endif %}">{% if blk.video is defined and blk.video %}<video controls preload="metadata"{% if blk.video_poster is defined and blk.video_poster %} poster="{{ blk.video_poster }}"{% endif %} style="width:100%;height:100%;object-fit:cover;display:block">
       <source src="{{ blk.video }}" type="video/mp4">
-    </video>{% elseif blk.image is defined and blk.image %}<img src="{{ blk.image }}" alt="{{ blk.image_alt|default('') }}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block">{% else %}<div class="g"></div><span>{{ blk.panel_label|raw }}</span>{% endif %}</div>
+    </video>{% elseif blk.image is defined and blk.image %}{% if fit == 'cover' %}<img src="{{ blk.image }}" alt="{{ blk.image_alt|default('') }}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block">{% else %}<img src="{{ blk.image }}" alt="{{ blk.image_alt|default('') }}" loading="lazy">{% if blk.panel_label is defined and blk.panel_label %}<span class="panel-cap">{{ blk.panel_label|raw }}</span>{% endif %}{% endif %}{% else %}<div class="g"></div><span>{{ blk.panel_label|raw }}</span>{% endif %}</div>
   <div>
     <p class="sec-h" style="color:#7fd6e8">{{ blk.sec_h|raw }}</p>
     <h2 class="sec-t display">{{ blk.sec_t|raw }}</h2>

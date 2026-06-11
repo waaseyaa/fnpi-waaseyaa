@@ -53,6 +53,7 @@ final class PageStructureTest extends TestCase
                 'hero',
                 'text_intro',
                 'module_grid',
+                'photo_strip',
                 'faraday_showcase',
                 'checklist',
                 'department_list',
