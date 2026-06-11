@@ -116,7 +116,7 @@ final class PagesTest extends TestCase
     }
 
     #[Test]
-    public function contact_page_has_quote_form_to_mailto(): void
+    public function contact_page_has_contact_form_to_mailto(): void
     {
         $html = (string) new PageController(self::$pages)->contact()->getContent();
         $this->assertStringContainsString('Tell us what your Nation needs', $html);
@@ -161,7 +161,7 @@ final class PagesTest extends TestCase
     public function no_published_pricing_anywhere_public(string $method): void
     {
         $html = (string) new PageController(self::$pages)->{$method}()->getContent();
-        // No dollar figures on public pages; pricing lives behind "request a quote".
+        // No dollar figures on public pages; pricing lives behind the assessment CTA.
         $this->assertDoesNotMatchRegularExpression('/\$\s*[0-9]/', $html, sprintf('Public page "%s" must not publish pricing.', $method));
         // The pitch is ownership/sovereignty, not price: no pricing language at all.
         $lower = strtolower($html);

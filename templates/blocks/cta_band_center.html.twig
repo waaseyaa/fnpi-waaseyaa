@@ -1,9 +1,20 @@
+{# Two shapes: with a structured `doors` list the band renders the centred
+   eyebrow + heading over equal door panels (label, text, bottom-aligned
+   button; the first door is the cyan primary). Without `doors` the original
+   contract renders unchanged: sec_sub paragraph + the two-button row. #}
 <section id="contact" class="band center"><div class="wrap">
   <p class="sec-h">{{ blk.sec_h|raw }}</p>
   <h2 class="sec-t display">{{ blk.sec_t|raw }}</h2>
-  <p class="sec-sub">{{ blk.sec_sub|raw }}</p>
+{% if blk.doors is defined %}  <div class="doors">
+{% for d in blk.doors %}    <div class="door">
+      <p class="lbl">{{ d.label|raw }}</p>
+      <p class="door-text">{{ d.text|raw }}</p>
+      <a class="btn{{ loop.first ? ' cyan' : '' }}" href="{{ d.cta.href }}">{{ d.cta.label|raw }}</a>
+    </div>
+{% endfor %}  </div>
+{% else %}  <p class="sec-sub">{{ blk.sec_sub|raw }}</p>
   <div class="cta" style="justify-content:center">
     <a class="btn cyan" href="{{ blk.cta_primary.href }}">{{ blk.cta_primary.label|raw }}</a>
     <a class="btn" href="{{ blk.cta_secondary.href }}">{{ blk.cta_secondary.label|raw }}</a>
   </div>
-</div></section>
+{% endif %}</div></section>
