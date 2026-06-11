@@ -116,6 +116,16 @@
   .vm .lbl{font-family:"Oswald",sans-serif;font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan2);margin:0 0 12px}
   .vm p{font-size:18px;color:#33373a;margin:0;line-height:1.5}
   .vm--values{max-width:980px;margin:48px auto 0;border-top:1px solid var(--line);padding-top:38px}
+  /* photo strip: captioned photos on the dark band, natural aspect ratios */
+  .photo-strip{background:#0a0e12;color:#dfe7ea}
+  .photo-strip .sec-t{color:#fff}
+  .strip{display:grid;gap:18px;margin-top:8px}
+  .strip-1{grid-template-columns:1fr;max-width:880px;margin-left:auto;margin-right:auto}
+  .strip-2{grid-template-columns:1fr 1fr}
+  .strip-3{grid-template-columns:repeat(3,1fr)}
+  .strip figure{margin:0}
+  .strip img{width:100%;height:auto;display:block;border-radius:6px;border:1px solid #1b2a30}
+  .strip figcaption{margin-top:10px;font-size:13px;color:#8b969c;line-height:1.5}
   /* two-door closing band: equal panels, tops aligned, buttons bottom-aligned */
   .doors{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:880px;margin:8px auto 0;text-align:left}
   .door{background:#fff;border:1px solid var(--line);border-radius:4px;padding:26px;display:flex;flex-direction:column;gap:12px}
@@ -153,6 +163,7 @@
     .lanes,.lanes.lanes-4,.band .grid,.faraday .grid,.vm-wrap,.contact .grid{grid-template-columns:1fr}
     .vm-values{grid-template-columns:1fr 1fr}
     .doors{grid-template-columns:1fr}
+    .strip-2,.strip-3{grid-template-columns:1fr}
     .hero h1{font-size:48px}.brand img.wm{display:none}
     /* mobile menu: the burger replaces the inline links; the panel drops from
        the sticky header in the house dark theme */
