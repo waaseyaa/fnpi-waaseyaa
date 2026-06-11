@@ -46,6 +46,11 @@ final class PageController
         return $this->renderPath('/how-it-works');
     }
 
+    public function defence(): Response
+    {
+        return $this->renderPath('/defence');
+    }
+
     /**
      * The proof / reference-build page is intentionally DISABLED pending SFN
      * consent to be named publicly. It has no route and no seeded page entity.

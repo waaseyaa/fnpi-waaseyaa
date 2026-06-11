@@ -8,7 +8,7 @@ use App\Entity\Page;
 use Waaseyaa\Entity\Repository\EntityRepositoryInterface;
 
 /**
- * Seeds the four public pages into `page` entities and publishes them.
+ * Seeds the five public pages into `page` entities and publishes them.
  *
  * For each page in {@see PageSeedData}: create a revisionable `page` entity
  * (revision 1), then move the published-revision pointer to revision 1 so the

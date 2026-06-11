@@ -85,6 +85,15 @@ final class SiteServiceProvider extends ServiceProvider
                 ->build(),
         );
 
+        $router->addRoute(
+            'defence',
+            RouteBuilder::create('/defence')
+                ->controller(fn () => $controller->defence())
+                ->allowAll()
+                ->methods('GET')
+                ->build(),
+        );
+
         // /proof is intentionally DISABLED (unrouted -> 404) pending SFN consent
         // to name the reference build publicly. The PageController::proof() method
         // and templates/proof.html.twig are preserved; re-enable by restoring this

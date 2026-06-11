@@ -65,6 +65,14 @@ final class PageStructureTest extends TestCase
                 'faraday_showcase',
                 'hero_cta',
             ]],
+            '/defence' => ['defence', [
+                'hero',
+                'text_intro',
+                'module_grid',
+                'checklist',
+                'text_center',
+                'hero_cta',
+            ]],
             '/contact' => ['contact', [
                 'hero',
                 'contact_form',
