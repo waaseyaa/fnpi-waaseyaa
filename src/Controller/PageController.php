@@ -67,6 +67,11 @@ final class PageController
         return $this->renderPath('/contact');
     }
 
+    public function faraday(): Response
+    {
+        return $this->renderPath('/faraday');
+    }
+
     /**
      * Render the published revision of the `page` entity at the given path,
      * via the shared PublishedPageRenderer (the same render app:ingest-knowledge

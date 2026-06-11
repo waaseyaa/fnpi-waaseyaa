@@ -1,5 +1,13 @@
+{# Dark feature band: panel left, copy right. The panel renders, in order of
+   preference: an HTML5 video (when blk.video is set: mp4 URI + optional
+   blk.video_poster image, native controls, no autoplay), a still image (when
+   blk.image is set), else the labelled decorative panel. Built for the
+   Faraday product sections: tomorrow's stills and video drop into the same
+   block by adding the field, no restructuring. #}
 <section class="faraday"><div class="wrap"><div class="grid">
-  <div class="panel"><div class="g"></div><span>{{ blk.panel_label|raw }}</span></div>
+  <div class="panel">{% if blk.video is defined and blk.video %}<video controls preload="metadata"{% if blk.video_poster is defined and blk.video_poster %} poster="{{ blk.video_poster }}"{% endif %} style="width:100%;height:100%;object-fit:cover;display:block">
+      <source src="{{ blk.video }}" type="video/mp4">
+    </video>{% elseif blk.image is defined and blk.image %}<img src="{{ blk.image }}" alt="{{ blk.image_alt|default('') }}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block">{% else %}<div class="g"></div><span>{{ blk.panel_label|raw }}</span>{% endif %}</div>
   <div>
     <p class="sec-h" style="color:#7fd6e8">{{ blk.sec_h|raw }}</p>
     <h2 class="sec-t display">{{ blk.sec_t|raw }}</h2>

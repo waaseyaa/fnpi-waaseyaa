@@ -37,11 +37,11 @@ final class PageEntityTest extends TestCase
     }
 
     #[Test]
-    public function the_five_pages_are_seeded_with_paths(): void
+    public function the_six_pages_are_seeded_with_paths(): void
     {
         $paths = array_keys(PageSeedData::all());
         sort($paths);
-        $this->assertSame(['/', '/contact', '/defence', '/how-it-works', '/technology'], $paths);
+        $this->assertSame(['/', '/contact', '/defence', '/faraday', '/how-it-works', '/technology'], $paths);
     }
 
     #[Test]

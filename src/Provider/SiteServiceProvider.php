@@ -115,6 +115,15 @@ final class SiteServiceProvider extends ServiceProvider
         // );
 
         $router->addRoute(
+            'faraday',
+            RouteBuilder::create('/faraday')
+                ->controller(fn () => $controller->faraday())
+                ->allowAll()
+                ->methods('GET')
+                ->build(),
+        );
+
+        $router->addRoute(
             'contact',
             RouteBuilder::create('/contact')
                 ->controller(fn () => $controller->contact())

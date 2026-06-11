@@ -83,9 +83,9 @@ final class IngestKnowledgeTest extends TestCase
         }
 
         $this->assertSame(
-            ['/', '/contact', '/defence', '/how-it-works', '/technology'],
+            ['/', '/contact', '/defence', '/faraday', '/how-it-works', '/technology'],
             array_keys((function (array $a) { ksort($a); return $a; })($bySource)),
-            'Exactly the five public pages are indexed as site copy.',
+            'Exactly the six public pages are indexed as site copy.',
         );
 
         // A known published string per page proves the copy came through

@@ -138,6 +138,7 @@ final class PagesTest extends TestCase
             ['howItWorks'],
             ['contact'],
             ['defence'],
+            ['faraday'],
         ];
     }
 
@@ -160,6 +161,16 @@ final class PagesTest extends TestCase
     #[DataProvider('pageHtmlProvider')]
     public function no_published_pricing_anywhere_public(string $method): void
     {
+        // Posture change 2026-06-11 (Russell): /faraday SELLS products at
+        // listed prices with Stripe checkout, so it is exempt from the
+        // no-pricing sweep. Consultative pricing stays off every other page
+        // (the assessment CTA), and /faraday still runs the defence-words and
+        // dash sweeps like everyone else.
+        if ($method === 'faraday') {
+            $this->expectNotToPerformAssertions();
+
+            return;
+        }
         $html = (string) new PageController(self::$pages)->{$method}()->getContent();
         // No dollar figures on public pages; pricing lives behind the assessment CTA.
         $this->assertDoesNotMatchRegularExpression('/\$\s*[0-9]/', $html, sprintf('Public page "%s" must not publish pricing.', $method));
@@ -179,7 +190,7 @@ final class PagesTest extends TestCase
         // the site is navigable from a phone.
         $html = (string) new PageController(self::$pages)->{$method}()->getContent();
         $this->assertStringContainsString('id="site-nav"', $html);
-        foreach (['href="/technology"', 'href="/defence"', 'href="/contact"'] as $link) {
+        foreach (['href="/technology"', 'href="/defence"', 'href="/faraday"', 'href="/contact"'] as $link) {
             $this->assertStringContainsString($link, $html, sprintf('Page "%s" header must link %s.', $method, $link));
         }
         $this->assertStringContainsString('class="nav-toggle"', $html);

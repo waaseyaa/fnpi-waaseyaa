@@ -392,6 +392,68 @@ final class PageSeedData
                 ],
             ],
 
+            '/faraday' => [
+                'title' => 'Faraday cases: signal-blocking protection, in stock · FNPI',
+                'meta_description' => 'Faraday enclosures that block cellular, WiFi, GPS, and radio signals to protect devices and data from interception. In stock and shipping from Canada. 100% First Nations-owned supplier.',
+                'meta_robots' => null,
+                'head_styles' => null,
+                'blocks' => [
+                    [
+                        'type' => 'hero',
+                        'eyebrow' => 'Faraday Protection &nbsp;&middot;&nbsp; In stock',
+                        'h1' => 'Signal-blocking protection, in stock today.',
+                        'oneline' => 'Faraday enclosures that block cellular, WiFi, GPS, and radio signals to protect devices and data from interception. 100% First Nations-owned supplier.',
+                    ],
+                    [
+                        'type' => 'faraday_feature',
+                        'panel_label' => 'Ghost Mode &middot; Phone case',
+                        'sec_h' => 'In stock &middot; $20 CAD',
+                        'sec_t' => 'Faraday phone case',
+                        'sec_sub' => 'Blocks cellular, WiFi, GPS, and radio signals to protect the phone and its data from interception while enclosed.',
+                        'cta' => ['label' => 'Buy now &middot; $20 CAD', 'href' => 'https://buy.stripe.com/5kQ4gs2bQ5fbezScup6g800'],
+                    ],
+                    [
+                        'type' => 'faraday_feature',
+                        'panel_label' => 'Ghost Mode &middot; Utility case',
+                        'sec_h' => 'In stock &middot; $15 CAD',
+                        'sec_t' => 'Faraday utility case',
+                        'sec_sub' => 'The larger enclosure: blocks cellular, WiFi, GPS, and radio signals to protect devices and data from interception.',
+                        'cta' => ['label' => 'Buy now &middot; $15 CAD', 'href' => 'https://buy.stripe.com/aFa7sE03IcHDbnGeCx6g801'],
+                    ],
+                    [
+                        'type' => 'faraday_feature',
+                        'panel_label' => 'Ghost Mode &middot; Key fob 2-pack',
+                        'sec_h' => 'In stock &middot; $10 CAD',
+                        'sec_t' => 'Faraday key fob case, 2-pack',
+                        'sec_sub' => 'A two-pack sized for key fobs: blocks cellular, WiFi, GPS, and radio signals to protect devices and data from interception.',
+                        'cta' => ['label' => 'Buy now &middot; $10 CAD', 'href' => 'https://buy.stripe.com/5kQ00cdUybDz2Racup6g802'],
+                    ],
+                    [
+                        'type' => 'cta_band_center',
+                        'sec_h' => 'Bulk &amp; institutional',
+                        'sec_t' => 'Equipping a team?',
+                        'sec_sub' => 'Volume pricing for law enforcement, emergency management, and government buyers. An Indigenous-qualified supplier on the ISC and CCAB registries.',
+                        'cta_primary' => ['label' => 'Book an assessment', 'href' => '/contact'],
+                    ],
+                    [
+                        'type' => 'photo_strip',
+                        'photos' => [
+                            [
+                                'src' => '/img/fnpi-booth-faraday.jpg',
+                                'alt' => 'FNPI trade-show booth with Ghost Mode Faraday case banner.',
+                                'caption' => 'The FNPI booth: the Ghost Mode Faraday line in the field.',
+                            ],
+                        ],
+                    ],
+                    [
+                        'type' => 'text_center',
+                        'sec_h' => 'Shipping &amp; returns',
+                        'sec_t' => 'Ships from Canada.',
+                        'sec_sub' => 'Questions or returns: <a href="/contact">contact us</a>.',
+                    ],
+                ],
+            ],
+
             '/contact' => [
                 'title' => 'Contact: Tell us what your Nation needs · FNPI',
                 'meta_description' => 'Request a quote or get started. For First Nations exploring a sovereign platform, and for funders and partners who want to support the build.',
