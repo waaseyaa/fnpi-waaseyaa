@@ -50,6 +50,7 @@ final class IngestKnowledgeCommand
         '/how-it-works' => 'FNPI How It Works (public site)',
         '/contact' => 'FNPI Contact (public site)',
         '/defence' => 'FNPI Defence &amp; Security (public site)',
+        '/faraday' => 'FNPI Faraday cases (public site)',
     ];
 
     public function __construct(

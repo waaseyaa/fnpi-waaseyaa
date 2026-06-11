@@ -15,6 +15,6 @@
 {% else %}  <p class="sec-sub">{{ blk.sec_sub|raw }}</p>
   <div class="cta" style="justify-content:center">
     <a class="btn cyan" href="{{ blk.cta_primary.href }}">{{ blk.cta_primary.label|raw }}</a>
-    <a class="btn" href="{{ blk.cta_secondary.href }}">{{ blk.cta_secondary.label|raw }}</a>
-  </div>
+{% if blk.cta_secondary is defined %}    <a class="btn" href="{{ blk.cta_secondary.href }}">{{ blk.cta_secondary.label|raw }}</a>
+{% endif %}  </div>
 {% endif %}</div></section>
