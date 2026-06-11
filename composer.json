@@ -52,7 +52,8 @@
         "waaseyaa": {
             "providers": [
                 "App\\Provider\\SiteServiceProvider",
-                "App\\Provider\\AnokiiServiceProvider"
+                "App\\Provider\\AnokiiServiceProvider",
+                "App\\Provider\\McpAgentServiceProvider"
             ]
         }
     },

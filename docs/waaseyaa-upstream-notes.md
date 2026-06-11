@@ -4,6 +4,52 @@ Running log of framework quirks, gaps, and changes worth remembering when buildi
 FNPI on Waaseyaa. Newest first. These are notes about the *upstream* framework
 (`waaseyaa/framework`), kept here so app work does not re-discover them.
 
+## 2026-06-10 — MCP endpoint (alpha.202): three gaps found wiring POST /mcp, all worked around app-side
+
+Found during the MCP wire-up (see `docs/reports/2026-06-10-mcp-wireup.md`).
+App workarounds live in `src/Mcp/` + `src/Provider/McpAgentServiceProvider.php`;
+each can be deleted when the upstream fix lands.
+
+1. **`McpEndpoint::handle()` returns `McpResponse`, which the SSR dispatcher
+   cannot convert — every /mcp request 500s.** `SsrPageHandler::dispatchAppController()`
+   only accepts a Symfony `Response` or an Inertia page result; the mcp
+   package's `McpResponse` VO falls through to a 500 ("returned an unsupported
+   value"). The package's own tests call `dispatch()` directly and never catch
+   it. Workaround: the app re-registers the `mcp.endpoint` route
+   (`removeRoute()` + `addRoute()`, the documented override lever) onto
+   `App\Mcp\McpEndpointController`, which converts `McpResponse` → `Response`.
+
+2. **`AttributeToolRegistry` hydrates from an empty manifest under the HTTP
+   kernel — tools/list is always empty.** `AiToolsServiceProvider::resolveManifest()`
+   asks the kernel-services bus for `PackageManifest`, but nothing ever serves
+   it (`ProviderRegistryKernelServices` knows EntityTypeManager / Database /
+   Dispatcher / Logger / PDO + provider bindings only), so the registry falls
+   back to `new PackageManifest()` and discovers zero `#[AsAgentTool]` classes
+   even though the compiled manifest has all 16. Workaround:
+   `App\Mcp\McpToolCatalogue` hand-constructs the tools (mirroring
+   `App\CoIntelligence\AgentTools`), reading each class's own `#[AsAgentTool]`
+   attribute for metadata. Side effect: the bimaaji introspect/mutation tools
+   are skipped here because their deps (`ApplicationGraphGenerator`,
+   `MutationValidator`) fail to resolve at request scope in this app;
+   `bimaaji_search_specs` constructs fine.
+
+3. **`AbstractAgentTool::argumentsForAudit()` TypeErrors on list-valued
+   arguments.** It calls `strtolower($key)` on every array key recursively;
+   integer keys (any list value, e.g. a page's `blocks`) throw on PHP 8.4+.
+   Workaround: the app's MCP audit trail hashes raw arguments instead of
+   calling it.
+
+Also noted, not blocking: the app cannot usefully re-bind `McpAuthInterface`
+because provider resolution is first-match in registration order and app
+providers register after `Waaseyaa\Mcp\McpServiceProvider` (its empty-token
+default wins for the admin `ServerConfigReadModel`); `BearerTokenAuth` does a
+plain array lookup (no `hash_equals`) and ignores the account's blocked
+status; `McpDispatchAuditListener` listens for `waaseyaa.mcp.dispatch` but
+`McpEndpoint` never dispatches it; `McpEndpoint` always advertises
+`serverInfo.version` 0.1.0. Already queued upstream per the wire-up brief:
+media upload tool, OAuth 2.1 resource-server auth, MCP registry listing,
+stale mcp README/spec.
+
 ## 2026-06-08 — Published-revision pointer (added upstream, alpha.195)
 
 Built for the Anokii Pages capability (public site driven from `page` entities).
