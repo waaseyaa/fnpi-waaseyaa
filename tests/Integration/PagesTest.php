@@ -172,6 +172,24 @@ final class PagesTest extends TestCase
 
     #[Test]
     #[DataProvider('pageHtmlProvider')]
+    public function header_nav_carries_the_links_and_the_mobile_menu_toggle(string $method): void
+    {
+        // The mobile menu (2026-06-11): every page's header must carry the three
+        // nav links, the panel quote CTA, and an accessible toggle button, so
+        // the site is navigable from a phone.
+        $html = (string) new PageController(self::$pages)->{$method}()->getContent();
+        $this->assertStringContainsString('id="site-nav"', $html);
+        foreach (['href="/technology"', 'href="/defence"', 'href="/contact"'] as $link) {
+            $this->assertStringContainsString($link, $html, sprintf('Page "%s" header must link %s.', $method, $link));
+        }
+        $this->assertStringContainsString('class="nav-toggle"', $html);
+        $this->assertStringContainsString('aria-expanded="false"', $html);
+        $this->assertStringContainsString('aria-controls="site-nav"', $html);
+        $this->assertStringContainsString('class="menu-cta"', $html);
+    }
+
+    #[Test]
+    #[DataProvider('pageHtmlProvider')]
     public function no_em_or_en_dashes_in_rendered_copy(string $method): void
     {
         // House style: no em dashes or en dashes in visible site copy.
