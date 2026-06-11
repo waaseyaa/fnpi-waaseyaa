@@ -258,6 +258,28 @@ final class BlockTemplatesTest extends TestCase
     }
 
     #[Test]
+    public function photo_strip_mixed_orientations_share_one_row_height_via_aspect_ratios(): void
+    {
+        // The equal-height row: each enriched figure carries its aspect ratio
+        // as --ar (flex-grow + max-width math in base.html.twig); a photo with
+        // no measured dimensions gets no --ar and falls back to 1.
+        $html = self::$twig->render('blocks/photo_strip.html.twig', ['blk' => [
+            'type' => 'photo_strip',
+            'photos' => [
+                ['src' => '/img/p.jpg', 'alt' => 'Portrait.', 'caption' => 'P.', '_w' => 1200, '_h' => 1600],
+                ['src' => '/img/l.jpg', 'alt' => 'Landscape.', 'caption' => 'L.', '_w' => 1600, '_h' => 1067],
+                ['src' => '/img/s.jpg', 'alt' => 'Square no dims.', 'caption' => 'S.'],
+            ],
+        ]]);
+
+        $this->assertStringContainsString('style="--ar:0.75"', $html);
+        $this->assertStringContainsString('style="--ar:1.499531"', $html);
+        $this->assertStringContainsString('width="1200" height="1600"', $html);
+        $this->assertSame(2, substr_count($html, '--ar:'), 'the dimensionless photo gets no --ar');
+        $this->assertStringNotContainsString('object-fit', $html);
+    }
+
+    #[Test]
     public function the_home_seed_photo_strip_references_shipped_image_files(): void
     {
         // Every image the seed places must exist as an optimized derivative in
