@@ -93,6 +93,14 @@ final class PageSeedData
                     ],
                     [
                         'type' => 'faraday_feature',
+                        'panel_label' => 'Grounded on your files',
+                        'sec_h' => 'Sovereign AI',
+                        'sec_t' => 'AI that lives where your data lives.',
+                        'sec_sub' => 'Co-Intelligence is the assistant inside Anokii, grounded on your own records and running on Canadian-controlled infrastructure. Answers come from your files, and your files go nowhere.',
+                        'cta' => ['label' => 'See the platform', 'href' => '/technology'],
+                    ],
+                    [
+                        'type' => 'faraday_feature',
                         'panel_label' => 'Faraday Protection',
                         'sec_h' => 'In stock and shipping',
                         'sec_t' => 'Faraday cases',
