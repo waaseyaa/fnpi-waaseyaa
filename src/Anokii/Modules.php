@@ -56,6 +56,11 @@ final class Modules
                 'icon' => '<path d="M4 6h16v12H4V6Z" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/><path d="m4 7 8 6 8-6" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
             ],
             [
+                'id' => 'analytics', 'label' => 'Analytics', 'group' => 'Workspace', 'live' => true,
+                'href' => '/anokii/analytics', 'desc' => "First-party site analytics, in the Nation's own database.", 'badge' => '', 'tile' => true,
+                'icon' => '<path d="M5 20V10M12 20V4M19 20v-7" stroke="currentColor" stroke-width="1.9" fill="none" stroke-linecap="round"/>',
+            ],
+            [
                 'id' => 'rooms', 'label' => 'Data Rooms', 'group' => 'Workspace', 'live' => false,
                 'href' => '/anokii/m/rooms', 'desc' => 'Secure, time-bound spaces with full audit trails.', 'badge' => 'Soon', 'tile' => true,
                 'icon' => '<rect x="4" y="5" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M4 9h16" stroke="currentColor" stroke-width="1.7"/><circle cx="15" cy="14" r="2" stroke="currentColor" stroke-width="1.6" fill="none"/>',
