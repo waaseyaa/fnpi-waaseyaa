@@ -55,17 +55,24 @@ security.
   network. Per Matt, the defense and drone side stays low-key and off public materials. Sell the
   products publicly; pursue the defense lane privately.
 
-## Public posture (per Matt, 2026-06-02)
+## Public posture (per Matt, 2026-06-02; amended 2026-06-10)
 
-Matt keeps the military and defense relationships and the drone ambition low-key. Those do not go
-on the website or public materials. What is already public on FNPI's current site, and is fine to
-keep, is the product side: the Faraday cases and a protective/tactical-gear line (there is a
-tactical-gear video on the current site). So the public third pillar is Privacy and Protection,
-expressed through real, shippable products, not through defense contracting or drones. Internally,
+**Amended 2026-06-10 (Russell):** FNPI filed a DAF EOI and now carries a public /defence page on
+fnprocure.ca, pinned to the filed EOI language only: operator standing (we build it, run it, or
+supply it ourselves), an OCAP-designed platform, no facial recognition by design, materiel access
+through the partner network, and a both-sides-of-the-chain systems view. Nothing beyond the EOI
+claims goes public. The drone ambition, Matt's military relationships, and the international
+network (Canada, Turkey, UAE) remain private and off public materials, exactly as below.
+
+Original posture (2026-06-02): Matt keeps the military and defense relationships and the drone
+ambition low-key. Those do not go on the website or public materials. What is already public on
+FNPI's current site, and is fine to keep, is the product side: the Faraday cases and a
+protective/tactical-gear line (there is a tactical-gear video on the current site). So the public
+third pillar is Privacy and Protection, expressed through real, shippable products. Internally,
 the security and defense lane (drone-led autonomous monitoring, international defense procurement
-across Matt's Canadian, Turkey, and UAE network) remains the high-value ambition, pursued
-privately through relationships and labelled as concept. The public face leads with sourcing,
-technology, and sovereignty, with privacy and protection as the consumer-safe expression.
+across Matt's network) remains the high-value ambition, pursued privately through relationships
+and labelled as concept. The public face leads with sourcing, technology, and sovereignty, with
+privacy and protection as the consumer-safe expression.
 
 ## Proof points
 
@@ -97,8 +104,9 @@ the story stays credible to a Nation, a procurement officer, and a defense buyer
 
 - Pick the primary tagline (the homepage currently leads with the existing "Service and Sourcing
   Solutions"; option 1 above is the natural evolution).
-- (Resolved 2026-06-02, Matt) The defense and drone lane stays low-key and off public materials.
-  Publicly, the protection pillar is the Faraday and protective-gear products already on the site;
-  the defense ambition is pursued privately.
+- (Resolved 2026-06-02, Matt; amended 2026-06-10, Russell) The drone ambition and the military
+  relationships stay low-key and off public materials. The defence lane itself went public on
+  2026-06-10 via the /defence page, restricted to the filed DAF EOI claims (see Public posture);
+  the protection pillar remains the Faraday and protective-gear products.
 - Whether "sovereignty" or "procurement" is the louder word in the public-facing story (internal
   answer: procurement qualifies us, sovereignty sells us).

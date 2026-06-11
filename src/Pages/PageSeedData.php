@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Pages;
 
 /**
- * The canonical content of the four public marketing pages, as ordered content
+ * The canonical content of the five public marketing pages, as ordered content
  * blocks (Anokii Pages, increment 1).
  *
  * This is the single source of truth the migration seeds into `page` entities
@@ -158,7 +158,7 @@ final class PageSeedData
                         'type' => 'module_grid',
                         'sec_h' => 'Anokii, the sovereign workspace',
                         'h2' => 'One system. One login. One record across departments.',
-                        'sec_sub' => 'Anokii is built on the Waaseyaa engine: an entity-first, AI-native platform. Instead of a dozen rented apps that do not talk to each other, the Nation runs on one workspace it controls.',
+                        'sec_sub' => 'Anokii is an entity-first, AI-native platform. Instead of a dozen rented apps that do not talk to each other, the Nation runs on one workspace it controls.',
                         'mods' => [
                             ['h4' => 'Website', 'body' => 'A fast, branded public site with a real editable backend.'],
                             ['h4' => 'Member Portal', 'body' => 'Secure services and information for members, online.'],
@@ -291,6 +291,77 @@ final class PageSeedData
                         'type' => 'hero_cta',
                         'h2' => "Let's scope your Nation.",
                         'cta_primary' => ['label' => 'Request a quote', 'href' => '/contact'],
+                        'cta_secondary' => ['label' => 'See the platform', 'href' => '/technology'],
+                    ],
+                ],
+            ],
+
+            '/defence' => [
+                'title' => 'Defence &amp; Security: First Nations Procurement Inc.',
+                'meta_description' => "FNPI brings 100% First Nations-owned capability to Canada's defence and security supply chain: sovereign AI and digital systems, personnel protection and materiel, and privacy-first sensor systems.",
+                'meta_robots' => null,
+                'head_styles' => <<<'CSS'
+                      .modgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+                      .mod{background:#fff;border:1px solid var(--line);border-radius:4px;padding:18px 18px 20px}
+                      .mod h4{margin:0 0 6px;font-size:16px;color:var(--ink)}
+                      .mod p{margin:0;font-size:13.5px;color:var(--muted)}
+                      .checks{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:12px 28px}
+                      .checks li{padding-left:26px;position:relative;color:var(--muted)}
+                      .checks li b{color:var(--ink)}
+                      .checks li::before{content:"";position:absolute;left:0;top:7px;width:12px;height:12px;border:2px solid var(--cyan);border-radius:2px}
+                      @media(max-width:880px){.modgrid{grid-template-columns:1fr 1fr}.checks{grid-template-columns:1fr}}
+                    CSS . "\n",
+                'blocks' => [
+                    [
+                        'type' => 'hero',
+                        'eyebrow' => 'Defence &amp; Security &nbsp;&middot;&nbsp; 100% First Nations-owned',
+                        'h1' => "An operator's standing, not an observer's.",
+                        'oneline' => "FNPI brings First Nations-owned capability to Canada's defence and security supply chain: sovereign AI and digital systems, personnel protection and materiel, and sensor systems built privacy-first.",
+                        'cta' => [
+                            'primary' => ['label' => 'Start the conversation', 'href' => '/contact'],
+                            'secondary' => ['label' => 'See the platform', 'href' => '/technology'],
+                        ],
+                    ],
+                    [
+                        'type' => 'text_intro',
+                        'sec_h' => 'Who we are',
+                        'paragraphs' => [
+                            "First Nations Procurement Inc. is a 100% First Nations-owned technology and procurement company operating from Sagamok Anishnawbek First Nation since 2017, registered on the Indigenous Services Canada Business Directory and CCAB certified. Our defence and security capability spans four areas, and in each one our standing is an operator's: we build it, run it, or supply it ourselves.",
+                        ],
+                    ],
+                    [
+                        'type' => 'module_grid',
+                        'sec_h' => 'Capability',
+                        'h2' => 'Four areas, an operator in each.',
+                        'sec_sub' => 'We build it, run it, or supply it ourselves.',
+                        'mods' => [
+                            ['h4' => 'Artificial intelligence', 'body' => 'First Nations-created AI on Canadian-controlled infrastructure. Our sovereign AI workspace platform is built with data residency, auditability, and Indigenous data governance (the OCAP principles) designed in from the start, not added later.'],
+                            ['h4' => 'Digital systems &amp; cyber', 'body' => 'Sovereign digital capability depends on who owns the infrastructure and whose law reaches the data. We build and run systems on Canadian-controlled infrastructure, with data jurisdiction, dual-use AI governance, and supply chain trust treated as design constraints.'],
+                            ['h4' => 'Personnel protection &amp; materiel', 'body' => 'Through our partner network, direct access to body armour, helmets, armoured vehicles, carriers, and sites suitable for defence-related use.'],
+                            ['h4' => 'Sensors', 'body' => 'Edge AI security analytics built privacy-first, with no facial recognition by design. Sensor and camera feeds are processed on-site, so data stays in the community and under its jurisdiction.'],
+                        ],
+                    ],
+                    [
+                        'type' => 'checklist',
+                        'sec_h' => 'Both sides of the chain',
+                        'sec_t' => 'The view from both sides of the chain',
+                        'sec_sub' => 'Capability delivery in Canada runs through chains that Indigenous and small firms experience from the far end. We know that system from both sides of our business:',
+                        'items' => [
+                            '<b>Materiel:</b> supply access depends on distribution relationships, certification, and the working capital to hold inventory, exactly where small and Indigenous firms drop out of the chain.',
+                            '<b>Digital:</b> sovereign AI and cyber capability depends on infrastructure ownership, data jurisdiction, and a skilled workforce pipeline; for remote and First Nations communities, workforce is inseparable from training capacity and connectivity.',
+                            '<b>Policy:</b> Indigenous procurement commitments, ITB obligations, and federal sovereignty requirements shape who can participate, and at what tier.',
+                        ],
+                    ],
+                    [
+                        'type' => 'text_center',
+                        'sec_h' => 'Sovereignty',
+                        'sec_t' => 'Sovereignty is not a talking point here.',
+                        'sec_sub' => 'It is where our files live, whose law reaches them, and who owns the infrastructure they run on. That is the capability we build, and the standing we bring.',
+                    ],
+                    [
+                        'type' => 'hero_cta',
+                        'h2' => 'Defence and security work starts with a conversation.',
+                        'cta_primary' => ['label' => 'Contact us', 'href' => '/contact'],
                         'cta_secondary' => ['label' => 'See the platform', 'href' => '/technology'],
                     ],
                 ],

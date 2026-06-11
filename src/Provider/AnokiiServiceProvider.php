@@ -335,7 +335,7 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
 
         yield new CommandDefinition(
             name: 'app:seed-pages',
-            description: 'Seed the four public pages (home, technology, how-it-works, contact) into published `page` entities. Idempotent.',
+            description: 'Seed the five public pages (home, technology, how-it-works, contact, defence) into published `page` entities. Idempotent.',
             handler: function (CliIO $io): int {
                 $etm = $this->entityTypeManager();
                 if ($etm === null) {

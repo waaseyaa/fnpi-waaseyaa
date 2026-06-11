@@ -58,7 +58,9 @@ the thinking once, then express it.
   truth. Corrects anything confident but wrong.
 - **Matthew Owl.** FNPI owner. Supplies operational facts no one else has (real revenue,
   Faraday unit economics, supplier network, live pipeline, contract history). Endorses the
-  narrative. Keeps the defense and drone lane private and off public materials.
+  narrative. Keeps the drone ambition and military relationships private and off public
+  materials (the defence lane itself went public 2026-06-10 via the /defence page, restricted
+  to the filed DAF EOI claims).
 - **This Cowork session.** Planning artifacts, market research, business model shaping with
   Russell, the business plan draft, website content and sitemap, and the Claude Code build
   prompts. No repo access here.
@@ -140,7 +142,8 @@ decisions). Flagging it now so it does not surprise us at cutover.
 In `business/northops-fnpi-venture/`:
 
 - `fnpi-narrative.md`. The positioning spine. The three lanes, the moat, the honesty line,
-  the public posture (defense and drones stay private). This is the source for site messaging.
+  the public posture (drones private; the defence lane public since 2026-06-10, restricted to
+  the filed DAF EOI claims). This is the source for site messaging.
 - `fnpi-homepage-concept.html`. A polished concept homepage, dark hero, three lane layout.
   Matthew endorsed the concept. The visual reference for the build.
 - `fnpi-lanes-explorer.html`, `fn-offerings-explorer.html`. Interactive supporting pages.
