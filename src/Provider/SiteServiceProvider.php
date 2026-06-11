@@ -9,7 +9,6 @@ use App\Analytics\AnalyticsReport;
 use App\Analytics\AnalyticsSchema;
 use App\Contact\ContactRateLimiter;
 use App\Controller\ContactSubmitController;
-use App\Controller\AnalyticsDashboardController;
 use App\Controller\CollectController;
 use App\Controller\PageController;
 use Symfony\Component\HttpFoundation\Request;
@@ -160,7 +159,6 @@ final class SiteServiceProvider extends ServiceProvider
             $secret = getenv('WAASEYAA_ANALYTICS_SECRET')
                 ?: (getenv('WAASEYAA_JWT_SECRET') ?: 'fnpi-analytics');
             $collect = new CollectController(new AnalyticsRecorder($database, $secret));
-            $analytics = new AnalyticsDashboardController(new AnalyticsReport($database));
 
             // JSON body -> CSRF auto-skipped (same as oiatc's collect/chat).
             $router->addRoute(
@@ -172,12 +170,15 @@ final class SiteServiceProvider extends ServiceProvider
                     ->build(),
             );
 
+            // The old standalone dashboard assumed an edge basic-auth gate that
+            // was never configured, so it sat publicly reachable. Analytics now
+            // lives staff-gated in the workspace; old bookmarks land there.
             // priority(10) so this exact route wins over any admin-surface
             // catch-all (/admin/{path}) the framework may register.
             $router->addRoute(
                 'admin.analytics',
                 RouteBuilder::create('/admin/analytics')
-                    ->controller(fn (Request $request) => $analytics->index($request))
+                    ->controller(fn () => new \Symfony\Component\HttpFoundation\RedirectResponse('/anokii/analytics'))
                     ->allowAll()
                     ->methods('GET')
                     ->priority(10)

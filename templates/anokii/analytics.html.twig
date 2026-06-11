@@ -1,0 +1,80 @@
+{% extends "anokii/_shell.html.twig" %}
+
+{% block anokii_styles %}
+  :root{ --card-shadow:0 1px 3px rgba(10,14,18,.05),0 8px 24px rgba(10,14,18,.06); }
+  .abar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+  .aspacer{flex:1}
+  .abar form{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .abar label{font-family:"Oswald",sans-serif;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .abar input[type=date]{border:1px solid var(--line);border-radius:9px;padding:7px 10px;font:inherit;font-size:13px;background:#fff}
+  .abar button{font-family:"Oswald",sans-serif;font-size:13px;border-radius:9px;padding:8px 14px;border:1px solid var(--cyan2);background:var(--cyan2);color:#fff;cursor:pointer}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--card-shadow);padding:18px 20px}
+  .stat b{display:block;font-family:"Anton",sans-serif;font-size:34px;color:var(--ink);line-height:1.1}
+  .stat span{font-family:"Oswald",sans-serif;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--card-shadow);padding:18px 20px;margin-bottom:16px}
+  .panel h2{margin:0 0 12px;font-family:"Oswald",sans-serif;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--cyan2)}
+  table.at{width:100%;border-collapse:collapse;font-size:13.5px}
+  table.at th{font-family:"Oswald",sans-serif;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+  table.at td{padding:7px 8px;border-bottom:1px solid var(--line);color:#33373a}
+  table.at tr:last-child td{border-bottom:none}
+  table.at td.num{text-align:right;font-variant-numeric:tabular-nums}
+  table.at th.num{text-align:right}
+  .empty{color:var(--muted);font-size:13.5px}
+{% endblock %}
+
+{% block anokii_content %}
+<div class="ahead">
+  <p class="ey">Analytics</p>
+  <h1>Analytics</h1>
+  <p class="sub">FNPI's own first-party analytics: cookieless, self-hosted in the Nation's database, no third party anywhere. Pageviews and engagement from the public site.</p>
+</div>
+
+<div class="abar">
+  <form method="get" action="/anokii/analytics">
+    <label for="from">From</label><input type="date" id="from" name="from" value="{{ range.from }}">
+    <label for="to">To</label><input type="date" id="to" name="to" value="{{ range.to }}">
+    <button type="submit">Apply</button>
+  </form>
+  <div class="aspacer"></div>
+  <span style="font-size:12.5px;color:var(--muted)">{{ range.from }} to {{ range.to }} (UTC)</span>
+</div>
+
+<div class="stats">
+  <div class="stat"><b>{{ report.totals.views }}</b><span>Pageviews</span></div>
+  <div class="stat"><b>{{ report.totals.visitors }}</b><span>Unique visitors</span></div>
+</div>
+
+<div class="panel">
+  <h2>Pages</h2>
+{% if report.pages is empty %}  <p class="empty">No pageviews in this range.</p>
+{% else %}  <table class="at">
+    <tr><th>Path</th><th class="num">Views</th><th class="num">Visitors</th><th class="num">Avg scroll</th><th class="num">Avg dwell</th></tr>
+{% for row in report.pages %}    <tr>
+      <td>{{ row.path }}</td>
+      <td class="num">{{ row.views }}</td>
+      <td class="num">{{ row.visitors }}</td>
+      <td class="num">{{ row.avg_scroll|round }}%</td>
+      <td class="num">{{ (row.avg_dwell_ms / 1000)|round(1) }}s</td>
+    </tr>
+{% endfor %}  </table>
+{% endif %}</div>
+
+<div class="panel">
+  <h2>Referrers</h2>
+{% if report.referrers is empty %}  <p class="empty">No external referrers in this range.</p>
+{% else %}  <table class="at">
+    <tr><th>Host</th><th class="num">Views</th></tr>
+{% for ref in report.referrers %}    <tr><td>{{ ref.host }}</td><td class="num">{{ ref.count }}</td></tr>
+{% endfor %}  </table>
+{% endif %}</div>
+
+<div class="panel">
+  <h2>Devices</h2>
+{% if report.devices is empty %}  <p class="empty">No device data in this range.</p>
+{% else %}  <table class="at">
+    <tr><th>Device</th><th class="num">Views</th></tr>
+{% for d in report.devices %}    <tr><td>{{ d.device }}</td><td class="num">{{ d.count }}</td></tr>
+{% endfor %}  </table>
+{% endif %}</div>
+{% endblock %}
