@@ -184,6 +184,20 @@ final class BlockTemplatesTest extends TestCase
     }
 
     #[Test]
+    public function module_grid_omits_an_absent_subline_instead_of_an_empty_paragraph(): void
+    {
+        // The defence capability grid drops its subline (the intro already
+        // carries the sentence); no empty sec-sub paragraph may remain.
+        $html = self::$twig->render('blocks/module_grid.html.twig', ['blk' => [
+            'type' => 'module_grid',
+            'sec_h' => 'Capability',
+            'h2' => 'Four areas.',
+            'mods' => [['h4' => 'A', 'body' => 'B']],
+        ]]);
+        $this->assertStringNotContainsString('sec-sub', $html);
+    }
+
+    #[Test]
     public function hero_and_hero_cta_render_a_single_button_when_secondary_is_absent(): void
     {
         // A CTA without a secondary renders one button and no empty ghost

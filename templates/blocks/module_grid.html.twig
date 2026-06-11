@@ -1,7 +1,8 @@
 <section class="band"><div class="wrap">
   <p class="sec-h">{{ blk.sec_h|raw }}</p>
   <h2 class="display">{{ blk.h2|raw }}</h2>
-  <p class="sec-sub" style="margin-left:0">{{ blk.sec_sub|raw }}</p>
+{% if blk.sec_sub is defined and blk.sec_sub %}  <p class="sec-sub" style="margin-left:0">{{ blk.sec_sub|raw }}</p>
+{% endif %}
   <div class="modgrid">
 {% for m in blk.mods %}    <div class="mod"><h4>{{ m.h4|raw }}</h4><p>{{ m.body|raw }}</p></div>
 {% endfor %}  </div>
