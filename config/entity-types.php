@@ -13,6 +13,7 @@ declare(strict_types=1);
  */
 
 use App\Entity\Document;
+use App\Entity\ContactSubmission;
 use App\Entity\DocumentNote;
 use App\Entity\DriveFile;
 use App\Entity\Page;
@@ -104,6 +105,21 @@ return [
         ],
         revisionable: true,
         revisionDefault: true,
+    ),
+
+    // Inbound public contact-form submission; not revisionable (immutable
+    // record, only the read flag mutates). Created only by the public
+    // ContactSubmitController; staff read it in the Anokii Inbox. Table lands
+    // via db:init --sync-schema like the rest.
+    new EntityType(
+        id: 'contact_submission',
+        label: 'Contact submission',
+        class: ContactSubmission::class,
+        keys: [
+            'id' => 'id',
+            'uuid' => 'uuid',
+            'label' => 'email',
+        ],
     ),
 
     // Flat discussion thread; not revisionable.

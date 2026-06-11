@@ -1,0 +1,33 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Contact: Let's scope it · FNPI{% endblock %}
+{% block robots %}noindex,follow{% endblock %}
+
+{% block head_styles %}
+  .field select{width:100%;border:1px solid var(--line);border-radius:3px;padding:11px 13px;font:inherit;font-size:16px;background:#fff}
+  .funders{margin-top:18px;padding:16px 18px;background:#e3f4f8;border-radius:4px;color:#0f7488;font-size:14px}
+{% endblock %}
+
+{% block content %}
+{% if form_success is defined and form_success %}
+<section class="hero"><div class="grid-bg"></div><div class="glow"></div><div class="wrap">
+  <p class="eyebrow">Message received</p>
+  <h1 class="display">Got it.</h1>
+  <p class="oneline">We'll come back to you.</p>
+  <div class="cta">
+    <a class="btn cyan" href="/">Back to the site</a>
+    <a class="btn ghost" href="/technology">See the platform</a>
+  </div>
+</div></section>
+{% else %}
+<section class="hero"><div class="grid-bg"></div><div class="glow"></div><div class="wrap">
+  <p class="eyebrow">One thing to fix</p>
+  <h1 class="display">Almost there.</h1>
+  <p class="oneline">Check the email address below; everything else is optional.</p>
+</div></section>
+{% include 'blocks/contact_form.html.twig' with {
+  form_error: form_error|default(''),
+  form_old: form_old|default({}),
+} %}
+{% endif %}
+{% endblock %}

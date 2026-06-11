@@ -7,6 +7,8 @@ namespace App\Provider;
 use App\Analytics\AnalyticsRecorder;
 use App\Analytics\AnalyticsReport;
 use App\Analytics\AnalyticsSchema;
+use App\Contact\ContactRateLimiter;
+use App\Controller\ContactSubmitController;
 use App\Controller\AnalyticsDashboardController;
 use App\Controller\CollectController;
 use App\Controller\PageController;
@@ -40,7 +42,13 @@ final class SiteServiceProvider extends ServiceProvider
         // kernel) skip analytics entirely. Mirrors oiatc.
         if ($this->tryResolveDatabase() !== null) {
             new AnalyticsSchema($this->persistentDatabase())->ensure();
+            new ContactRateLimiter($this->persistentDatabase(), $this->rateSecret())->ensure();
         }
+    }
+
+    private function rateSecret(): string
+    {
+        return getenv('WAASEYAA_JWT_SECRET') ?: 'fnpi-contact';
     }
 
     public function routes(WaaseyaaRouter $router, ?\Waaseyaa\Entity\EntityTypeManager $entityTypeManager = null): void
@@ -113,6 +121,30 @@ final class SiteServiceProvider extends ServiceProvider
                 ->controller(fn () => $controller->contact())
                 ->allowAll()
                 ->methods('GET')
+                ->build(),
+        );
+
+        // The real contact-form POST. Classic form-encoded body carrying the
+        // framework CSRF token as a hidden field (no route exemption); spam
+        // hygiene (honeypot, fill-time, rate limit) lives in the controller.
+        $submissions = null;
+        if ($entityTypeManager !== null) {
+            try {
+                $submissions = $entityTypeManager->getRepository('contact_submission');
+            } catch (\Throwable) {
+                $submissions = null;
+            }
+        }
+        $limiter = $this->tryResolveDatabase() !== null
+            ? new ContactRateLimiter($this->persistentDatabase(), $this->rateSecret())
+            : null;
+        $submit = new ContactSubmitController($submissions, $limiter);
+        $router->addRoute(
+            'contact.submit',
+            RouteBuilder::create('/contact/submit')
+                ->controller(fn (Request $request) => $submit->submit($request))
+                ->allowAll()
+                ->methods('POST')
                 ->build(),
         );
 

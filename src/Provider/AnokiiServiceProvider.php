@@ -214,6 +214,10 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
         $post('anokii.drive.upload', '/anokii/drive/upload', fn(Request $r) => $drive->upload($r));
         $get('anokii.drive.file', '/anokii/drive/file/{id}', fn(Request $r, string $id) => $drive->download($r, $id));
         $post('anokii.drive.delete', '/anokii/drive/delete', fn(Request $r) => $drive->delete($r));
+        $inbox = new \App\Controller\ContactInboxController($entityTypeManager, $access);
+        $get('anokii.inbox', '/anokii/inbox', fn(Request $r) => $inbox->index($r));
+        $post('anokii.inbox.read', '/anokii/inbox/read', fn(Request $r) => $inbox->markAllRead($r));
+
         $get('anokii.documents', '/anokii/documents', fn(Request $r) => $documents->index($r));
         $post('anokii.documents.create', '/anokii/documents/create', fn(Request $r) => $documents->create($r));
         $get('anokii.documents.show', '/anokii/documents/{uuid}', fn(Request $r, string $uuid) => $documents->show($r, $uuid));

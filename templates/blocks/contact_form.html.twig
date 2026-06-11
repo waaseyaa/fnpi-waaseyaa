@@ -1,21 +1,34 @@
+{# The public contact form. Posts classic form-encoded to /contact/submit
+   (works without JS). Email is the only required field; the labels say so
+   honestly. Hidden fields: the framework CSRF token (csrf_token is a lazy
+   Twig global registered by PageController; defaults empty in bare-Twig
+   tests), the render timestamp for the minimum-fill-time trap, and the
+   honeypot ("website") that humans never see. Optional context (form_error /
+   form_old) lets the POST result page re-render with values preserved. #}
 <section class="contact"><div class="wrap"><div class="grid">
-  {# Posts to email via a mailto: action for now (matches the homepage pattern),
-     with the field structure ready to point at a real handler later. #}
-  <form action="mailto:info@fnprocure.ca" method="post" enctype="text/plain">
-    <div class="field"><label>Name</label><input type="text" name="name" placeholder="Your name"></div>
-    <div class="field"><label>Organization (Nation or company)</label><input type="text" name="organization" placeholder="Your Nation or organization"></div>
-    <div class="field"><label>Email</label><input type="email" name="email" placeholder="you@email.com"></div>
+  <form action="/contact/submit" method="post">
+{% if form_error is defined and form_error %}    <div class="form-error" role="alert" style="margin-bottom:16px;padding:12px 14px;background:#fdecea;border:1px solid #e7b8b2;border-radius:3px;color:#8a2a1d;font-size:14px">{{ form_error }}</div>
+{% endif %}    <input type="hidden" name="_csrf_token" value="{{ csrf_token|default('') }}">
+    <input type="hidden" name="fts" value="{{ "now"|date("U") }}">
+    <div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;height:1px;width:1px;overflow:hidden">
+      <label>Leave this field empty</label>
+      <input type="text" name="website" tabindex="-1" autocomplete="off" value="">
+    </div>
+    <div class="field"><label>Email (required)</label><input type="email" name="email" required placeholder="you@email.com" value="{{ form_old.email|default('') }}"></div>
+    <div class="field"><label>Name (optional)</label><input type="text" name="name" placeholder="Your name" value="{{ form_old.name|default('') }}"></div>
+    <div class="field"><label>Organization (optional)</label><input type="text" name="organization" placeholder="Your Nation or organization" value="{{ form_old.organization|default('') }}"></div>
     <div class="field">
-      <label>What can we help with?</label>
+      <label>What can we help with? (optional)</label>
       <select name="topic">
-        <option value="technology">Technology and sovereign platform</option>
-        <option value="sourcing">Sourcing and services</option>
-        <option value="protection">Privacy and protection (Faraday)</option>
-        <option value="defence">Defence &amp; security</option>
-        <option value="partnership">Partnership or funding</option>
+        <option value=""{{ form_old.topic|default('') == '' ? ' selected' : '' }}>Choose a topic</option>
+        <option value="technology"{{ form_old.topic|default('') == 'technology' ? ' selected' : '' }}>Technology and sovereign platform</option>
+        <option value="sourcing"{{ form_old.topic|default('') == 'sourcing' ? ' selected' : '' }}>Sourcing and services</option>
+        <option value="protection"{{ form_old.topic|default('') == 'protection' ? ' selected' : '' }}>Privacy and protection (Faraday)</option>
+        <option value="defence"{{ form_old.topic|default('') == 'defence' ? ' selected' : '' }}>Defence &amp; security</option>
+        <option value="partnership"{{ form_old.topic|default('') == 'partnership' ? ' selected' : '' }}>Partnership or funding</option>
       </select>
     </div>
-    <div class="field"><label>Message</label><textarea name="message" rows="4" placeholder="Tell us a little about what you need, and we'll come back with next steps."></textarea></div>
+    <div class="field"><label>Message (optional)</label><textarea name="message" rows="4" placeholder="Tell us a little about what you need, and we'll come back with next steps.">{{ form_old.message|default('') }}</textarea></div>
     <button class="btn cyan" type="submit">Send</button>
   </form>
   <div class="info">
