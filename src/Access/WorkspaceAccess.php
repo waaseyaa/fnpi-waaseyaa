@@ -45,6 +45,12 @@ final class WorkspaceAccess
     public const string MANAGE_INBOX = 'manage inbox';
     public const string PUBLISH_PAGES = 'publish pages';
     public const string ADMINISTER_PAGES = 'administer pages';
+    // Venture Numbers: view is itself permission-gated (the section is
+    // staff-only; the Viewer role does NOT get it).
+    public const string VIEW_VENTURES = 'view ventures';
+    public const string EDIT_VENTURES = 'edit ventures';
+    public const string CONFIRM_VENTURES = 'confirm ventures';
+    public const string ADMINISTER_VENTURES = 'administer ventures';
 
     /**
      * Coarse capabilities the framework's entity agent tools require before they
@@ -78,6 +84,10 @@ final class WorkspaceAccess
             self::PUBLISH_PAGES,
             self::ADMINISTER_PAGES,
             self::MANAGE_INBOX,
+            self::VIEW_VENTURES,
+            self::EDIT_VENTURES,
+            self::CONFIRM_VENTURES,
+            self::ADMINISTER_VENTURES,
             ...self::AGENT_TOOL_CAPABILITIES,
         ];
     }
@@ -93,7 +103,7 @@ final class WorkspaceAccess
     {
         return [
             self::ROLE_ADMIN => ['label' => 'Admin', 'permissions' => self::allPermissions()],
-            self::ROLE_EDITOR => ['label' => 'Editor', 'permissions' => [self::EDIT_IDENTITY, self::EDIT_DOCUMENTS, self::EDIT_DRIVE, self::EDIT_PAGES, self::PUBLISH_PAGES, self::MANAGE_INBOX, ...self::AGENT_TOOL_CAPABILITIES]],
+            self::ROLE_EDITOR => ['label' => 'Editor', 'permissions' => [self::EDIT_IDENTITY, self::EDIT_DOCUMENTS, self::EDIT_DRIVE, self::EDIT_PAGES, self::PUBLISH_PAGES, self::MANAGE_INBOX, self::VIEW_VENTURES, self::EDIT_VENTURES, self::CONFIRM_VENTURES, ...self::AGENT_TOOL_CAPABILITIES]],
             self::ROLE_VIEWER => ['label' => 'Viewer', 'permissions' => [...self::AGENT_TOOL_CAPABILITIES]],
         ];
     }
@@ -136,6 +146,8 @@ final class WorkspaceAccess
             new DriveFileAccessPolicy(),
             new PageAccessPolicy(),
             new ContactSubmissionAccessPolicy(),
+            new VentureAccessPolicy(),
+            new VentureTrackerAccessPolicy(),
         ]);
     }
 }

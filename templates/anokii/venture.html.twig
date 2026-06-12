@@ -1,0 +1,52 @@
+{% extends "anokii/_shell.html.twig" %}
+
+{% block anokii_styles %}
+  .vlegend{color:var(--muted);font-size:12.5px;margin:0 0 18px;display:flex;flex-wrap:wrap;gap:6px 16px}
+  .vlegend i{font-style:normal;display:inline-flex;align-items:center;gap:6px}
+  .vlegend .vd{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .vgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px}
+  .vcard{background:#11161c;border:1px solid #1f2730;border-radius:12px;padding:18px 18px 14px;color:#e8edf2}
+  .vcard.dec{background:#161013;border-color:#4a2a2a}
+  .vcard h2{font-size:14px;text-transform:uppercase;letter-spacing:1px;color:var(--cyan2);margin:0 0 10px}
+  .vcard.dec h2{color:#e85d5d}
+  .vcard ul{list-style:none;margin:0;padding:0}
+  .vcard li{padding:6px 0 6px 22px;position:relative;border-top:1px solid #1f2730;font-size:13.5px;line-height:1.5}
+  .vcard li:first-child{border-top:none}
+  .vcard li .vd{position:absolute;left:2px;top:11px;width:10px;height:10px;border-radius:50%}
+  .vd.done{background:#3ddc84}.vd.doing{background:var(--cyan)}.vd.wait{background:#e8b339}.vd.todo{background:#3a4754}.vd.dec{background:#e85d5d}
+  .vcard li .vwho{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+  .vnext{margin-top:10px;padding-top:8px;border-top:1px dashed var(--cyan2);font-size:13px;color:#cfd8de}
+  .vnext b{color:var(--cyan2);text-transform:uppercase;font-size:11px;letter-spacing:1px;margin-right:6px}
+  .vempty{color:var(--muted);font-size:13.5px}
+  @media(max-width:880px){.vgrid{grid-template-columns:1fr}}
+{% endblock %}
+
+{% block anokii_content %}
+<div class="ahead">
+  <p class="ey">Venture Tracker</p>
+  <h1>Venture Tracker</h1>
+  <p class="sub">The live working board across FNPI's ventures. Read-only here; the Co-Intelligence agent keeps it current. Staff-only, on FNPI's own infrastructure.</p>
+</div>
+
+<div class="vlegend">
+  <i><span class="vd done"></span>done</i>
+  <i><span class="vd doing"></span>in progress</i>
+  <i><span class="vd wait"></span>waiting on someone</i>
+  <i><span class="vd todo"></span>not started</i>
+  <i><span class="vd dec"></span>decision needed</i>
+</div>
+
+{% if threads is empty %}
+<div class="vempty">No threads yet.</div>
+{% else %}
+<div class="vgrid">
+{% for t in threads %}  <div class="vcard{{ t.items|length and t.items[0].status == 'dec' and t.next == '' ? ' dec' : '' }}">
+    <h2>{{ t.title }}</h2>
+    <ul>
+{% for it in t.items %}      <li><span class="vd {{ it.status }}"></span>{{ it.body }}{% if it.who %}<span class="vwho">{{ it.who }}</span>{% endif %}</li>
+{% endfor %}    </ul>
+{% if t.next %}    <div class="vnext"><b>Next</b>{{ t.next }}</div>
+{% endif %}  </div>
+{% endfor %}</div>
+{% endif %}
+{% endblock %}

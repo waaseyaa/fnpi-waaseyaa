@@ -188,12 +188,18 @@ final class AgentConversation
         );
 
         // Tell the UI which workspace item this targets so it can preview the
-        // draft on that pillar card (pid is the card handle). Reads are cheap.
+        // draft on that card (pid is the card handle: a pillar's pid, or a
+        // venture lane's / gating fact's key). Reads are cheap.
         $type = (string) ($toolUse->input['entity_type'] ?? '');
         $id = (string) ($toolUse->input['id'] ?? '');
         $pid = '';
-        if ($type === 'identity_pillar' && $id !== '') {
-            $pid = (string) ($this->loadValues($type, $id, $account)['pid'] ?? '');
+        $handleField = match ($type) {
+            'identity_pillar' => 'pid',
+            'venture_lane', 'gating_fact' => 'key',
+            default => '',
+        };
+        if ($handleField !== '' && $id !== '') {
+            $pid = (string) ($this->loadValues($type, $id, $account)[$handleField] ?? '');
         }
 
         $emit('proposal', [
@@ -393,11 +399,26 @@ final class AgentConversation
         $type = (string) ($input['entity_type'] ?? '');
         $now = gmdate('Y-m-d H:i:s');
         $attribution = match ($type) {
-            'identity_pillar', 'drive_asset' => ['editor_uid' => $uid, 'editor_label' => $label, 'updated_at' => $now],
+            'identity_pillar', 'drive_asset', 'venture_lane', 'gating_fact', 'venture_snapshot' => ['editor_uid' => $uid, 'editor_label' => $label, 'updated_at' => $now],
             'document' => ['version_author_uid' => $uid, 'version_author_label' => $label, 'updated_at' => $now],
             default => ['updated_at' => $now],
         };
         $values = is_array($input['values'] ?? null) ? $input['values'] : [];
+
+        // A gating-fact status flip approved here IS the human confirmation:
+        // the approver's identity stamps confirmed_by_*, exactly like the
+        // Confirm button in the Ventures UI; flipping back clears the stamp.
+        if ($type === 'gating_fact' && array_key_exists('status', $values)) {
+            if ($values['status'] === 'confirmed') {
+                $attribution['confirmed_by_uid'] = $uid;
+                $attribution['confirmed_by_label'] = $label;
+                $attribution['confirmed_at'] = $now;
+            } elseif ($values['status'] === 'placeholder') {
+                $attribution['confirmed_by_uid'] = 0;
+                $attribution['confirmed_by_label'] = '';
+                $attribution['confirmed_at'] = '';
+            }
+        }
 
         // Approving any change to a pillar resolves its open "Decide" prompt: a
         // decision has been made. Clear it (unless the model is itself setting

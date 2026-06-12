@@ -1,0 +1,196 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Entity;
+
+use Waaseyaa\Entity\Attribute\ContentEntityKeys;
+use Waaseyaa\Entity\Attribute\ContentEntityType;
+use Waaseyaa\Entity\ContentEntityBase;
+
+/**
+ * A named gating fact on a venture lane: something the model depends on that
+ * is either still a placeholder or has been confirmed by a person.
+ *
+ * The status flip to "confirmed" is the load-bearing edit: it stamps who
+ * confirmed and when (confirmed_by_uid / confirmed_by_label / confirmed_at),
+ * and the revision history keeps the full placeholder-to-confirmed trail.
+ * Flipping back to placeholder clears the confirmation stamp.
+ *
+ * Fields (all in the automatic _data blob, snapshotted per revision):
+ *   key                  stable string handle (faraday-landed-cost, ...)
+ *   lane_key             the parent lane's key (app-side soft reference)
+ *   label                short fact name
+ *   detail               what the fact is and why it gates the lane
+ *   status               placeholder | confirmed
+ *   confirmed_by_uid/_label/_at  who confirmed, set on the confirm flip
+ *   sort_order           ordering within the lane
+ *   editor_uid/_label    who made the current revision
+ *   updated_at           last-edited stamp
+ */
+#[ContentEntityType(id: 'gating_fact', label: 'Gating fact', description: 'A venture-lane gating fact with placeholder/confirmed status and confirmation attribution.')]
+#[ContentEntityKeys(id: 'id', uuid: 'uuid', label: 'label', revision: 'revision_id')]
+final class GatingFact extends ContentEntityBase
+{
+    /** Valid statuses, in display order. */
+    public const STATUSES = ['placeholder', 'confirmed'];
+
+    public function getKey(): string
+    {
+        return (string) ($this->get('key') ?? '');
+    }
+
+    public function getLaneKey(): string
+    {
+        return (string) ($this->get('lane_key') ?? '');
+    }
+
+    public function getLabel(): string
+    {
+        return (string) ($this->get('label') ?? '');
+    }
+
+    public function getDetail(): string
+    {
+        return (string) ($this->get('detail') ?? '');
+    }
+
+    public function setDetail(string $detail): static
+    {
+        $this->set('detail', $detail);
+
+        return $this;
+    }
+
+    public function getStatus(): string
+    {
+        return (string) ($this->get('status') ?? 'placeholder');
+    }
+
+    public function setStatus(string $status): static
+    {
+        $this->set('status', $status);
+
+        return $this;
+    }
+
+    public function isConfirmed(): bool
+    {
+        return $this->getStatus() === 'confirmed';
+    }
+
+    public function getConfirmedByUid(): int
+    {
+        return (int) ($this->get('confirmed_by_uid') ?? 0);
+    }
+
+    public function getConfirmedByLabel(): string
+    {
+        return (string) ($this->get('confirmed_by_label') ?? '');
+    }
+
+    public function getConfirmedAt(): string
+    {
+        return (string) ($this->get('confirmed_at') ?? '');
+    }
+
+    /** Stamp the confirmation (who and when). The caller flips status too. */
+    public function setConfirmedBy(int $uid, string $label, string $at): static
+    {
+        $this->set('confirmed_by_uid', $uid);
+        $this->set('confirmed_by_label', $label);
+        $this->set('confirmed_at', $at);
+
+        return $this;
+    }
+
+    /** Clear the confirmation stamp (the fact went back to placeholder). */
+    public function clearConfirmation(): static
+    {
+        $this->set('confirmed_by_uid', 0);
+        $this->set('confirmed_by_label', '');
+        $this->set('confirmed_at', '');
+
+        return $this;
+    }
+
+    public function getSortOrder(): int
+    {
+        return (int) ($this->get('sort_order') ?? 0);
+    }
+
+    public function getEditorUid(): int
+    {
+        return (int) ($this->get('editor_uid') ?? 0);
+    }
+
+    public function getEditorLabel(): string
+    {
+        return (string) ($this->get('editor_label') ?? '');
+    }
+
+    public function setEditor(int $uid, string $label): static
+    {
+        $this->set('editor_uid', $uid);
+        $this->set('editor_label', $label);
+
+        return $this;
+    }
+
+    public function getUpdatedAt(): string
+    {
+        return (string) ($this->get('updated_at') ?? '');
+    }
+
+    public function setUpdatedAt(string $updatedAt): static
+    {
+        $this->set('updated_at', $updatedAt);
+
+        return $this;
+    }
+
+    /** When this revision was created, from the revision metadata. */
+    public function getRevisionCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->revisionMetadata()?->revisionCreatedAt;
+    }
+
+    /**
+     * Populate every defining field at once (the seed path). The caller saves;
+     * with revisionDefault the save records the initial revision.
+     */
+    public function fill(
+        string $key,
+        string $laneKey,
+        string $label,
+        string $detail,
+        string $status,
+        int $sortOrder,
+        int $editorUid,
+        string $editorLabel,
+        string $updatedAt,
+    ): static {
+        $this->set('key', $key);
+        $this->set('lane_key', $laneKey);
+        $this->set('label', $label);
+        $this->set('detail', $detail);
+        $this->set('status', $status);
+        $this->set('confirmed_by_uid', 0);
+        $this->set('confirmed_by_label', '');
+        $this->set('confirmed_at', '');
+        $this->set('sort_order', $sortOrder);
+        $this->set('editor_uid', $editorUid);
+        $this->set('editor_label', $editorLabel);
+        $this->set('updated_at', $updatedAt);
+
+        return $this;
+    }
+
+    /** Write a short summary into the revision log (what this edit changed). */
+    public function recordEdit(string $summary): static
+    {
+        $this->setRevisionLog($summary);
+
+        return $this;
+    }
+}

@@ -112,4 +112,52 @@ final class McpAgentScopeTest extends TestCase
     {
         $this->assertNull(McpAgentScope::guard('bimaaji_search_specs', ['query' => 'mcp']));
     }
+
+    #[Test]
+    public function venture_types_are_in_scope_for_reads_and_numeric_draft_writes(): void
+    {
+        foreach (['venture_lane', 'gating_fact', 'venture_snapshot'] as $type) {
+            $this->assertNull(McpAgentScope::guard('entity.read', ['entity_type' => $type, 'id' => 1]), "$type read");
+        }
+
+        // Numeric scenario updates on a lane are the point of the agent access.
+        $this->assertNull(McpAgentScope::guard('entity.update', [
+            'entity_type' => 'venture_lane',
+            'id' => 1,
+            'values' => ['y3_likely' => 75000, 'assumptions' => ['Updated assumption']],
+        ]));
+
+        // A gating fact's detail stays writable.
+        $this->assertNull(McpAgentScope::guard('entity.update', [
+            'entity_type' => 'gating_fact',
+            'id' => 1,
+            'values' => ['detail' => 'Sharper wording'],
+        ]));
+    }
+
+    #[Test]
+    public function gating_fact_confirmation_is_human_only_over_mcp(): void
+    {
+        // The remote MCP surface has no human approval loop, so the status
+        // flip and the confirmation stamp are denied field writes there (the
+        // in-app chat agent gets them through an approved proposal instead).
+        foreach (['status', 'confirmed_by_uid', 'confirmed_by_label', 'confirmed_at'] as $field) {
+            $denied = McpAgentScope::guard('entity.update', [
+                'entity_type' => 'gating_fact',
+                'id' => 1,
+                'values' => [$field => 'confirmed'],
+            ]);
+            $this->assertNotNull($denied, "gating_fact.$field must be denied");
+            $this->assertSame('publish_denied', $denied->summary);
+        }
+
+        // The publish-pointer denials cover the new types automatically.
+        $denied = McpAgentScope::guard('entity.update', [
+            'entity_type' => 'venture_lane',
+            'id' => 1,
+            'values' => ['published_revision_id' => 1],
+        ]);
+        $this->assertNotNull($denied);
+        $this->assertSame('publish_denied', $denied->summary);
+    }
 }

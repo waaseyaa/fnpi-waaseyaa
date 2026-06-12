@@ -56,9 +56,19 @@ final class Modules
                 'icon' => '<path d="M4 6h16v12H4V6Z" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/><path d="m4 7 8 6 8-6" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
             ],
             [
+                'id' => 'venture', 'label' => 'Venture Tracker', 'group' => 'Workspace', 'live' => true,
+                'href' => '/anokii/venture', 'desc' => 'The live working board across FNPI ventures.', 'badge' => '', 'tile' => true,
+                'icon' => '<path d="M4 19h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><rect x="5" y="11" width="3.4" height="6" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="10.3" y="7" width="3.4" height="10" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="15.6" y="13" width="3.4" height="4" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/>',
+            ],
+            [
                 'id' => 'analytics', 'label' => 'Analytics', 'group' => 'Workspace', 'live' => true,
                 'href' => '/anokii/analytics', 'desc' => "First-party site analytics, in the Nation's own database.", 'badge' => '', 'tile' => true,
                 'icon' => '<path d="M5 20V10M12 20V4M19 20v-7" stroke="currentColor" stroke-width="1.9" fill="none" stroke-linecap="round"/>',
+            ],
+            [
+                'id' => 'ventures', 'label' => 'Venture Numbers', 'group' => 'Workspace', 'live' => true,
+                'href' => '/anokii/ventures', 'desc' => 'The revenue model, lane by lane: scenarios, assumptions, gating facts.', 'badge' => '', 'tile' => true,
+                'icon' => '<path d="M4 19h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="m5 14 4-4 3 3 6-6" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 7h4v4" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
             ],
             [
                 'id' => 'rooms', 'label' => 'Data Rooms', 'group' => 'Workspace', 'live' => false,

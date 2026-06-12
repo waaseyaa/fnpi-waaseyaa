@@ -23,12 +23,15 @@ use App\Command\MigratePillarsCommand;
 use App\Command\WidenPillarsCommand;
 use App\Command\SeedDocumentsCommand;
 use App\Command\SeedDriveCommand;
+use App\Command\SeedVenturesCommand;
 use App\Controller\AnokiiController;
 use App\Controller\CoIntelligenceController;
 use App\Controller\DocumentsController;
 use App\Controller\DriveController;
 use App\Controller\IdentityController;
 use App\Controller\PagesController;
+use App\Controller\VenturesController;
+use App\Venture\VentureService;
 use App\Documents\DocumentService;
 use App\Documents\DocumentStorage;
 use App\Documents\GotenbergClient;
@@ -177,6 +180,12 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
         // publish pages).
         $pages = new PagesController($entityTypeManager, new PagesService($entityTypeManager, new CloudflareCachePurger()), $access);
 
+        // Venture Numbers (staff-only): the revenue model mirrored as
+        // revisionable entities, chat-first beside Co-Intelligence. The first
+        // tool whose READ is permission-gated (view ventures, Forbidden
+        // otherwise via VentureAccessPolicy).
+        $ventures = new VenturesController($entityTypeManager, new VentureService($entityTypeManager), $access);
+
         $get = static fn(string $name, string $path, callable $c) => $router->addRoute(
             $name,
             RouteBuilder::create($path)->controller($c)->allowAll()->methods('GET')->build(),
@@ -216,6 +225,15 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
         $post('anokii.drive.delete', '/anokii/drive/delete', fn(Request $r) => $drive->delete($r));
         $analytics = new \App\Controller\AnokiiAnalyticsController($entityTypeManager, new \App\Analytics\AnalyticsReport($this->db()));
         $get('anokii.analytics', '/anokii/analytics', fn(Request $r) => $analytics->index($r));
+
+        $get('anokii.ventures', '/anokii/ventures', fn(Request $r) => $ventures->index($r));
+        $post('anokii.ventures.lane_save', '/anokii/ventures/lane/save', fn(Request $r) => $ventures->saveLane($r));
+        $post('anokii.ventures.fact_save', '/anokii/ventures/fact/save', fn(Request $r) => $ventures->saveFact($r));
+        $get('anokii.ventures.lane_history', '/anokii/ventures/lane/{key}/history', fn(Request $r, string $key) => $ventures->laneHistory($r, $key));
+        $get('anokii.ventures.fact_history', '/anokii/ventures/fact/{key}/history', fn(Request $r, string $key) => $ventures->factHistory($r, $key));
+
+        $venture = new \App\Controller\VentureController($entityTypeManager);
+        $get('anokii.venture', '/anokii/venture', fn(Request $r) => $venture->index($r));
 
         $inbox = new \App\Controller\ContactInboxController($entityTypeManager, $access);
         $get('anokii.inbox', '/anokii/inbox', fn(Request $r) => $inbox->index($r));
@@ -437,6 +455,21 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
                 $command = new MigrateDriveCommand(new DriveFileService($etm), $this->db());
 
                 return $command->run($io);
+            },
+        );
+
+        yield new CommandDefinition(
+            name: 'app:seed-ventures',
+            description: 'Seed the Venture Numbers section (six lanes, gating facts, provenance snapshot) from the checked-in model mirror. Idempotent; never overwrites entered numbers.',
+            handler: function (CliIO $io): int {
+                $etm = $this->entityTypeManager();
+                if ($etm === null) {
+                    $io->error('Ventures seed requires a booted kernel (EntityTypeManager).');
+
+                    return 1;
+                }
+
+                return new SeedVenturesCommand(new VentureService($etm))->run($io);
             },
         );
 
