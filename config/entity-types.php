@@ -14,10 +14,15 @@ declare(strict_types=1);
 
 use App\Entity\Document;
 use App\Entity\ContactSubmission;
+use App\Entity\VentureItem;
+use App\Entity\VentureThread;
 use App\Entity\DocumentNote;
 use App\Entity\DriveFile;
+use App\Entity\GatingFact;
 use App\Entity\Page;
 use App\Entity\Pillar;
+use App\Entity\VentureLane;
+use App\Entity\VentureSnapshot;
 use Waaseyaa\Entity\EntityType;
 
 return [
@@ -122,6 +127,29 @@ return [
         ],
     ),
 
+    // Venture tracker (staff-only working board, MCP-maintained): two flat,
+    // non-revisionable types. A thread is a card; items are its status lines.
+    new EntityType(
+        id: 'venture_thread',
+        label: 'Venture thread',
+        class: VentureThread::class,
+        keys: [
+            'id' => 'id',
+            'uuid' => 'uuid',
+            'label' => 'title',
+        ],
+    ),
+    new EntityType(
+        id: 'venture_item',
+        label: 'Venture item',
+        class: VentureItem::class,
+        keys: [
+            'id' => 'id',
+            'uuid' => 'uuid',
+            'label' => 'body',
+        ],
+    ),
+
     // Flat discussion thread; not revisionable.
     new EntityType(
         id: 'document_note',
@@ -132,5 +160,52 @@ return [
             'uuid' => 'uuid',
             'label' => 'author_label',
         ],
+    ),
+
+    // Venture Numbers (staff-only). All three types are revisionable with
+    // revisionDefault so every numeric or status edit records a revision (the
+    // rollback net); VentureAccessPolicy gates view on the `view ventures`
+    // permission (the section is invisible to the public AND to authenticated
+    // accounts without it). Tables land via db:init --sync-schema.
+    new EntityType(
+        id: 'venture_lane',
+        label: 'Venture lane',
+        class: VentureLane::class,
+        keys: [
+            'id' => 'id',
+            'uuid' => 'uuid',
+            'label' => 'title',
+            'revision' => 'revision_id',
+        ],
+        revisionable: true,
+        revisionDefault: true,
+    ),
+
+    new EntityType(
+        id: 'gating_fact',
+        label: 'Gating fact',
+        class: GatingFact::class,
+        keys: [
+            'id' => 'id',
+            'uuid' => 'uuid',
+            'label' => 'label',
+            'revision' => 'revision_id',
+        ],
+        revisionable: true,
+        revisionDefault: true,
+    ),
+
+    new EntityType(
+        id: 'venture_snapshot',
+        label: 'Venture snapshot',
+        class: VentureSnapshot::class,
+        keys: [
+            'id' => 'id',
+            'uuid' => 'uuid',
+            'label' => 'model_version',
+            'revision' => 'revision_id',
+        ],
+        revisionable: true,
+        revisionDefault: true,
     ),
 ];

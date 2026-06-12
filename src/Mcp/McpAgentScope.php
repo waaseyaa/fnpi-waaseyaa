@@ -26,15 +26,19 @@ final class McpAgentScope
      * contact submissions carry personal contact data and the agent has no
      * business reading them (pinned by McpAgentScopeTest).
      */
-    public const array READ_TYPES = ['page', 'identity_pillar', 'document', 'document_note', 'drive_asset'];
+    public const array READ_TYPES = ['page', 'identity_pillar', 'document', 'document_note', 'drive_asset', 'venture_lane', 'gating_fact', 'venture_snapshot', 'venture_thread', 'venture_item'];
 
     /**
-     * Entity types the MCP agent may write. Revisionable types only: a write
-     * lands as a draft revision and never moves the published pointer.
-     * document_note is excluded — it is not revisionable, so an update would
-     * mutate the live note thread rather than produce a reviewable draft.
+     * Entity types the MCP agent may write. Mostly revisionable types, where a
+     * write lands as a draft revision and never moves the published pointer;
+     * document_note is excluded because a non-revisionable update would mutate
+     * the live note thread rather than produce a reviewable draft. The venture
+     * tracker (venture_thread, venture_item) is the deliberate exception: it is
+     * a non-revisionable internal working board with no public surface and no
+     * third-party data, and the agent is its maintainer, so live in-place
+     * updates are intended.
      */
-    public const array WRITE_TYPES = ['page', 'identity_pillar', 'document', 'drive_asset'];
+    public const array WRITE_TYPES = ['page', 'identity_pillar', 'document', 'drive_asset', 'venture_lane', 'gating_fact', 'venture_snapshot', 'venture_thread', 'venture_item'];
 
     /**
      * Field keys refused in entity.create / entity.update values for every
@@ -46,9 +50,15 @@ final class McpAgentScope
     /**
      * Per-type field denials. `page.status` is the publish marker ("published"
      * once live); identity_pillar's `status` is its maturity field and stays
-     * writable.
+     * writable. A gating fact's status flip is a human confirmation act: the
+     * in-app chat agent gets it through a human-approved proposal, but the
+     * remote MCP surface has no approval loop, so the flip and its
+     * confirmation stamp are refused here outright.
      */
-    public const array DENIED_FIELDS_BY_TYPE = ['page' => ['status']];
+    public const array DENIED_FIELDS_BY_TYPE = [
+        'page' => ['status'],
+        'gating_fact' => ['status', 'confirmed_by_uid', 'confirmed_by_label', 'confirmed_at'],
+    ];
 
     /**
      * Tools refused outright for the MCP surface. Both share the

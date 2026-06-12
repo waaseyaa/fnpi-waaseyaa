@@ -52,4 +52,18 @@ final class AgentPromptTest extends TestCase
         // The convention: an Anishinaabemowin field sits beside the English one.
         $this->assertStringContainsString('_oj', $this->prompt);
     }
+
+    #[Test]
+    public function the_agent_knows_the_venture_numbers_and_their_placeholder_posture(): void
+    {
+        $this->assertStringContainsString('venture_lane:', $this->prompt);
+        $this->assertStringContainsString('gating_fact:', $this->prompt);
+        $this->assertStringContainsString('y1_worst .. y5_best', $this->prompt);
+        // The hard rule: venture figures are placeholder-grade and must be
+        // labeled that way whenever quoted.
+        $this->assertStringContainsString('placeholder-grade', $this->prompt);
+        $this->assertStringContainsString('Never present a venture number as confirmed or final', $this->prompt);
+        // Numbers come from the entities, not the RAG passages.
+        $this->assertStringContainsString('entity.list venture_lane', $this->prompt);
+    }
 }

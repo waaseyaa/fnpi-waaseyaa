@@ -106,12 +106,15 @@ final class AgentToolsTest extends TestCase
     }
 
     #[Test]
-    public function the_workspace_types_include_the_page_for_agent_drafting(): void
+    public function the_workspace_types_include_pages_and_the_venture_section(): void
     {
         // The agent may draft public website copy (page) in addition to the
-        // identity / documents / drive entities — drafts only, never publish.
+        // identity / documents / drive entities (drafts only, never publish),
+        // and may read and propose edits to the staff-only venture numbers
+        // (lanes, gating facts, the provenance snapshot), every write behind
+        // the same human-approval loop.
         $this->assertSame(
-            ['identity_pillar', 'document', 'document_note', 'drive_asset', 'page'],
+            ['identity_pillar', 'document', 'document_note', 'drive_asset', 'page', 'venture_lane', 'gating_fact', 'venture_snapshot', 'venture_thread', 'venture_item'],
             AgentTools::WORKSPACE_TYPES,
         );
     }
