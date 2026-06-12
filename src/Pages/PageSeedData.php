@@ -109,6 +109,18 @@ final class PageSeedData
                         ],
                     ],
                     [
+                        // Reads as a continuation of the track-record band above:
+                        // no heading, the dark theme carries straight through.
+                        'type' => 'video_embed',
+                        'video_id' => 'zbxPX21K1gE',
+                        'title' => '2012 China Trade Mission',
+                        'poster' => '/img/video-china-trade-2012.jpg',
+                        'poster_alt' => 'The FNPI delegation on the 2012 China trade mission.',
+                        'poster_w' => 1280,
+                        'poster_h' => 720,
+                        'caption' => '2012 China Trade Mission.',
+                    ],
+                    [
                         'type' => 'faraday_feature',
                         'panel_label' => 'Grounded on your files',
                         'image' => '/img/anokii-cointelligence.jpg',
@@ -378,6 +390,18 @@ final class PageSeedData
                             ['h4' => 'Personnel protection &amp; materiel', 'body' => 'Through our partner network, direct access to body armour, helmets, armoured vehicles, carriers, and sites suitable for defence-related use.'],
                             ['h4' => 'Sensors', 'body' => 'Edge AI security analytics built privacy-first, with no facial recognition by design. Sensor and camera feeds are processed on-site, so data stays in the community and under its jurisdiction.'],
                         ],
+                    ],
+                    [
+                        // Breaks the text wall after the capability grid.
+                        'type' => 'video_embed',
+                        'sec_h' => 'Who we are',
+                        'video_id' => 'AzmgGLEEt1U',
+                        'title' => 'An introduction to First Nations Procurement Inc.',
+                        'poster' => '/img/video-fnpi-intro.jpg',
+                        'poster_alt' => 'Title frame of the FNPI introduction video.',
+                        'poster_w' => 640,
+                        'poster_h' => 360,
+                        'caption' => 'An introduction to First Nations Procurement Inc.',
                     ],
                     [
                         'type' => 'checklist',

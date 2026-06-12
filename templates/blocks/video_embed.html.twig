@@ -1,0 +1,22 @@
+{# video_embed: a privacy-first YouTube facade. At load this renders ONLY a
+   self-hosted 16:9 poster (served from our own origin, never hotlinked from
+   i.ytimg.com) plus a play button, so the page makes ZERO third-party requests
+   until the visitor chooses to play. The footer script (base.html.twig) then
+   swaps in a www.youtube-nocookie.com/embed iframe with autoplay=1, so one
+   click plays. Without JS the <noscript> link opens the video on YouTube.
+   The 16:9 box is reserved by aspect-ratio, so swapping the iframe in causes
+   no layout shift. Optional eyebrow (sec_h) and h2; caption line below. #}
+<section class="video-embed"><div class="wrap">
+{% if blk.sec_h is defined and blk.sec_h %}  <p class="sec-h">{{ blk.sec_h|raw }}</p>
+{% endif %}{% if blk.h2 is defined and blk.h2 %}  <h2 class="sec-t display">{{ blk.h2|raw }}</h2>
+{% endif %}  <figure class="vembed">
+    <div class="vframe">
+      <img class="vposter" src="{{ blk.poster }}" alt="{{ blk.poster_alt }}"{% if blk.poster_w is defined and blk.poster_h is defined %} width="{{ blk.poster_w }}" height="{{ blk.poster_h }}"{% endif %} loading="lazy">
+      <button type="button" class="vplay" data-video-id="{{ blk.video_id }}" aria-label="Play video: {{ blk.title }}">
+        <svg viewBox="0 0 68 48" aria-hidden="true" focusable="false"><path class="vplay-bg" d="M66.52 7.74c-.78-2.93-2.49-5.42-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.64 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.42 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z"></path><path d="M45 24 27 14v20" fill="#fff"></path></svg>
+      </button>
+      <noscript><a class="vfallback" href="https://www.youtube.com/watch?v={{ blk.video_id }}">Watch &ldquo;{{ blk.title }}&rdquo; on YouTube &rarr;</a></noscript>
+    </div>
+{% if blk.caption is defined and blk.caption %}    <figcaption>{{ blk.caption|raw }}</figcaption>
+{% endif %}  </figure>
+</div></section>

@@ -44,6 +44,7 @@ final class PageStructureTest extends TestCase
                 'feature_lanes',
                 'band_proof',
                 'photo_strip', // the Track record strip
+                'video_embed', // the 2012 China trade-mission video, continuing that band
                 'faraday_feature', // the sovereign-AI band
                 'faraday_feature', // the Faraday product band
                 'vision_mission',
@@ -72,6 +73,7 @@ final class PageStructureTest extends TestCase
                 'hero',
                 'text_intro',
                 'module_grid',
+                'video_embed', // the FNPI introduction video, breaking the text wall
                 'checklist',
                 'text_center',
                 'hero_cta',
@@ -107,5 +109,31 @@ final class PageStructureTest extends TestCase
         preg_match_all('/<!-- blk:([a-z0-9_]+) -->/', $html, $matches);
 
         $this->assertSame($expectedBlockTypes, $matches[1]);
+    }
+
+    /**
+     * The privacy-first contract for the video facade: the site sells
+     * counter-surveillance, so the pages that carry a video must ship NO
+     * third-party player resource at load. The poster is self-hosted, no
+     * iframe is present, and the only youtube/ytimg/googlevideo reference in
+     * the document is the click-handler data (the inline <script>) and the
+     * no-JS <noscript> fallback link. The check targets request-making markup,
+     * so the inline <script> (the handler), <style> (CSS comments), and the
+     * <noscript> fallback are excluded.
+     */
+    #[Test]
+    public function pages_with_a_video_embed_ship_no_third_party_player_at_load(): void
+    {
+        foreach (['home', 'defence'] as $method) {
+            $html = (string) new PageController(self::$pages)->{$method}()->getContent();
+
+            $this->assertStringContainsString('data-video-id=', $html, "$method carries a video facade");
+            $this->assertStringNotContainsString('<iframe', $html, "$method loads no iframe before the click");
+
+            $stripped = (string) preg_replace('#<(script|style|noscript)\b[^>]*>.*?</\1>#is', '', $html);
+            foreach (['youtube', 'ytimg', 'googlevideo'] as $needle) {
+                $this->assertStringNotContainsString($needle, $stripped, "no $needle URL in $method markup outside the click-handler data");
+            }
+        }
     }
 }

@@ -134,6 +134,25 @@
   .strip figure{margin:0;min-width:0;flex:var(--ar,1) 1 0%;max-width:calc(min(420px,70vh) * var(--ar,1))}
   .strip img{width:100%;height:auto;display:block;border-radius:6px;outline:1px solid #1b2a30;outline-offset:-1px}
   .strip figcaption{margin-top:10px;font-size:13px;color:#8b969c;line-height:1.5}
+  /* video embed: privacy-first YouTube facade. The poster is self-hosted and
+     served from our origin; NO iframe loads until the visitor clicks the play
+     button, at which point the footer script swaps in a youtube-nocookie embed.
+     16:9 is reserved by aspect-ratio, so the swap causes no layout shift. */
+  .video-embed{background:#0a0e12;color:#dfe7ea}
+  .video-embed .sec-t{color:#fff}
+  .photo-strip + .video-embed{padding-top:0} /* reads as a continuation of the track-record band */
+  .vembed{margin:0 auto;max-width:920px}
+  .vframe{position:relative;aspect-ratio:16/9;background:#0e151b;border-radius:8px;overflow:hidden;outline:1px solid #1b2a30;outline-offset:-1px}
+  .vposter{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+  .vplay{position:absolute;inset:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:0;background:transparent;border:0;cursor:pointer}
+  .vplay svg{width:84px;height:60px;filter:drop-shadow(0 2px 10px rgba(0,0,0,.45));transition:transform .15s}
+  .vplay .vplay-bg{fill:#11161c;opacity:.82;transition:fill .15s,opacity .15s}
+  .vplay:hover .vplay-bg,.vplay:focus-visible .vplay-bg{fill:var(--cyan2);opacity:1}
+  .vplay:hover svg{transform:scale(1.06)}
+  .vplay:focus-visible{outline:3px solid var(--cyan);outline-offset:4px}
+  .vframe iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+  .vfallback{position:absolute;left:0;right:0;bottom:14px;text-align:center;color:#bfe9f2;font-family:"Oswald",sans-serif;font-size:14px;letter-spacing:.04em}
+  .video-embed figcaption{margin-top:12px;font-size:13px;color:#8b969c;line-height:1.5;text-align:center}
   /* two-door closing band: equal panels, tops aligned, buttons bottom-aligned */
   .doors{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:880px;margin:8px auto 0;text-align:left}
   .door{background:#fff;border:1px solid var(--line);border-radius:4px;padding:26px;display:flex;flex-direction:column;gap:12px}
@@ -258,6 +277,29 @@
   nav.addEventListener('click', function (e) {
     if (e.target.closest('a')) setOpen(false);
   });
+})();
+(function () {
+  // Video facade: on click, swap the self-hosted poster for a youtube-nocookie
+  // iframe (autoplay). This is the ONLY place a YouTube URL is constructed; the
+  // initial markup carries no third-party player resource.
+  var btns = document.querySelectorAll('.vplay');
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].addEventListener('click', function (e) {
+      e.preventDefault();
+      var id = this.getAttribute('data-video-id');
+      var frame = this.closest('.vframe');
+      if (!id || !frame) return;
+      var iframe = document.createElement('iframe');
+      iframe.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(id) + '?autoplay=1&rel=0';
+      iframe.title = this.getAttribute('aria-label') || 'Video player';
+      iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
+      iframe.setAttribute('allowfullscreen', '');
+      var poster = frame.querySelector('.vposter');
+      if (poster) poster.parentNode.removeChild(poster);
+      this.parentNode.removeChild(this);
+      frame.appendChild(iframe);
+    });
+  }
 })();
 </script>
 </body>

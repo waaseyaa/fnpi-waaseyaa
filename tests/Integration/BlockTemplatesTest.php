@@ -369,6 +369,58 @@ final class BlockTemplatesTest extends TestCase
     }
 
     #[Test]
+    public function video_embed_renders_a_self_hosted_facade_with_no_iframe_at_load(): void
+    {
+        // The privacy-first facade: a self-hosted poster (never i.ytimg.com), an
+        // accessible play button carrying only the bare id, a no-JS fallback
+        // link, and NO iframe/stream until the footer script swaps one in.
+        $html = self::$twig->render('blocks/video_embed.html.twig', ['blk' => [
+            'type' => 'video_embed',
+            'sec_h' => 'Who we are',
+            'video_id' => 'AzmgGLEEt1U',
+            'title' => 'An introduction to First Nations Procurement Inc.',
+            'poster' => '/img/video-fnpi-intro.jpg',
+            'poster_alt' => 'Title frame of the FNPI introduction video.',
+            'poster_w' => 640,
+            'poster_h' => 360,
+            'caption' => 'An introduction to First Nations Procurement Inc.',
+        ]]);
+
+        $this->assertStringContainsString('src="/img/video-fnpi-intro.jpg" alt="Title frame of the FNPI introduction video."', $html);
+        $this->assertStringContainsString('width="640" height="360"', $html);
+        $this->assertStringNotContainsString('i.ytimg.com', $html, 'the poster is self-hosted, never hotlinked');
+        $this->assertStringContainsString('<button type="button" class="vplay" data-video-id="AzmgGLEEt1U"', $html);
+        $this->assertStringContainsString('aria-label="Play video: An introduction to First Nations Procurement Inc."', $html);
+        $this->assertStringNotContainsString('<iframe', $html, 'no iframe ships at load');
+        $this->assertStringNotContainsString('googlevideo', $html);
+        $this->assertStringContainsString('<noscript><a class="vfallback" href="https://www.youtube.com/watch?v=AzmgGLEEt1U">', $html);
+        // The eyebrow renders; with no h2 supplied, no section title is emitted.
+        $this->assertStringContainsString('<p class="sec-h">Who we are</p>', $html);
+        $this->assertStringNotContainsString('class="sec-t', $html);
+        $this->assertStringContainsString('<figcaption>An introduction to First Nations Procurement Inc.</figcaption>', $html);
+    }
+
+    #[Test]
+    public function the_seeded_video_embeds_reference_shipped_posters(): void
+    {
+        // Both placements must ship a self-hosted poster derivative in public/img
+        // (no hotlinking), and a poster_alt is required for accessibility.
+        foreach (['/', '/defence'] as $path) {
+            $page = \App\Pages\PageSeedData::all()[$path];
+            $video = null;
+            foreach ($page['blocks'] as $block) {
+                if ($block['type'] === 'video_embed') {
+                    $video = $block;
+                }
+            }
+            $this->assertNotNull($video, "$path seed carries a video_embed");
+            $this->assertNotSame('', trim($video['video_id'] ?? ''), 'a video id is required');
+            $this->assertNotSame('', trim($video['poster_alt'] ?? ''), 'poster alt text is required');
+            $this->assertFileExists(dirname(__DIR__, 2) . '/public' . $video['poster']);
+        }
+    }
+
+    #[Test]
     public function module_grid_omits_an_absent_subline_instead_of_an_empty_paragraph(): void
     {
         // The defence capability grid drops its subline (the intro already
