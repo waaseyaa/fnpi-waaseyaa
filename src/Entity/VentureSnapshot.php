@@ -6,7 +6,9 @@ namespace App\Entity;
 
 use Waaseyaa\Entity\Attribute\ContentEntityKeys;
 use Waaseyaa\Entity\Attribute\ContentEntityType;
+use Waaseyaa\Entity\Attribute\Field;
 use Waaseyaa\Entity\ContentEntityBase;
+use Waaseyaa\Field\FieldStorage;
 
 /**
  * Provenance for the Venture Numbers mirror: which modeling workbook state the
@@ -26,6 +28,29 @@ use Waaseyaa\Entity\ContentEntityBase;
 #[ContentEntityKeys(id: 'id', uuid: 'uuid', label: 'model_version', revision: 'revision_id')]
 final class VentureSnapshot extends ContentEntityBase
 {
+    // ── Declared field definitions (alpha.204+ save-time validation) ──
+    // Metadata declarations read by EntityType::fromClass() in
+    // config/entity-types.php; values still flow through the value bag and
+    // stay in the _data blob (stored: FieldStorage::Data).
+
+    #[Field(required: true, label: 'As of', stored: FieldStorage::Data)]
+    public string $as_of = '';
+
+    #[Field(required: true, label: 'Model version', stored: FieldStorage::Data)]
+    public string $model_version = '';
+
+    #[Field(required: false, label: 'Note', stored: FieldStorage::Data)]
+    public string $note = '';
+
+    #[Field(required: false, stored: FieldStorage::Data)]
+    public int $editor_uid = 0;
+
+    #[Field(required: false, stored: FieldStorage::Data)]
+    public string $editor_label = '';
+
+    #[Field(required: false, stored: FieldStorage::Data)]
+    public string $updated_at = '';
+
     public function getAsOf(): string
     {
         return (string) ($this->get('as_of') ?? '');

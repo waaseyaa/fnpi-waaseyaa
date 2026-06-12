@@ -6,7 +6,9 @@ namespace App\Entity;
 
 use Waaseyaa\Entity\Attribute\ContentEntityKeys;
 use Waaseyaa\Entity\Attribute\ContentEntityType;
+use Waaseyaa\Entity\Attribute\Field;
 use Waaseyaa\Entity\ContentEntityBase;
+use Waaseyaa\Field\FieldStorage;
 
 /**
  * One revenue lane in the staff-only Venture Numbers section.
@@ -40,6 +42,80 @@ final class VentureLane extends ContentEntityBase
 
     /** Modeled horizon in years. */
     public const YEARS = 5;
+
+    // ── Declared field definitions (alpha.204+ save-time validation) ──
+    //
+    // These #[Field] properties are metadata declarations read by
+    // EntityType::fromClass() in config/entity-types.php; values still flow
+    // through the ContentEntityBase value bag (get()/set()), and every field
+    // stays in the _data blob (stored: FieldStorage::Data — the sql-blob
+    // backend materializes no column, and findBy() routes via json_extract).
+    // The framework derives constraints from them and enforces on EVERY
+    // save: required → NotBlank, settings.min → Range, PHP type → Type.
+    // Strings that may legitimately be empty declare required: false
+    // explicitly (the inferrer defaults required to "not nullable").
+
+    #[Field(required: true, label: 'Lane key', stored: FieldStorage::Data)]
+    public string $key = '';
+
+    #[Field(required: true, label: 'Title', stored: FieldStorage::Data)]
+    public string $title = '';
+
+    #[Field(required: false, label: 'Summary', stored: FieldStorage::Data)]
+    public string $summary = '';
+
+    // The fifteen scenario grid cells: whole CAD per year, never negative.
+    // Type('int') rejects floats and non-numeric values; Range(min: 0)
+    // rejects negatives. (No field stores a scenario KEY — the scenario is
+    // baked into the field names, so SCENARIOS needs no Choice constraint.)
+    #[Field(required: false, settings: ['min' => 0], stored: FieldStorage::Data)]
+    public int $y1_worst = 0;
+    #[Field(required: false, settings: ['min' => 0], stored: FieldStorage::Data)]
+    public int $y1_likely = 0;
+    #[Field(required: false, settings: ['min' => 0], stored: FieldStorage::Data)]
+    public int $y1_best = 0;
+    #[Field(required: false, settings: ['min' => 0], stored: FieldStorage::Data)]
+    public int $y2_worst = 0;
+    #[Field(required: false, settings: ['min' => 0], stored: FieldStorage::Data)]
+    public int $y2_likely = 0;
+    #[Field(required: false, settings: ['min' => 0], stored: FieldStorage::Data)]
+    public int $y2_best = 0;
+    #[Field(required: false, settings: ['min' => 0], stored: FieldStorage::Data)]
+    public int $y3_worst = 0;
+    #[Field(required: false, settings: ['min' => 0], stored: FieldStorage::Data)]
+    public int $y3_likely = 0;
+    #[Field(required: false, settings: ['min' => 0], stored: FieldStorage::Data)]
+    public int $y3_best = 0;
+    #[Field(required: false, settings: ['min' => 0], stored: FieldStorage::Data)]
+    public int $y4_worst = 0;
+    #[Field(required: false, settings: ['min' => 0], stored: FieldStorage::Data)]
+    public int $y4_likely = 0;
+    #[Field(required: false, settings: ['min' => 0], stored: FieldStorage::Data)]
+    public int $y4_best = 0;
+    #[Field(required: false, settings: ['min' => 0], stored: FieldStorage::Data)]
+    public int $y5_worst = 0;
+    #[Field(required: false, settings: ['min' => 0], stored: FieldStorage::Data)]
+    public int $y5_likely = 0;
+    #[Field(required: false, settings: ['min' => 0], stored: FieldStorage::Data)]
+    public int $y5_best = 0;
+
+    #[Field(required: false, label: 'Assumptions', stored: FieldStorage::Data)]
+    public array $assumptions = [];
+
+    #[Field(required: false, label: 'Notes', stored: FieldStorage::Data)]
+    public string $notes = '';
+
+    #[Field(required: false, settings: ['min' => 0], stored: FieldStorage::Data)]
+    public int $sort_order = 0;
+
+    #[Field(required: false, stored: FieldStorage::Data)]
+    public int $editor_uid = 0;
+
+    #[Field(required: false, stored: FieldStorage::Data)]
+    public string $editor_label = '';
+
+    #[Field(required: false, stored: FieldStorage::Data)]
+    public string $updated_at = '';
 
     /** The field name for one grid cell, e.g. y3_likely. */
     public static function scenarioField(int $year, string $scenario): string

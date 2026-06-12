@@ -10,6 +10,7 @@ use App\Entity\VentureSnapshot;
 use Symfony\Component\Uid\Uuid;
 use Waaseyaa\Entity\EntityTypeManager;
 use Waaseyaa\Entity\Repository\EntityRepositoryInterface;
+use Waaseyaa\Entity\Validation\EntityValidationException;
 
 /**
  * Orchestrates the staff-only Venture Numbers section over the framework
@@ -85,9 +86,13 @@ final class VentureService
      * Apply an edit to a lane, recording a new revision with attribution.
      * $changes may carry scenario cell values (y1_worst .. y5_best, integers),
      * plus summary, notes, and assumptions (list of strings). Unknown keys are
-     * ignored; negative or non-numeric scenario values are rejected. Returns
-     * the stamp plus what changed, or null when the key is unknown, a value is
-     * invalid, or nothing would change.
+     * ignored. Scenario validity (whole non-negative integers) is enforced by
+     * the framework on save from the entity's declared field definitions
+     * (Type('int') + Range(min: 0), alpha.204); an invalid value surfaces as
+     * EntityValidationException, which this boundary maps to null — the same
+     * invalid-input signal the controller has always turned into its 422 JSON
+     * shape. Returns the stamp plus what changed, or null when the key is
+     * unknown, a value is invalid, or nothing would change.
      *
      * @param array<string, mixed> $changes
      * @return array{editor_label:string, updated_at:string, changed:list<string>}|null
@@ -105,12 +110,18 @@ final class VentureService
                 continue;
             }
             $raw = $changes[$field];
-            if (!is_numeric($raw) || (int) $raw < 0 || (int) $raw != $raw) {
-                return null;
+            // Whole-number coercion, deliberately kept app-side: the venture
+            // entities declare no $casts, so the framework's cast-aware get()
+            // does NOT coerce — a numeric string ("40000" from a text input)
+            // or a whole JSON float (4.0) would hit the declared Type('int')
+            // constraint raw and be rejected, although both were always
+            // accepted here. 4.5 fails the whole-int equality, stays a float,
+            // and is rejected by the framework at save (verified on alpha.207).
+            if (is_numeric($raw) && (int) $raw == $raw) {
+                $raw = (int) $raw;
             }
-            $value = (int) $raw;
-            if ($value !== (int) ($lane->get($field) ?? 0)) {
-                $lane->set($field, $value);
+            if ($raw !== (int) ($lane->get($field) ?? 0)) {
+                $lane->set($field, $raw);
                 $changed[] = $field;
             }
         }
@@ -142,7 +153,14 @@ final class VentureService
         $lane->setEditor($editorUid, $editorLabel);
         $lane->setUpdatedAt($updatedAt);
         $lane->recordEdit($this->summarizeLaneEdit($changed));
-        $this->lanes()->save($lane);
+        try {
+            $this->lanes()->save($lane);
+        } catch (EntityValidationException) {
+            // Declared-constraint violation (negative, float, non-numeric):
+            // nothing was persisted; null is the boundary's invalid-input
+            // signal and the controller keeps its existing 422 JSON shape.
+            return null;
+        }
 
         return ['editor_label' => $editorLabel, 'updated_at' => $updatedAt, 'changed' => $changed];
     }
@@ -244,9 +262,10 @@ final class VentureService
         $changed = [];
         $updatedAt = gmdate('Y-m-d\TH:i:s\Z');
         if ($newStatus !== null && $newStatus !== $fact->getStatus()) {
-            if (!in_array($newStatus, GatingFact::STATUSES, true)) {
-                return null;
-            }
+            // Status validity is enforced by the framework on save: the
+            // entity declares allowed_values = GatingFact::STATUSES, so an
+            // unknown status throws EntityValidationException below (Choice
+            // constraint, alpha.204) and this boundary returns null as before.
             $fact->setStatus($newStatus);
             if ($newStatus === 'confirmed') {
                 $fact->setConfirmedBy($editorUid, $editorLabel, $updatedAt);
@@ -266,7 +285,13 @@ final class VentureService
         $fact->setEditor($editorUid, $editorLabel);
         $fact->setUpdatedAt($updatedAt);
         $fact->recordEdit($this->summarizeFactEdit($changed, $fact, $editorLabel));
-        $this->facts()->save($fact);
+        try {
+            $this->facts()->save($fact);
+        } catch (EntityValidationException) {
+            // Invalid status (Choice violation): nothing was persisted; null
+            // keeps the controller's existing 422 JSON shape.
+            return null;
+        }
 
         return [
             'editor_label' => $editorLabel,

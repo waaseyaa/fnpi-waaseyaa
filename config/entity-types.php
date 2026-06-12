@@ -167,44 +167,29 @@ return [
     // rollback net); VentureAccessPolicy gates view on the `view ventures`
     // permission (the section is invisible to the public AND to authenticated
     // accounts without it). Tables land via db:init --sync-schema.
-    new EntityType(
-        id: 'venture_lane',
-        label: 'Venture lane',
-        class: VentureLane::class,
-        keys: [
-            'id' => 'id',
-            'uuid' => 'uuid',
-            'label' => 'title',
-            'revision' => 'revision_id',
-        ],
+    //
+    // Registered via fromClass() (not the bare constructor) so the #[Field]
+    // declarations on the entity classes reach EntityType::getFieldDefinitions()
+    // and the alpha.204 save-time validation derives constraints from them
+    // (scenario ints get Range(min: 0) + Type('int'); the gating-fact status
+    // gets Choice from allowed_values). Keys come from #[ContentEntityKeys]
+    // on each class — identical to the explicit maps these replaced. Every
+    // declared field is stored: FieldStorage::Data, so the schema is unchanged
+    // (everything stays in the _data blob; findBy routes via json_extract).
+    EntityType::fromClass(
+        VentureLane::class,
         revisionable: true,
         revisionDefault: true,
     ),
 
-    new EntityType(
-        id: 'gating_fact',
-        label: 'Gating fact',
-        class: GatingFact::class,
-        keys: [
-            'id' => 'id',
-            'uuid' => 'uuid',
-            'label' => 'label',
-            'revision' => 'revision_id',
-        ],
+    EntityType::fromClass(
+        GatingFact::class,
         revisionable: true,
         revisionDefault: true,
     ),
 
-    new EntityType(
-        id: 'venture_snapshot',
-        label: 'Venture snapshot',
-        class: VentureSnapshot::class,
-        keys: [
-            'id' => 'id',
-            'uuid' => 'uuid',
-            'label' => 'model_version',
-            'revision' => 'revision_id',
-        ],
+    EntityType::fromClass(
+        VentureSnapshot::class,
         revisionable: true,
         revisionDefault: true,
     ),

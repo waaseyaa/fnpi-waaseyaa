@@ -6,7 +6,9 @@ namespace App\Entity;
 
 use Waaseyaa\Entity\Attribute\ContentEntityKeys;
 use Waaseyaa\Entity\Attribute\ContentEntityType;
+use Waaseyaa\Entity\Attribute\Field;
 use Waaseyaa\Entity\ContentEntityBase;
+use Waaseyaa\Field\FieldStorage;
 
 /**
  * A named gating fact on a venture lane: something the model depends on that
@@ -34,6 +36,52 @@ final class GatingFact extends ContentEntityBase
 {
     /** Valid statuses, in display order. */
     public const STATUSES = ['placeholder', 'confirmed'];
+
+    // ── Declared field definitions (alpha.204+ save-time validation) ──
+    //
+    // Metadata declarations read by EntityType::fromClass() in
+    // config/entity-types.php; values still flow through the value bag and
+    // stay in the _data blob (stored: FieldStorage::Data). The load-bearing
+    // one is `status`: settings.allowed_values derives a Choice constraint
+    // from the canonical STATUSES set, so the framework rejects any other
+    // value on every save. Strings that may legitimately be empty declare
+    // required: false explicitly.
+
+    #[Field(required: true, label: 'Fact key', stored: FieldStorage::Data)]
+    public string $key = '';
+
+    #[Field(required: true, label: 'Lane key', stored: FieldStorage::Data)]
+    public string $lane_key = '';
+
+    #[Field(required: true, label: 'Label', stored: FieldStorage::Data)]
+    public string $label = '';
+
+    #[Field(required: false, label: 'Detail', stored: FieldStorage::Data)]
+    public string $detail = '';
+
+    #[Field(required: true, settings: ['allowed_values' => self::STATUSES], label: 'Status', stored: FieldStorage::Data)]
+    public string $status = 'placeholder';
+
+    #[Field(required: false, stored: FieldStorage::Data)]
+    public int $confirmed_by_uid = 0;
+
+    #[Field(required: false, stored: FieldStorage::Data)]
+    public string $confirmed_by_label = '';
+
+    #[Field(required: false, stored: FieldStorage::Data)]
+    public string $confirmed_at = '';
+
+    #[Field(required: false, settings: ['min' => 0], stored: FieldStorage::Data)]
+    public int $sort_order = 0;
+
+    #[Field(required: false, stored: FieldStorage::Data)]
+    public int $editor_uid = 0;
+
+    #[Field(required: false, stored: FieldStorage::Data)]
+    public string $editor_label = '';
+
+    #[Field(required: false, stored: FieldStorage::Data)]
+    public string $updated_at = '';
 
     public function getKey(): string
     {
