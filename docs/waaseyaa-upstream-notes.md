@@ -122,3 +122,20 @@ iframes. Before that happens, the wiring needs an embed-route exemption hook
 shell-redesign track). Until then: do not "fix" the drift upstream without the
 exemption, and treat any framework release note touching SecurityHeaders as a
 deploy blocker for the workspace.
+
+## 2026-06-12 — Golden SHA cannot verify against Packagist installs (waaseyaa-version strict always drifts)
+
+`docs/specs/version-provenance.md` says apps should pin `.waaseyaa-golden-sha`
+and run `bin/waaseyaa-version` without `--report-only` so CI fails on drift.
+But `ComposerProvenanceReporter` (alpha.207) only compares the golden SHA
+against the Git HEAD of **path** installs; for Packagist/dist installs it sets
+`goldenMismatch = true` unconditionally ("golden SHA set but only
+Packagist/dist installs; cannot verify monorepo SHA from lockfile") even
+though composer.lock carries the exact monorepo SHA in
+`packages[waaseyaa/framework].source.reference`. Consequence: an app that
+installs from Packagist (this one) can never get a clean strict exit with a
+golden SHA configured. Workaround: keep the golden SHA file (it documents the
+pinned revision and works for path checkouts), rely on
+`waaseyaa-audit-site`'s `--report-only` invocation for the gate. Upstream fix:
+the reporter should compare golden against the lockfile source reference when
+all installs are dist.
