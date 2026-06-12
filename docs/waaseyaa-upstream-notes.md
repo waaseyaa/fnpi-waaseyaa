@@ -160,3 +160,17 @@ changes, the trait already satisfies it. Upstream fix: either have
 `RevisionableEntityInterface` extend `RevisionableInterface`, have
 ContentEntityBase declare it, or duck-type the pre-check like
 `entity.read`'s revision_id exposure already does.
+
+## 2026-06-12 — alpha.208 adoption resolutions
+
+- The `getRepository()` 500 on FTS5-bearing databases (whole-schema introspection in the
+  alpha.205 `revision_author` additive arm) was filed as framework #1653 and is FIXED in
+  alpha.208 (targeted guarded ALTER). Verified here: public pages render again at alpha.208.
+- The optimistic-locking `RevisionableInterface` gate gap was filed as #1654 and is FIXED
+  in alpha.208 (getRevisionId duck-check). Our app-side `implements RevisionableInterface`
+  declarations on the seven revisionable entities are now redundant but harmless; safe to
+  drop in a future cleanup.
+- Bonus framework fix shipped in alpha.208 (#1655): boolean field validation now accepts the
+  framework's own 0/1 convention (`User::setActive()` saves no longer throw).
+- Still open upstream: golden-SHA strict verification is impossible on Packagist/dist installs
+  (`waaseyaa-version` advisory noted above); no issue filed yet.
