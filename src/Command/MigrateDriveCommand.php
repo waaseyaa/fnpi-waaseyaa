@@ -72,7 +72,6 @@ final class MigrateDriveCommand
                 folder: (string) ($row['folder'] ?? ''),
                 storageUri: (string) ($row['storage_uri'] ?? ''),
                 uploadedAt: $uploadedAt,
-                editorUid: (int) ($row['owner_id'] ?? 0),
                 editorLabel: $ownerLabel,
                 updatedAt: $uploadedAt,
                 revisionLog: 'Imported from prototype',

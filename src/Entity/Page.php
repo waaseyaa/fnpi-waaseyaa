@@ -7,6 +7,7 @@ namespace App\Entity;
 use Waaseyaa\Entity\Attribute\ContentEntityKeys;
 use Waaseyaa\Entity\Attribute\ContentEntityType;
 use Waaseyaa\Entity\ContentEntityBase;
+use Waaseyaa\Entity\RevisionableInterface;
 
 /**
  * A public marketing page, driven from the workspace (Anokii Pages).
@@ -31,7 +32,7 @@ use Waaseyaa\Entity\ContentEntityBase;
  */
 #[ContentEntityType(id: 'page', label: 'Page', description: 'A public marketing page rendered from ordered content blocks.')]
 #[ContentEntityKeys(id: 'id', uuid: 'uuid', label: 'title', revision: 'revision_id')]
-final class Page extends ContentEntityBase
+final class Page extends ContentEntityBase implements RevisionableInterface
 {
     public function getTitle(): string
     {

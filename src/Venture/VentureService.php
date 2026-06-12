@@ -19,6 +19,11 @@ use Waaseyaa\Entity\Validation\EntityValidationException;
  * attribution (the rollback net). The roll-up is computed in PHP at read time
  * (the framework has no aggregation surface; six lanes is a loop).
  *
+ * Attribution (alpha.205+): the framework records the acting account uid as
+ * revision_author on every save automatically (request-scoped via
+ * SessionMiddleware), so this service no longer writes editor_uid — only the
+ * human-readable editor_label display cache stays app-side.
+ *
  * All scenario values are whole Canadian dollars per year, placeholder-grade
  * by definition until checked against the modeling workbook.
  */
@@ -68,13 +73,12 @@ final class VentureService
         array $assumptions,
         string $notes,
         int $sortOrder,
-        int $editorUid,
         string $editorLabel,
         string $revisionLog,
     ): VentureLane {
         $lane = new VentureLane();
         $lane->set('uuid', Uuid::v4()->toRfc4122());
-        $lane->fill($key, $title, $summary, $grid, $assumptions, $notes, $sortOrder, $editorUid, $editorLabel, gmdate('Y-m-d\TH:i:s\Z'));
+        $lane->fill($key, $title, $summary, $grid, $assumptions, $notes, $sortOrder, $editorLabel, gmdate('Y-m-d\TH:i:s\Z'));
         $lane->recordEdit($revisionLog);
         $lane->enforceIsNew();
         $this->lanes()->save($lane);
@@ -97,7 +101,7 @@ final class VentureService
      * @param array<string, mixed> $changes
      * @return array{editor_label:string, updated_at:string, changed:list<string>}|null
      */
-    public function updateLane(string $key, array $changes, int $editorUid, string $editorLabel): ?array
+    public function updateLane(string $key, array $changes, string $editorLabel): ?array
     {
         $lane = $this->findLaneByKey($key);
         if ($lane === null) {
@@ -150,7 +154,13 @@ final class VentureService
         }
 
         $updatedAt = gmdate('Y-m-d\TH:i:s\Z');
-        $lane->setEditor($editorUid, $editorLabel);
+        // The acting uid lands in revision_author on save (framework-owned,
+        // alpha.205+); only the display label is app data now. NOTE: the lane
+        // form does not send the revision id it was rendered from, so this
+        // human path saves without SaveContext::withExpectedRevisionId() —
+        // adopting conflict detection here needs a client change (send the
+        // read revision_id, pass it through) and is a documented follow-up.
+        $lane->setEditorLabel($editorLabel);
         $lane->setUpdatedAt($updatedAt);
         $lane->recordEdit($this->summarizeLaneEdit($changed));
         try {
@@ -229,13 +239,12 @@ final class VentureService
         string $detail,
         string $status,
         int $sortOrder,
-        int $editorUid,
         string $editorLabel,
         string $revisionLog,
     ): GatingFact {
         $fact = new GatingFact();
         $fact->set('uuid', Uuid::v4()->toRfc4122());
-        $fact->fill($key, $laneKey, $label, $detail, $status, $sortOrder, $editorUid, $editorLabel, gmdate('Y-m-d\TH:i:s\Z'));
+        $fact->fill($key, $laneKey, $label, $detail, $status, $sortOrder, $editorLabel, gmdate('Y-m-d\TH:i:s\Z'));
         $fact->recordEdit($revisionLog);
         $fact->enforceIsNew();
         $this->facts()->save($fact);
@@ -249,6 +258,11 @@ final class VentureService
      * flip back to "placeholder" clears the stamp. Returns the stamp plus what
      * changed, or null when the key is unknown, the status is invalid, or
      * nothing would change.
+     *
+     * $editorUid is still a parameter here (unlike updateLane) because the
+     * confirmation stamp confirmed_by_uid is app-level domain data — who
+     * CONFIRMED the fact, distinct from who edited the revision (which the
+     * framework now records as revision_author).
      *
      * @return array{editor_label:string, updated_at:string, changed:list<string>, status:string, confirmed_by:string, confirmed_at:string}|null
      */
@@ -282,7 +296,7 @@ final class VentureService
             return null;
         }
 
-        $fact->setEditor($editorUid, $editorLabel);
+        $fact->setEditorLabel($editorLabel);
         $fact->setUpdatedAt($updatedAt);
         $fact->recordEdit($this->summarizeFactEdit($changed, $fact, $editorLabel));
         try {
@@ -334,11 +348,11 @@ final class VentureService
     }
 
     /** Create the provenance snapshot (the seed path). */
-    public function createSnapshot(string $asOf, string $modelVersion, string $note, int $editorUid, string $editorLabel): VentureSnapshot
+    public function createSnapshot(string $asOf, string $modelVersion, string $note, string $editorLabel): VentureSnapshot
     {
         $snapshot = new VentureSnapshot();
         $snapshot->set('uuid', Uuid::v4()->toRfc4122());
-        $snapshot->fill($asOf, $modelVersion, $note, $editorUid, $editorLabel, gmdate('Y-m-d\TH:i:s\Z'));
+        $snapshot->fill($asOf, $modelVersion, $note, $editorLabel, gmdate('Y-m-d\TH:i:s\Z'));
         $snapshot->recordEdit('Initial venture-numbers mirror recorded');
         $snapshot->enforceIsNew();
         $this->snapshots()->save($snapshot);

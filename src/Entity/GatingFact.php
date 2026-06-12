@@ -8,6 +8,7 @@ use Waaseyaa\Entity\Attribute\ContentEntityKeys;
 use Waaseyaa\Entity\Attribute\ContentEntityType;
 use Waaseyaa\Entity\Attribute\Field;
 use Waaseyaa\Entity\ContentEntityBase;
+use Waaseyaa\Entity\RevisionableInterface;
 use Waaseyaa\Field\FieldStorage;
 
 /**
@@ -27,12 +28,14 @@ use Waaseyaa\Field\FieldStorage;
  *   status               placeholder | confirmed
  *   confirmed_by_uid/_label/_at  who confirmed, set on the confirm flip
  *   sort_order           ordering within the lane
- *   editor_uid/_label    who made the current revision
+ *   editor_label         display name of who made the current revision (cache;
+ *                        the acting uid is the framework's revision_author,
+ *                        alpha.205+ — old revisions keep editor_uid in _data)
  *   updated_at           last-edited stamp
  */
 #[ContentEntityType(id: 'gating_fact', label: 'Gating fact', description: 'A venture-lane gating fact with placeholder/confirmed status and confirmation attribution.')]
 #[ContentEntityKeys(id: 'id', uuid: 'uuid', label: 'label', revision: 'revision_id')]
-final class GatingFact extends ContentEntityBase
+final class GatingFact extends ContentEntityBase implements RevisionableInterface
 {
     /** Valid statuses, in display order. */
     public const STATUSES = ['placeholder', 'confirmed'];
@@ -73,9 +76,6 @@ final class GatingFact extends ContentEntityBase
 
     #[Field(required: false, settings: ['min' => 0], stored: FieldStorage::Data)]
     public int $sort_order = 0;
-
-    #[Field(required: false, stored: FieldStorage::Data)]
-    public int $editor_uid = 0;
 
     #[Field(required: false, stored: FieldStorage::Data)]
     public string $editor_label = '';
@@ -167,8 +167,20 @@ final class GatingFact extends ContentEntityBase
         return (int) ($this->get('sort_order') ?? 0);
     }
 
+    /**
+     * The acting account uid for this revision: the framework's
+     * revision_author (recorded automatically since alpha.205, hydrated on
+     * loadRevision()/listRevisions()), falling back to the editor_uid the app
+     * snapshotted into _data before the framework owned authorship. 0 means
+     * anonymous/system (the pre-upgrade seed convention).
+     */
     public function getEditorUid(): int
     {
+        $author = $this->revisionMetadata()?->revisionAuthor;
+        if ($author !== null) {
+            return $author;
+        }
+
         return (int) ($this->get('editor_uid') ?? 0);
     }
 
@@ -177,9 +189,12 @@ final class GatingFact extends ContentEntityBase
         return (string) ($this->get('editor_label') ?? '');
     }
 
-    public function setEditor(int $uid, string $label): static
+    /**
+     * Stamp the display name of the editor. The acting uid is NOT written
+     * here any more: the framework records it as revision_author on save.
+     */
+    public function setEditorLabel(string $label): static
     {
-        $this->set('editor_uid', $uid);
         $this->set('editor_label', $label);
 
         return $this;
@@ -214,7 +229,6 @@ final class GatingFact extends ContentEntityBase
         string $detail,
         string $status,
         int $sortOrder,
-        int $editorUid,
         string $editorLabel,
         string $updatedAt,
     ): static {
@@ -227,7 +241,6 @@ final class GatingFact extends ContentEntityBase
         $this->set('confirmed_by_label', '');
         $this->set('confirmed_at', '');
         $this->set('sort_order', $sortOrder);
-        $this->set('editor_uid', $editorUid);
         $this->set('editor_label', $editorLabel);
         $this->set('updated_at', $updatedAt);
 

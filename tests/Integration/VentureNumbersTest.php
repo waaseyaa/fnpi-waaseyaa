@@ -84,7 +84,6 @@ final class VentureNumbersTest extends TestCase
             $data['assumptions'],
             $data['notes'],
             $sortOrder,
-            0,
             'Seed (model mirror)',
             '2026-06-11T00:00:00Z',
         );
@@ -103,7 +102,7 @@ final class VentureNumbersTest extends TestCase
         $this->assertNotSame([], $lane->getAssumptions());
 
         $fact = new GatingFact();
-        $fact->fill('faraday-test-data', 'faraday', 'Independent test data', 'No test data, no government sale.', 'placeholder', 10, 0, 'Seed', '2026-06-11T00:00:00Z');
+        $fact->fill('faraday-test-data', 'faraday', 'Independent test data', 'No test data, no government sale.', 'placeholder', 10, 'Seed', '2026-06-11T00:00:00Z');
         $this->assertInstanceOf(RevisionableEntityInterface::class, $fact);
         $this->assertFalse($fact->isConfirmed());
 

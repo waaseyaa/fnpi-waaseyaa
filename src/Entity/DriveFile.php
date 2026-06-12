@@ -7,6 +7,7 @@ namespace App\Entity;
 use Waaseyaa\Entity\Attribute\ContentEntityKeys;
 use Waaseyaa\Entity\Attribute\ContentEntityType;
 use Waaseyaa\Entity\ContentEntityBase;
+use Waaseyaa\Entity\RevisionableInterface;
 
 /**
  * A file in the Anokii Drive workspace, entity-native rebuild of the raw
@@ -33,12 +34,14 @@ use Waaseyaa\Entity\ContentEntityBase;
  *   folder              grouping tag, e.g. "Global relationships"
  *   storage_uri         media URI of the bytes (public://drive/<safe-name>)
  *   uploaded_at         when first uploaded
- *   editor_uid/_label   who made the current revision
+ *   editor_label        display name of who made the current revision (cache;
+ *                       the acting uid is the framework's revision_author,
+ *                       alpha.205+ — old revisions keep editor_uid in _data)
  *   updated_at          last-edited stamp
  */
 #[ContentEntityType(id: 'drive_asset', label: 'Drive file', description: 'A Nation-shared Drive file with attribution and history.')]
 #[ContentEntityKeys(id: 'id', uuid: 'uuid', label: 'name', revision: 'revision_id')]
-final class DriveFile extends ContentEntityBase
+final class DriveFile extends ContentEntityBase implements RevisionableInterface
 {
     public function getName(): string
     {
@@ -115,7 +118,6 @@ final class DriveFile extends ContentEntityBase
         string $folder,
         string $storageUri,
         string $uploadedAt,
-        int $editorUid,
         string $editorLabel,
         string $updatedAt,
     ): static {
@@ -128,7 +130,6 @@ final class DriveFile extends ContentEntityBase
         $this->set('folder', $folder);
         $this->set('storage_uri', $storageUri);
         $this->set('uploaded_at', $uploadedAt);
-        $this->set('editor_uid', $editorUid);
         $this->set('editor_label', $editorLabel);
         $this->set('updated_at', $updatedAt);
 

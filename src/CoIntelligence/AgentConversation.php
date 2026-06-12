@@ -21,11 +21,21 @@ use Waaseyaa\AI\Tools\AgentToolResult;
  * which executes the tool as the signed-in account (so the same AccessPolicy the
  * UI uses gates it), attributes it, records a revision, and resumes the loop by
  * feeding the tool result back to the model.
+ *
+ * Optimistic locking (alpha.207): an entity.update proposal is pinned to the
+ * revision it was drafted from — propose() records the entity's revision_id as
+ * the tool's expected_revision_id, so if the content moves between draft and
+ * approval the apply is refused with a structured revision_conflict instead of
+ * silently reverting the competing edit. The conflict is surfaced to the user
+ * and fed back to the model, which re-reads and re-proposes.
  */
 final class AgentConversation
 {
     private const int MAX_ITERS = 6;
     private const int MAX_TOKENS = 1500;
+
+    /** User-facing explanation when an approved proposal hits a stale revision. */
+    public const string CONFLICT_MESSAGE = 'This content changed since the proposal was drafted — re-reading the latest version so the change can be re-proposed.';
 
     public function __construct(
         private readonly ProviderInterface $provider,
@@ -70,7 +80,17 @@ final class AgentConversation
             );
             $resultText = $this->resultText($result);
             $isError = $result->isError;
-            $emit('applied', ['ok' => !$isError, 'summary' => $summary, 'error' => $isError ? $resultText : null]);
+            // A stale expected_revision_id surfaces as a structured
+            // revision_conflict: tell the user plainly; the model still gets
+            // the full structured error below (it carries the current head),
+            // so the resumed loop re-reads and re-proposes.
+            $conflict = $isError && $this->isRevisionConflict($result);
+            $emit('applied', [
+                'ok' => !$isError,
+                'summary' => $summary,
+                'error' => $isError ? ($conflict ? self::CONFLICT_MESSAGE : $resultText) : null,
+                'conflict' => $conflict,
+            ]);
         } else {
             $resultText = 'The user rejected this proposed change. Do not retry it. Acknowledge and ask what they would like to do instead.';
             $isError = false;
@@ -174,11 +194,38 @@ final class AgentConversation
     private function propose(int $conversationId, ToolUseBlock $toolUse, array $messages, array $prefixResults, int $authorUid, string $authorLabel, AccountInterface $account, callable $emit): void
     {
         [$summary, $diff] = $this->describe($toolUse, $account);
+        $canonical = $this->tools->canonicalName($toolUse->name);
+        $type = (string) ($toolUse->input['entity_type'] ?? '');
+        $id = (string) ($toolUse->input['id'] ?? '');
+
+        // One read serves two purposes (reads are cheap): the card handle for
+        // the UI preview, and — for entity.update — the revision_id this draft
+        // was built from, pinned as the tool's expected_revision_id so a stale
+        // approval is refused with a revision_conflict instead of silently
+        // overwriting whatever changed in between (alpha.207).
+        $handleField = match ($type) {
+            'identity_pillar' => 'pid',
+            'venture_lane', 'gating_fact' => 'key',
+            default => '',
+        };
+        $read = [];
+        if ($id !== '' && ($handleField !== '' || $canonical === 'entity.update')) {
+            $read = $this->readData($type, $id, $account);
+        }
+
+        $input = $toolUse->input;
+        if ($canonical === 'entity.update' && !isset($input['expected_revision_id'])) {
+            $revisionId = $read['revision_id'] ?? null;
+            if (is_numeric($revisionId) && (int) $revisionId > 0) {
+                $input['expected_revision_id'] = (int) $revisionId;
+            }
+        }
+
         $token = $this->proposals->create(
             conversationId: $conversationId,
-            toolName: $this->tools->canonicalName($toolUse->name),
+            toolName: $canonical,
             toolUseId: $toolUse->id,
-            toolInput: $toolUse->input,
+            toolInput: $input,
             messages: $messages,
             prefixResults: $prefixResults,
             summary: $summary,
@@ -189,17 +236,11 @@ final class AgentConversation
 
         // Tell the UI which workspace item this targets so it can preview the
         // draft on that card (pid is the card handle: a pillar's pid, or a
-        // venture lane's / gating fact's key). Reads are cheap.
-        $type = (string) ($toolUse->input['entity_type'] ?? '');
-        $id = (string) ($toolUse->input['id'] ?? '');
+        // venture lane's / gating fact's key).
         $pid = '';
-        $handleField = match ($type) {
-            'identity_pillar' => 'pid',
-            'venture_lane', 'gating_fact' => 'key',
-            default => '',
-        };
-        if ($handleField !== '' && $id !== '') {
-            $pid = (string) ($this->loadValues($type, $id, $account)[$handleField] ?? '');
+        if ($handleField !== '') {
+            $values = is_array($read['values'] ?? null) ? $read['values'] : [];
+            $pid = (string) ($values[$handleField] ?? '');
         }
 
         $emit('proposal', [
@@ -275,9 +316,12 @@ final class AgentConversation
     }
 
     /**
+     * The entity.read json payload: values plus, on revisionable types, the
+     * top-level revision_id (the optimistic-locking expectation source).
+     *
      * @return array<string,mixed>
      */
-    private function loadValues(string $type, string $id, AccountInterface $account): array
+    private function readData(string $type, string $id, AccountInterface $account): array
     {
         if ($type === '' || $id === '') {
             return [];
@@ -288,13 +332,38 @@ final class AgentConversation
         }
         foreach ($result->content as $block) {
             if (($block['type'] ?? '') === 'json') {
-                $values = $block['data']['values'] ?? [];
+                $data = $block['data'] ?? [];
 
-                return is_array($values) ? $values : [];
+                return is_array($data) ? $data : [];
             }
         }
 
         return [];
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private function loadValues(string $type, string $id, AccountInterface $account): array
+    {
+        $values = $this->readData($type, $id, $account)['values'] ?? [];
+
+        return is_array($values) ? $values : [];
+    }
+
+    /** Whether a tool error is the structured optimistic-locking conflict. */
+    private function isRevisionConflict(AgentToolResult $result): bool
+    {
+        foreach ($result->content as $block) {
+            if (($block['type'] ?? '') === 'json'
+                && is_array($block['data'] ?? null)
+                && ($block['data']['error'] ?? '') === 'revision_conflict'
+            ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -398,8 +467,12 @@ final class AgentConversation
         }
         $type = (string) ($input['entity_type'] ?? '');
         $now = gmdate('Y-m-d H:i:s');
+        // The acting uid is recorded by the framework as revision_author on
+        // every save (alpha.205+); only the display label stays app-side for
+        // the workspace entities. Documents keep their own version-author
+        // pattern (a distinct app-level concept, untouched here).
         $attribution = match ($type) {
-            'identity_pillar', 'drive_asset', 'venture_lane', 'gating_fact', 'venture_snapshot' => ['editor_uid' => $uid, 'editor_label' => $label, 'updated_at' => $now],
+            'identity_pillar', 'drive_asset', 'venture_lane', 'gating_fact', 'venture_snapshot' => ['editor_label' => $label, 'updated_at' => $now],
             'document' => ['version_author_uid' => $uid, 'version_author_label' => $label, 'updated_at' => $now],
             default => ['updated_at' => $now],
         };

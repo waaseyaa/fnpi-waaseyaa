@@ -84,7 +84,6 @@ final class IdentityPillarTest extends TestCase
             pills: [['t' => 'FNPI', 'cyan' => true], ['t' => 'Sovereignty', 'cyan' => false]],
             isFull: false,
             sortOrder: 7,
-            editorUid: 0,
             editorLabel: 'Matthew',
             updatedAt: '2026-06-07T00:38:04Z',
         );
@@ -120,14 +119,17 @@ final class IdentityPillarTest extends TestCase
         $pillar->fill(
             pid: 'purpose', section: 'foundation', title: 'Purpose', nowLabel: 'Now', body: '',
             isQuote: false, decideLabel: 'Decide', decision: '', status: 'gap', notes: '',
-            pills: [], isFull: false, sortOrder: 1, editorUid: 0, editorLabel: '', updatedAt: '',
+            pills: [], isFull: false, sortOrder: 1, editorLabel: '', updatedAt: '',
         );
 
-        $pillar->setStatus('work')->setEditor(3, 'Russell')->recordEdit('Status set to work');
+        $pillar->setStatus('work')->setEditorLabel('Russell')->recordEdit('Status set to work');
 
         $this->assertSame('work', $pillar->getStatus());
         $this->assertSame('Russell', $pillar->getEditorLabel());
-        $this->assertSame(3, $pillar->getEditorUid());
+        // The acting uid is no longer app data: the framework records it as
+        // revision_author on save (RevisionAuthorProvenanceTest covers it).
+        // With no revision metadata and no legacy snapshot, the fallback is 0.
+        $this->assertSame(0, $pillar->getEditorUid());
         $this->assertSame('Status set to work', $pillar->getRevisionLog());
     }
 }

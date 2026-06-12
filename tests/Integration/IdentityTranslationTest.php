@@ -82,7 +82,7 @@ final class IdentityTranslationTest extends TestCase
         $pillar->fill(
             pid: $pid, section: 'positioning', title: $title, nowLabel: 'Now', body: $body,
             isQuote: false, decideLabel: 'Keep', decision: '', status: $status, notes: '',
-            pills: [], isFull: false, sortOrder: 7, editorUid: 0, editorLabel: 'Matthew',
+            pills: [], isFull: false, sortOrder: 7, editorLabel: 'Matthew',
             updatedAt: '2026-06-07T00:38:04Z',
         );
         $pillar->recordEdit('Imported from prototype');
@@ -157,7 +157,7 @@ final class IdentityTranslationTest extends TestCase
         foreach (['work', 'defined'] as $s) {
             $reloaded = $this->repo->find($id, self::EN);
             $this->assertInstanceOf(Pillar::class, $reloaded);
-            $reloaded->setStatus($s)->setEditor(3, 'Russell')->recordEdit('Status set to ' . $s);
+            $reloaded->setStatus($s)->setEditorLabel('Russell')->recordEdit('Status set to ' . $s);
             $this->repo->save($reloaded);
         }
         // English single-axis history: 1 create + 2 edits.

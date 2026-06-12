@@ -81,11 +81,10 @@ final class VentureValidationTest extends TestCase
             ['Placeholder until checked against the workbook.'],
             '',
             10,
-            0,
             'Seed (model mirror)',
             'Initial seed',
         );
-        $this->service->createFact('faraday-test-data', 'technology', 'Independent test data', 'No test data, no government sale.', 'placeholder', 10, 0, 'Seed', 'Initial seed');
+        $this->service->createFact('faraday-test-data', 'technology', 'Independent test data', 'No test data, no government sale.', 'placeholder', 10, 'Seed', 'Initial seed');
     }
 
     #[Test]
@@ -118,7 +117,7 @@ final class VentureValidationTest extends TestCase
         // null (the signal VenturesController::saveLane() has always mapped
         // to its {ok: false, error: ...} 422 JSON), and storage is untouched.
         foreach ([-5, 4.5, 'abc'] as $bad) {
-            $result = $this->service->updateLane('technology', ['y1_likely' => $bad], 7, 'Russell');
+            $result = $this->service->updateLane('technology', ['y1_likely' => $bad], 'Russell');
             $this->assertNull($result, var_export($bad, true) . ' must be rejected');
         }
 
@@ -131,7 +130,7 @@ final class VentureValidationTest extends TestCase
     #[Test]
     public function a_valid_lane_update_is_unchanged_by_the_enforcement(): void
     {
-        $result = $this->service->updateLane('technology', ['y1_likely' => 200000, 'summary' => 'Updated framing.'], 7, 'Russell');
+        $result = $this->service->updateLane('technology', ['y1_likely' => 200000, 'summary' => 'Updated framing.'], 'Russell');
 
         $this->assertNotNull($result);
         $this->assertSame('Russell', $result['editor_label']);
@@ -153,11 +152,11 @@ final class VentureValidationTest extends TestCase
         // whole-number coercion step (coercion, not validation) so these
         // historically-accepted payloads still save; 4.5 fails the whole-int
         // equality, stays a float, and is rejected by the framework above.
-        $result = $this->service->updateLane('technology', ['y2_likely' => '450000'], 7, 'Russell');
+        $result = $this->service->updateLane('technology', ['y2_likely' => '450000'], 'Russell');
         $this->assertNotNull($result);
         $this->assertSame(['y2_likely'], $result['changed']);
 
-        $result = $this->service->updateLane('technology', ['y3_likely' => 950000.0], 7, 'Russell');
+        $result = $this->service->updateLane('technology', ['y3_likely' => 950000.0], 'Russell');
         $this->assertNotNull($result);
 
         $lane = $this->service->findLaneByKey('technology');

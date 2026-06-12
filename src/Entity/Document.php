@@ -7,6 +7,7 @@ namespace App\Entity;
 use Waaseyaa\Entity\Attribute\ContentEntityKeys;
 use Waaseyaa\Entity\Attribute\ContentEntityType;
 use Waaseyaa\Entity\ContentEntityBase;
+use Waaseyaa\Entity\RevisionableInterface;
 
 /**
  * A document in the Anokii Documents workspace.
@@ -39,7 +40,7 @@ use Waaseyaa\Entity\ContentEntityBase;
  */
 #[ContentEntityType(id: 'document', label: 'Document', description: 'A versioned document with preview, history, and notes.')]
 #[ContentEntityKeys(id: 'id', uuid: 'uuid', label: 'title', revision: 'revision_id')]
-final class Document extends ContentEntityBase
+final class Document extends ContentEntityBase implements RevisionableInterface
 {
     public function getTitle(): string
     {

@@ -69,7 +69,7 @@ final class PillarTranslationServiceTest extends TestCase
         $this->service->createPillar(
             pid: 'moat', section: 'positioning', title: 'Differentiation / moat', nowLabel: 'Now',
             body: 'Four layers, only FNPI has all four.', isQuote: false, decideLabel: 'Keep', decision: '',
-            status: 'defined', notes: '', pills: [], isFull: false, sortOrder: 7, editorUid: 0,
+            status: 'defined', notes: '', pills: [], isFull: false, sortOrder: 7,
             editorLabel: 'Matthew', updatedAt: '2026-06-07T00:38:04Z', revisionLog: 'Imported',
         );
     }
@@ -80,7 +80,7 @@ final class PillarTranslationServiceTest extends TestCase
         // No translation yet.
         $this->assertNull($this->service->getTranslation('moat', 'oj'));
 
-        $stamp = $this->service->saveTranslation('moat', 'oj', 'Maamawichigewin', 'Niiwin apatchitchiganan.', 3, 'Russell Jones');
+        $stamp = $this->service->saveTranslation('moat', 'oj', 'Maamawichigewin', 'Niiwin apatchitchiganan.', 'Russell Jones');
         $this->assertNotNull($stamp);
         $this->assertSame(1, $stamp['revision']);
 
@@ -97,7 +97,7 @@ final class PillarTranslationServiceTest extends TestCase
 
         // Independent per-language history.
         $this->assertCount(1, $this->service->listTranslationHistory('moat', 'oj'));
-        $this->service->saveTranslation('moat', 'oj', 'Maamawichigewin v2', 'oj v2', 3, 'Russell Jones');
+        $this->service->saveTranslation('moat', 'oj', 'Maamawichigewin v2', 'oj v2', 'Russell Jones');
         $this->assertCount(2, $this->service->listTranslationHistory('moat', 'oj'));
         $this->assertSame('Maamawichigewin v2', $this->service->getTranslation('moat', 'oj')?->getTitle());
     }
@@ -106,7 +106,7 @@ final class PillarTranslationServiceTest extends TestCase
     public function an_unsupported_language_is_rejected(): void
     {
         $this->assertFalse($this->service->isTranslationLangcode('fr'));
-        $this->assertNull($this->service->saveTranslation('moat', 'fr', 'x', 'y', 0, ''));
+        $this->assertNull($this->service->saveTranslation('moat', 'fr', 'x', 'y', ''));
         $this->assertNull($this->service->getTranslation('moat', 'fr'));
         $this->assertSame([], $this->service->listTranslationHistory('moat', 'fr'));
     }

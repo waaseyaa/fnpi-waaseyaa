@@ -212,6 +212,9 @@
             else if(ev==='delta'){ if(!started){ bub.textContent=''; started=true; } raw+=data.text||''; bub.textContent=raw; scrollDown(); }
             else if(ev==='done'){ sources=data.sources||[]; }
             else if(ev==='proposal'){ proposed=true; renderProposal(bub, raw, data); }
+            else if(ev==='applied'){ if(!data.ok && data.error){ if(!started){ bub.textContent=''; started=true; } raw+=(raw?'
+
+':'')+data.error; bub.textContent=raw; scrollDown(); } }
           });
           return pump();
         });

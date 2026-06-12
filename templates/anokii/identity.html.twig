@@ -448,7 +448,9 @@
         if(ev==='meta'){ if(d.conversation_id) rememberCid(d.conversation_id); }
         else if(ev==='delta'){ if(!started){ bub.textContent=''; started=true; } raw+=d.text||''; bub.textContent=raw; stream.scrollTop=stream.scrollHeight; }
         else if(ev==='proposal'){ proposed=true; routeProposal(bub,raw,d); }
-        else if(ev==='applied'){ if(d.ok) didApply=true; }
+        else if(ev==='applied'){ if(d.ok) didApply=true; else if(d.error){ if(!started){ bub.textContent=''; started=true; } raw+=(raw?'
+
+':'')+d.error; bub.textContent=raw; stream.scrollTop=stream.scrollHeight; } }
       }); return pump(); }); }
       function fin(){ if(!proposed){ bub.innerHTML=fmt(raw)||'<p>Done.</p>'; } busy=false; sendBtn.disabled=false; stream.scrollTop=stream.scrollHeight; if(didApply){ var n=addMsg('ai'); n.innerHTML='<span class="iwork"><span class="d"></span>Change applied. Refreshing the pillars...</span>'; setTimeout(function(){ location.reload(); },1400); } }
       return pump();

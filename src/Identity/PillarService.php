@@ -24,6 +24,12 @@ use Waaseyaa\Entity\Repository\EntityRepositoryInterface;
  *
  * This replaces the raw-table PillarRepository: the same read/edit surface, now
  * on registered entities with full per-pillar history and attribution.
+ *
+ * Attribution (alpha.205+): the framework records the acting account uid as
+ * revision_author on every save automatically (request-scoped via
+ * SessionMiddleware), so this service no longer writes editor_uid — only the
+ * human-readable editor_label display cache stays app-side. Old revisions keep
+ * their editor_uid snapshot in _data; Pillar::getEditorUid() falls back to it.
  */
 final class PillarService
 {
@@ -100,7 +106,6 @@ final class PillarService
         array $pills,
         bool $isFull,
         int $sortOrder,
-        int $editorUid,
         string $editorLabel,
         string $updatedAt,
         string $revisionLog,
@@ -121,7 +126,6 @@ final class PillarService
             $pills,
             $isFull,
             $sortOrder,
-            $editorUid,
             $editorLabel,
             $updatedAt,
         );
@@ -139,7 +143,7 @@ final class PillarService
      *
      * @return array{editor_label:string, updated_at:string, changed:list<string>}|null
      */
-    public function update(string $pid, ?string $status, ?string $notes, int $editorUid, string $editorLabel): ?array
+    public function update(string $pid, ?string $status, ?string $notes, string $editorLabel): ?array
     {
         $pillar = $this->findByPid($pid);
         if ($pillar === null) {
@@ -163,7 +167,13 @@ final class PillarService
         }
 
         $updatedAt = gmdate('Y-m-d\TH:i:s\Z');
-        $pillar->setEditor($editorUid, $editorLabel);
+        // The acting uid lands in revision_author on save (framework-owned,
+        // alpha.205+). NOTE: the workspace form does not send the revision id
+        // it was rendered from, so this human path saves without
+        // SaveContext::withExpectedRevisionId() — adopting conflict detection
+        // here needs a client change and is a documented follow-up (the agent
+        // path already states its expectation, see AgentConversation).
+        $pillar->setEditorLabel($editorLabel);
         $pillar->setUpdatedAt($updatedAt);
         $pillar->recordEdit($this->summarize($changed, $pillar));
         $this->pillars()->save($pillar);
@@ -260,7 +270,6 @@ final class PillarService
         string $langcode,
         string $title,
         string $body,
-        int $editorUid,
         string $editorLabel,
     ): ?array {
         if (!$this->isTranslationLangcode($langcode)) {
@@ -276,12 +285,13 @@ final class PillarService
             (string) $pillar->id(),
             $langcode,
             [
-                // The translatable moat fields, plus per-language attribution so
-                // the peer row carries its own editor stamp.
+                // The translatable moat fields, plus the per-language display
+                // label so the peer row carries its own editor stamp. The
+                // acting uid is recorded as revision_author by the framework
+                // (saveTranslation flows through the same author resolution).
                 'title' => $title,
                 'body' => $body,
                 'pid' => $pillar->getPid(),
-                'editor_uid' => $editorUid,
                 'editor_label' => $editorLabel,
                 'updated_at' => $updatedAt,
             ],

@@ -66,7 +66,6 @@ final class DriveFileService
         string $folder,
         string $storageUri,
         string $uploadedAt,
-        int $editorUid,
         string $editorLabel,
         string $updatedAt,
         string $revisionLog,
@@ -88,7 +87,6 @@ final class DriveFileService
             $folder,
             $storageUri,
             $uploadedAt,
-            $editorUid,
             $editorLabel,
             $updatedAt,
         );

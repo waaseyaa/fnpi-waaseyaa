@@ -105,7 +105,7 @@ final class IdentityController
         $status = array_key_exists('status', $data) ? (string) $data['status'] : null;
         $notes = array_key_exists('notes', $data) ? (string) $data['notes'] : null;
 
-        $result = $this->pillars->update($pid, $status, $notes, $user->id(), Auth::label($user));
+        $result = $this->pillars->update($pid, $status, $notes, Auth::label($user));
         if ($result === null) {
             return new JsonResponse(['ok' => false, 'error' => 'Unknown pillar or nothing to update.'], 422);
         }
@@ -173,7 +173,7 @@ final class IdentityController
         $title = trim((string) ($data['title'] ?? ''));
         $body = (string) ($data['body'] ?? '');
 
-        $result = $this->pillars->saveTranslation($pid, $langcode, $title, $body, $user->id(), Auth::label($user));
+        $result = $this->pillars->saveTranslation($pid, $langcode, $title, $body, Auth::label($user));
         if ($result === null) {
             return new JsonResponse(['ok' => false, 'error' => 'Could not save the translation.'], 422);
         }
@@ -285,6 +285,9 @@ final class IdentityController
             'status' => $rev->getStatus(),
             'summary' => $rev->getRevisionLog(),
             'editor' => $rev->getEditorLabel() !== '' ? $rev->getEditorLabel() : 'System',
+            // revision_author (framework, alpha.205+), falling back to the
+            // editor_uid snapshot old revisions carry in _data.
+            'editor_uid' => $rev->getEditorUid(),
             'when' => $when,
             'is_current' => $rev->isCurrentRevision(),
         ];

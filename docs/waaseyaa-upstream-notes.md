@@ -139,3 +139,24 @@ pinned revision and works for path checkouts), rely on
 `waaseyaa-audit-site`'s `--report-only` invocation for the gate. Upstream fix:
 the reporter should compare golden against the lockfile source reference when
 all installs are dist.
+
+## 2026-06-12 — Optimistic locking requires the entity class to declare RevisionableInterface explicitly (ContentEntityBase does not)
+
+`EntityRepository::doSave()`'s `expected_revision_id` fail-fast pre-check
+(alpha.207) reads the current head via `$originalEntity instanceof
+\Waaseyaa\Entity\RevisionableInterface ? $originalEntity->getRevisionId() :
+null`. `ContentEntityBase` implements `RevisionableEntityInterface` and uses
+`RevisionableEntityTrait` (which provides every `RevisionableInterface`
+method) — but does NOT declare `RevisionableInterface` itself, so for a plain
+ContentEntityBase subclass the pre-check resolves `currentRevisionId = null`
+and EVERY stated expectation is refused as a `revision_conflict` with
+`current: null` ("no readable head"), even when the head matches. The
+framework's own fixture (`packages/entity-storage/tests/Fixtures/
+TestRevisionableEntity.php`) adds `implements RevisionableInterface`
+explicitly, which is the tell. Workaround (this app): all seven revisionable
+entity classes (Pillar, Page, Document, DriveFile, VentureLane, GatingFact,
+VentureSnapshot) now declare `implements RevisionableInterface` — zero method
+changes, the trait already satisfies it. Upstream fix: either have
+`RevisionableEntityInterface` extend `RevisionableInterface`, have
+ContentEntityBase declare it, or duck-type the pre-check like
+`entity.read`'s revision_id exposure already does.

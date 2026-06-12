@@ -8,6 +8,7 @@ use Waaseyaa\Entity\Attribute\ContentEntityKeys;
 use Waaseyaa\Entity\Attribute\ContentEntityType;
 use Waaseyaa\Entity\Attribute\Field;
 use Waaseyaa\Entity\ContentEntityBase;
+use Waaseyaa\Entity\RevisionableInterface;
 use Waaseyaa\Field\FieldStorage;
 
 /**
@@ -21,12 +22,14 @@ use Waaseyaa\Field\FieldStorage;
  *   as_of               date the mirror reflects (YYYY-MM-DD)
  *   model_version       the workbook the numbers come from
  *   note                free-text caveat shown with the banner
- *   editor_uid/_label   who recorded the mirror
+ *   editor_label        display name of who recorded the mirror (cache; the
+ *                       acting uid is the framework's revision_author,
+ *                       alpha.205+ — old revisions keep editor_uid in _data)
  *   updated_at          last-edited stamp
  */
 #[ContentEntityType(id: 'venture_snapshot', label: 'Venture snapshot', description: 'Provenance for the venture-numbers mirror: workbook and as-of date.')]
 #[ContentEntityKeys(id: 'id', uuid: 'uuid', label: 'model_version', revision: 'revision_id')]
-final class VentureSnapshot extends ContentEntityBase
+final class VentureSnapshot extends ContentEntityBase implements RevisionableInterface
 {
     // ── Declared field definitions (alpha.204+ save-time validation) ──
     // Metadata declarations read by EntityType::fromClass() in
@@ -41,9 +44,6 @@ final class VentureSnapshot extends ContentEntityBase
 
     #[Field(required: false, label: 'Note', stored: FieldStorage::Data)]
     public string $note = '';
-
-    #[Field(required: false, stored: FieldStorage::Data)]
-    public int $editor_uid = 0;
 
     #[Field(required: false, stored: FieldStorage::Data)]
     public string $editor_label = '';
@@ -83,14 +83,12 @@ final class VentureSnapshot extends ContentEntityBase
         string $asOf,
         string $modelVersion,
         string $note,
-        int $editorUid,
         string $editorLabel,
         string $updatedAt,
     ): static {
         $this->set('as_of', $asOf);
         $this->set('model_version', $modelVersion);
         $this->set('note', $note);
-        $this->set('editor_uid', $editorUid);
         $this->set('editor_label', $editorLabel);
         $this->set('updated_at', $updatedAt);
 

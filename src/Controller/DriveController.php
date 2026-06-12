@@ -106,7 +106,6 @@ final class DriveController
             folder: $folder,
             storageUri: $file->uri,
             uploadedAt: $now,
-            editorUid: $user->id(),
             editorLabel: Auth::label($user),
             updatedAt: $now,
             revisionLog: 'Uploaded',

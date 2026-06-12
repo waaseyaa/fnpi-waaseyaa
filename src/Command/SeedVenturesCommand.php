@@ -18,8 +18,10 @@ use Waaseyaa\CLI\CliIO;
  */
 final class SeedVenturesCommand
 {
-    /** Attribution for seeded rows: uid 0 renders as "System" in history. */
-    private const SEED_UID = 0;
+    /**
+     * Attribution label for seeded rows. The acting uid is the framework's
+     * revision_author (null under the CLI — no acting account context).
+     */
     private const SEED_LABEL = 'Seed (model mirror)';
 
     public function __construct(private readonly VentureService $ventures) {}
@@ -41,7 +43,6 @@ final class SeedVenturesCommand
                 $lane['assumptions'],
                 $lane['notes'],
                 ($i + 1) * 10,
-                self::SEED_UID,
                 self::SEED_LABEL,
                 'Seeded from ' . VentureSeed::MODEL_VERSION . ' (placeholder-grade)',
             );
@@ -61,7 +62,6 @@ final class SeedVenturesCommand
                 $fact['detail'],
                 'placeholder',
                 ($i + 1) * 10,
-                self::SEED_UID,
                 self::SEED_LABEL,
                 'Seeded as placeholder',
             );
@@ -74,7 +74,6 @@ final class SeedVenturesCommand
                 VentureSeed::AS_OF,
                 VentureSeed::MODEL_VERSION,
                 VentureSeed::SNAPSHOT_NOTE,
-                self::SEED_UID,
                 self::SEED_LABEL,
             );
             $io->writeln('  seed   snapshot ' . VentureSeed::AS_OF);

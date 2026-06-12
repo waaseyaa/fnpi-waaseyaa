@@ -113,7 +113,7 @@ final class VenturesController
         }
 
         $changes = is_array($data['changes'] ?? null) ? $data['changes'] : [];
-        $result = $this->ventures->updateLane($key, $changes, $user->id(), Auth::label($user));
+        $result = $this->ventures->updateLane($key, $changes, Auth::label($user));
         if ($result === null) {
             return new JsonResponse(['ok' => false, 'error' => 'Nothing to update, or a value was not a whole non-negative number.'], 422);
         }
@@ -191,6 +191,9 @@ final class VenturesController
                 'vid' => (int) $rev->getRevisionId(),
                 'summary' => $rev->getRevisionLog(),
                 'editor' => $rev->getEditorLabel() !== '' ? $rev->getEditorLabel() : 'System',
+                // revision_author (framework, alpha.205+), falling back to the
+                // editor_uid snapshot old revisions carry in _data.
+                'editor_uid' => $rev->getEditorUid(),
                 'when' => $this->revisionStamp($rev->getUpdatedAt(), $rev->getRevisionCreatedAt()),
                 'is_current' => $rev->isCurrentRevision(),
             ];
@@ -220,6 +223,9 @@ final class VenturesController
                 'status' => $rev->getStatus(),
                 'summary' => $rev->getRevisionLog(),
                 'editor' => $rev->getEditorLabel() !== '' ? $rev->getEditorLabel() : 'System',
+                // revision_author (framework, alpha.205+), falling back to the
+                // editor_uid snapshot old revisions carry in _data.
+                'editor_uid' => $rev->getEditorUid(),
                 'when' => $this->revisionStamp($rev->getUpdatedAt(), $rev->getRevisionCreatedAt()),
                 'is_current' => $rev->isCurrentRevision(),
             ];

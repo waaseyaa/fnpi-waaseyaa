@@ -89,7 +89,6 @@ final class DriveTest extends TestCase
             folder: 'Global relationships',
             storageUri: 'public://drive/china_ab12cd34.jpg',
             uploadedAt: '2026-06-07 12:00:00',
-            editorUid: 7,
             editorLabel: 'Matthew Owl',
             updatedAt: '2026-06-07 12:00:00',
         );

@@ -7,6 +7,7 @@ namespace App\Entity;
 use Waaseyaa\Entity\Attribute\ContentEntityKeys;
 use Waaseyaa\Entity\Attribute\ContentEntityType;
 use Waaseyaa\Entity\ContentEntityBase;
+use Waaseyaa\Entity\RevisionableInterface;
 
 /**
  * A pillar in the Anokii Identity Workspace.
@@ -36,12 +37,14 @@ use Waaseyaa\Entity\ContentEntityBase;
  *   pills               tag chips: list of {t, cyan}
  *   is_full             render full-width (0/1)
  *   sort_order          ordering within the workspace
- *   editor_uid/_label   who made the current revision
+ *   editor_label        display name of who made the current revision (cache;
+ *                       the acting uid is the framework's revision_author,
+ *                       alpha.205+ — old revisions keep editor_uid in _data)
  *   updated_at          last-edited stamp (preserved verbatim on migration)
  */
 #[ContentEntityType(id: 'identity_pillar', label: 'Identity pillar', description: 'A revisionable Identity Workspace pillar with status, notes, and history.')]
 #[ContentEntityKeys(id: 'id', uuid: 'uuid', label: 'title', revision: 'revision_id')]
-final class Pillar extends ContentEntityBase
+final class Pillar extends ContentEntityBase implements RevisionableInterface
 {
     /** Valid maturity statuses, in display order. */
     public const STATUSES = ['defined', 'draft', 'work', 'gap'];
@@ -144,8 +147,20 @@ final class Pillar extends ContentEntityBase
         return (int) ($this->get('sort_order') ?? 0);
     }
 
+    /**
+     * The acting account uid for this revision: the framework's
+     * revision_author (recorded automatically since alpha.205, hydrated on
+     * loadRevision()/listRevisions()), falling back to the editor_uid the app
+     * snapshotted into _data before the framework owned authorship. 0 means
+     * anonymous/system (the pre-upgrade seed/migration convention).
+     */
     public function getEditorUid(): int
     {
+        $author = $this->revisionMetadata()?->revisionAuthor;
+        if ($author !== null) {
+            return $author;
+        }
+
         return (int) ($this->get('editor_uid') ?? 0);
     }
 
@@ -154,9 +169,12 @@ final class Pillar extends ContentEntityBase
         return (string) ($this->get('editor_label') ?? '');
     }
 
-    public function setEditor(int $uid, string $label): static
+    /**
+     * Stamp the display name of the editor. The acting uid is NOT written
+     * here any more: the framework records it as revision_author on save.
+     */
+    public function setEditorLabel(string $label): static
     {
-        $this->set('editor_uid', $uid);
         $this->set('editor_label', $label);
 
         return $this;
@@ -200,7 +218,6 @@ final class Pillar extends ContentEntityBase
         array $pills,
         bool $isFull,
         int $sortOrder,
-        int $editorUid,
         string $editorLabel,
         string $updatedAt,
     ): static {
@@ -217,7 +234,6 @@ final class Pillar extends ContentEntityBase
         $this->set('pills', array_values($pills));
         $this->set('is_full', $isFull ? 1 : 0);
         $this->set('sort_order', $sortOrder);
-        $this->set('editor_uid', $editorUid);
         $this->set('editor_label', $editorLabel);
         $this->set('updated_at', $updatedAt);
 
