@@ -4,33 +4,40 @@ declare(strict_types=1);
 
 namespace App\Access;
 
+use Anokii\Access\AbstractWorkspaceRoles;
 use Waaseyaa\Access\EntityAccessHandler;
-use Waaseyaa\User\User;
 
 /**
- * The Anokii workspace role and permission model, mapped onto Waaseyaa's
- * existing role/permission substrate (no parallel system).
+ * The Anokii workspace role and permission model for FNPI, mapped onto
+ * Waaseyaa's existing role/permission substrate (no parallel system).
+ *
+ * Subclasses the shared Anokii role base ({@see AbstractWorkspaceRoles}): the
+ * base derives apply() (which returns the updated User), the framework role
+ * value objects for discovery (ProvidesRolesInterface, exposed by
+ * AnokiiServiceProvider), the permission union, the role-label map, and the
+ * isRole/permissionsFor accessors from the single roleDefinitions() declaration
+ * below. FNPI declares only its three roles and keeps its permission string
+ * constants and the per-entity access handler.
  *
  * Three roles:
  *   - Admin  -> the framework's built-in `administrator` role, which short
  *               circuits every permission check. Holds all workspace permissions.
- *   - Editor -> the `editor` role plus the two `edit ...` permissions: full
- *               read/write on Identity and Documents, no destructive ops.
- *   - Viewer -> the `viewer` role with no write permissions: read-only.
+ *   - Editor -> the edit-and-publish permissions: full read/write on Identity,
+ *               Documents, Drive, Pages, the inbox, and the venture numbers, but
+ *               no destructive (administer) ops.
+ *   - Viewer -> the coarse agent-tool capabilities only: read-only to content.
  *
- * Because `User::hasPermission()` does not union a role's permissions (only the
- * `administrator` role is special-cased), a non-admin role is applied by writing
- * its concrete permission strings onto the user's permissions list. apply()
- * does exactly that, so the role and its permissions always travel together.
- *
- * The AccessPolicy classes (one per entity) are the single source of truth for
- * what each permission grants; both the UI controllers (via handler()) and, in
- * a later increment, the agent tools consult the same policies.
+ * Because the framework's User::hasPermission() does not union a role's
+ * permissions (only the `administrator` role is special-cased), a non-admin
+ * role is applied by writing its concrete permission strings onto the user's
+ * permissions list. The base apply() does that; the framework user:assign-role
+ * command does the same via the discovered roles (it replaced the bespoke
+ * app:assign-role command).
  */
-final class WorkspaceAccess
+final class WorkspaceAccess extends AbstractWorkspaceRoles
 {
     // Roles. Admin reuses the framework's all-permissions role.
-    public const string ROLE_ADMIN = 'administrator';
+    public const string ROLE_ADMIN = self::ROLE_ADMINISTRATOR;
     public const string ROLE_EDITOR = 'editor';
     public const string ROLE_VIEWER = 'viewer';
 
@@ -70,8 +77,54 @@ final class WorkspaceAccess
         'tool.entity.delete',
     ];
 
-    /** @return list<string> every workspace permission */
-    public static function allPermissions(): array
+    /**
+     * Role definitions: id => {label, permissions, weight}. Editor and Viewer are
+     * defined and available but assigned to no one until staff/Council/external
+     * accounts arrive.
+     *
+     * @return array<string, array{label: string, permissions: list<string>, weight?: int}>
+     */
+    protected function roleDefinitions(): array
+    {
+        return [
+            self::ROLE_ADMIN => [
+                'label' => 'Admin',
+                'permissions' => self::adminPermissions(),
+                'weight' => 0,
+            ],
+            self::ROLE_EDITOR => [
+                'label' => 'Editor',
+                'permissions' => [
+                    self::EDIT_IDENTITY,
+                    self::EDIT_DOCUMENTS,
+                    self::EDIT_DRIVE,
+                    self::EDIT_PAGES,
+                    self::PUBLISH_PAGES,
+                    self::MANAGE_INBOX,
+                    self::VIEW_VENTURES,
+                    self::EDIT_VENTURES,
+                    self::CONFIRM_VENTURES,
+                    ...self::AGENT_TOOL_CAPABILITIES,
+                ],
+                'weight' => 10,
+            ],
+            self::ROLE_VIEWER => [
+                'label' => 'Viewer',
+                'permissions' => [...self::AGENT_TOOL_CAPABILITIES],
+                'weight' => 20,
+            ],
+        ];
+    }
+
+    /**
+     * Every workspace permission, granted to the admin role. Listed explicitly
+     * (not derived from the role union) so the admin definition does not depend
+     * on the base allPermissions() reading roleDefinitions() while it is being
+     * built.
+     *
+     * @return list<string>
+     */
+    private static function adminPermissions(): array
     {
         return [
             self::EDIT_IDENTITY,
@@ -93,49 +146,10 @@ final class WorkspaceAccess
     }
 
     /**
-     * Role definitions: id => {label, permissions}. Editor and Viewer are
-     * defined and available but assigned to no one until staff/Council/external
-     * accounts arrive.
-     *
-     * @return array<string, array{label:string, permissions:list<string>}>
-     */
-    public static function roles(): array
-    {
-        return [
-            self::ROLE_ADMIN => ['label' => 'Admin', 'permissions' => self::allPermissions()],
-            self::ROLE_EDITOR => ['label' => 'Editor', 'permissions' => [self::EDIT_IDENTITY, self::EDIT_DOCUMENTS, self::EDIT_DRIVE, self::EDIT_PAGES, self::PUBLISH_PAGES, self::MANAGE_INBOX, self::VIEW_VENTURES, self::EDIT_VENTURES, self::CONFIRM_VENTURES, ...self::AGENT_TOOL_CAPABILITIES]],
-            self::ROLE_VIEWER => ['label' => 'Viewer', 'permissions' => [...self::AGENT_TOOL_CAPABILITIES]],
-        ];
-    }
-
-    public static function isRole(string $roleId): bool
-    {
-        return array_key_exists($roleId, self::roles());
-    }
-
-    /**
-     * Apply a workspace role to a user: set the role and write its permissions,
-     * preserving any roles that are not part of the workspace model. The caller
-     * persists the user.
-     */
-    public static function apply(User $user, string $roleId): void
-    {
-        $defs = self::roles();
-        $permissions = $defs[$roleId]['permissions'] ?? [];
-
-        // Keep any non-workspace roles; replace the workspace role with this one.
-        $kept = array_values(array_filter(
-            $user->getRoles(),
-            static fn(string $role): bool => !array_key_exists($role, $defs),
-        ));
-        $user->setRoles(array_values(array_unique([...$kept, $roleId])));
-        $user->setPermissions($permissions);
-    }
-
-    /**
-     * The single construction point for the workspace access handler: the three
-     * entity policies. Reused by the UI controllers and the tests so there is
-     * one source of truth.
+     * The single construction point for the workspace access handler: the eight
+     * entity policies. Reused by the UI controllers, the agent tools, and the
+     * tests so there is one source of truth. (FNPI-specific; not part of the
+     * shared role base.)
      */
     public static function handler(): EntityAccessHandler
     {

@@ -8,7 +8,6 @@ use App\Access\WorkspaceAccess;
 use App\Auth\SetupTokenRepository;
 use App\Auth\SetupTokenSchema;
 use App\CLI\AnokiiInviteHandler;
-use App\Command\AssignRoleCommand;
 use App\CoIntelligence\AgentConversation;
 use App\CoIntelligence\AgentProposalRepository;
 use App\CoIntelligence\AgentTools;
@@ -54,6 +53,7 @@ use Waaseyaa\CLI\OptionDefinition;
 use Waaseyaa\CLI\OptionMode;
 use Waaseyaa\Database\DatabaseInterface;
 use Waaseyaa\Foundation\ServiceProvider\Capability\HasNativeCommandsInterface;
+use Waaseyaa\Foundation\ServiceProvider\Capability\ProvidesRolesInterface;
 use Waaseyaa\Foundation\ServiceProvider\ServiceProvider;
 use Waaseyaa\Routing\RouteBuilder;
 use Waaseyaa\Routing\WaaseyaaRouter;
@@ -69,7 +69,7 @@ use Waaseyaa\SSR\SsrServiceProvider;
  * target is exactly /anokii/login. Public marketing routes live in
  * SiteServiceProvider and are untouched.
  */
-final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCommandsInterface
+final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCommandsInterface, ProvidesRolesInterface
 {
     /** Chat model, matching oiatc's Co-Intelligence (current Claude Sonnet). */
     private const CHAT_MODEL = 'claude-sonnet-4-6';
@@ -249,6 +249,19 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
         $get('anokii.documents.file', '/anokii/documents/{uuid}/file/{vid}/{kind}', fn(Request $r, string $uuid, string $vid, string $kind) => $documents->download($r, $uuid, $vid, $kind));
         // Coming-soon placeholder for not-yet-live modules (rooms, ...).
         $get('anokii.module', '/anokii/m/{module}', fn(Request $r, string $module) => $shell->comingSoon($r, $module));
+    }
+
+    /**
+     * Contribute the FNPI workspace roles to the framework RoleRepository so the
+     * framework user:assign-role command can resolve them and stamp their
+     * permissions. Delegates to the WorkspaceAccess role model (the single
+     * source of truth). Replaces the bespoke app:assign-role command.
+     *
+     * @return iterable<\Waaseyaa\User\Role>
+     */
+    public function roles(): iterable
+    {
+        yield from new WorkspaceAccess()->roles();
     }
 
     public function nativeCommands(): iterable
@@ -473,15 +486,6 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
             },
         );
 
-        yield new CommandDefinition(
-            name: 'app:assign-role',
-            description: 'Assign an Anokii workspace role (admin | editor | viewer) to an account, by email or numeric uid.',
-            arguments: [
-                new ArgumentDefinition(name: 'role', mode: ArgumentMode::Required, description: 'admin, editor, or viewer'),
-                new ArgumentDefinition(name: 'user', mode: ArgumentMode::Required, description: 'Account email or numeric uid'),
-            ],
-            handler: fn(CliIO $io): int => new AssignRoleCommand($this->entityTypeManager())->run($io),
-        );
     }
 
     private function db(): DatabaseInterface

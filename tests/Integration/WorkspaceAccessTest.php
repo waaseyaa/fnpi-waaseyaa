@@ -60,29 +60,29 @@ final class WorkspaceAccessTest extends TestCase
     #[Test]
     public function the_three_roles_are_defined_with_the_right_permissions(): void
     {
-        $roles = WorkspaceAccess::roles();
-        $this->assertArrayHasKey('administrator', $roles);
-        $this->assertArrayHasKey('editor', $roles);
-        $this->assertArrayHasKey('viewer', $roles);
+        $access = new WorkspaceAccess();
+        $this->assertTrue($access->isRole('administrator'));
+        $this->assertTrue($access->isRole('editor'));
+        $this->assertTrue($access->isRole('viewer'));
 
         // Editor: the three edit permissions plus the coarse agent-tool
         // capabilities (the policy is the decisive gate).
         foreach (['edit identity', 'edit documents', 'edit drive', 'tool.entity.update', 'tool.entity.create'] as $perm) {
-            $this->assertContains($perm, $roles['editor']['permissions']);
+            $this->assertContains($perm, $access->permissionsFor('editor'));
         }
-        $this->assertNotContains('administer identity', $roles['editor']['permissions']);
+        $this->assertNotContains('administer identity', $access->permissionsFor('editor'));
         // Viewer: only the agent-tool capabilities, no edit/administer rights.
-        $this->assertContains('tool.entity.read', $roles['viewer']['permissions']);
-        $this->assertNotContains('edit identity', $roles['viewer']['permissions']);
-        $this->assertContains('administer identity', $roles['administrator']['permissions']);
-        $this->assertContains('administer drive', $roles['administrator']['permissions']);
+        $this->assertContains('tool.entity.read', $access->permissionsFor('viewer'));
+        $this->assertNotContains('edit identity', $access->permissionsFor('viewer'));
+        $this->assertContains('administer identity', $access->permissionsFor('administrator'));
+        $this->assertContains('administer drive', $access->permissionsFor('administrator'));
     }
 
     #[Test]
     public function apply_admin_uses_the_builtin_administrator_role(): void
     {
         $user = new User(['uid' => 10, 'name' => 'Admin Person']);
-        WorkspaceAccess::apply($user, WorkspaceAccess::ROLE_ADMIN);
+        $user = new WorkspaceAccess()->apply($user, WorkspaceAccess::ROLE_ADMIN);
 
         $this->assertContains('administrator', $user->getRoles());
         // Administrator short-circuits every permission.
@@ -95,7 +95,7 @@ final class WorkspaceAccessTest extends TestCase
     public function apply_editor_grants_edit_but_not_administer(): void
     {
         $user = new User(['uid' => 11, 'name' => 'Editor Person']);
-        WorkspaceAccess::apply($user, WorkspaceAccess::ROLE_EDITOR);
+        $user = new WorkspaceAccess()->apply($user, WorkspaceAccess::ROLE_EDITOR);
 
         $this->assertContains('editor', $user->getRoles());
         $this->assertTrue($user->hasPermission('edit identity'));
@@ -110,7 +110,7 @@ final class WorkspaceAccessTest extends TestCase
     public function apply_viewer_grants_no_writes(): void
     {
         $user = new User(['uid' => 12, 'name' => 'Viewer Person']);
-        WorkspaceAccess::apply($user, WorkspaceAccess::ROLE_VIEWER);
+        $user = new WorkspaceAccess()->apply($user, WorkspaceAccess::ROLE_VIEWER);
 
         $this->assertContains('viewer', $user->getRoles());
         $this->assertFalse($user->hasPermission('edit identity'));
@@ -121,7 +121,7 @@ final class WorkspaceAccessTest extends TestCase
     public function apply_preserves_non_workspace_roles_and_replaces_the_workspace_role(): void
     {
         $user = new User(['uid' => 13, 'name' => 'Mixed', 'roles' => ['external_partner', 'editor']]);
-        WorkspaceAccess::apply($user, WorkspaceAccess::ROLE_VIEWER);
+        $user = new WorkspaceAccess()->apply($user, WorkspaceAccess::ROLE_VIEWER);
 
         $roles = $user->getRoles();
         $this->assertContains('external_partner', $roles, 'non-workspace role kept');

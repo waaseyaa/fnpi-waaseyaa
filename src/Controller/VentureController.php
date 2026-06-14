@@ -7,7 +7,7 @@ namespace App\Controller;
 use App\Entity\VentureItem;
 use App\Entity\VentureThread;
 use App\Support\AnokiiShell;
-use App\Support\Auth;
+use Anokii\Support\Auth;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;

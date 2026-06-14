@@ -7,7 +7,7 @@ namespace App\Controller;
 use App\Entity\GatingFact;
 use App\Entity\VentureLane;
 use App\Support\AnokiiShell;
-use App\Support\Auth;
+use Anokii\Support\Auth;
 use App\Venture\VentureService;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;

@@ -4,58 +4,35 @@ declare(strict_types=1);
 
 namespace App\Access;
 
-use Waaseyaa\Access\AccessPolicyInterface;
-use Waaseyaa\Access\AccessResult;
-use Waaseyaa\Access\AccountInterface;
+use Anokii\Access\AbstractEntityAccessPolicy;
 use Waaseyaa\Access\Gate\PolicyAttribute;
-use Waaseyaa\Entity\EntityInterface;
 
 /**
  * Access posture for Drive files (drive_asset).
  *
- * Drive is a Nation-shared bucket: any signed-in account may read every file.
- * Uploading or editing a file requires the `edit drive` permission (Editor and
- * Admin). Deleting requires `administer drive` (Admin only): a Drive delete
- * removes the bytes and is not recoverable, so it is the destructive tier.
- * Fails closed via Neutral, mirroring the Identity and Documents policies.
+ * Drive is a Nation-shared bucket (standard workspace shape via the shared
+ * Anokii base): any signed-in account may read every file; uploading or editing
+ * (create/update) requires `edit drive`; delete requires `administer drive`
+ * (the bytes are removed and not recoverable); anonymous and everything else
+ * fails closed.
  *
  * @api
  */
 #[PolicyAttribute(entityType: 'drive_asset')]
-final class DriveFileAccessPolicy implements AccessPolicyInterface
+final class DriveFileAccessPolicy extends AbstractEntityAccessPolicy
 {
-    public function appliesTo(string $entityTypeId): bool
+    protected function entityTypeId(): string
     {
-        return $entityTypeId === 'drive_asset';
+        return 'drive_asset';
     }
 
-    public function access(EntityInterface $entity, string $operation, AccountInterface $account): AccessResult
+    protected function editPermission(): string
     {
-        if ($operation === 'view') {
-            return $account->isAuthenticated()
-                ? AccessResult::allowed('signed-in workspace users may read Drive')
-                : AccessResult::neutral('Drive is workspace-only');
-        }
-
-        if ($operation === 'delete') {
-            return $account->hasPermission(WorkspaceAccess::ADMINISTER_DRIVE)
-                ? AccessResult::allowed('administer drive may delete')
-                : AccessResult::neutral('deleting a Drive file requires administer drive');
-        }
-
-        return $account->hasPermission(WorkspaceAccess::EDIT_DRIVE)
-            ? AccessResult::allowed('edit drive may update')
-            : AccessResult::neutral('editing a Drive file requires edit drive');
+        return WorkspaceAccess::EDIT_DRIVE;
     }
 
-    public function createAccess(string $entityTypeId, string $bundle, AccountInterface $account): AccessResult
+    protected function administerPermission(): string
     {
-        if (!$this->appliesTo($entityTypeId)) {
-            return AccessResult::neutral();
-        }
-
-        return $account->hasPermission(WorkspaceAccess::EDIT_DRIVE)
-            ? AccessResult::allowed('edit drive may upload')
-            : AccessResult::neutral('uploading a Drive file requires edit drive');
+        return WorkspaceAccess::ADMINISTER_DRIVE;
     }
 }

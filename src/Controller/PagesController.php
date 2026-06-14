@@ -6,7 +6,7 @@ namespace App\Controller;
 
 use App\Pages\PagesService;
 use App\Support\AnokiiShell;
-use App\Support\Auth;
+use Anokii\Support\Auth;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;

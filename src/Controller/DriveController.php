@@ -9,7 +9,7 @@ use App\Drive\DriveStorage;
 use App\Drive\FileTypes;
 use App\Entity\DriveFile;
 use App\Support\AnokiiShell;
-use App\Support\Auth;
+use Anokii\Support\Auth;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;

@@ -8,7 +8,7 @@ use App\Entity\Pillar;
 use App\Identity\IdentitySeed;
 use App\Identity\PillarService;
 use App\Support\AnokiiShell;
-use App\Support\Auth;
+use Anokii\Support\Auth;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
