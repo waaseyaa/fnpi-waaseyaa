@@ -169,13 +169,13 @@ final class VentureNumbersTest extends TestCase
 
         // The Editor role definition carries the venture permissions (the
         // Matt-can-edit bar); the Viewer role carries none of them.
-        $roles = WorkspaceAccess::roles();
+        $access = new WorkspaceAccess();
         foreach ([WorkspaceAccess::VIEW_VENTURES, WorkspaceAccess::EDIT_VENTURES, WorkspaceAccess::CONFIRM_VENTURES] as $perm) {
-            $this->assertContains($perm, $roles['editor']['permissions']);
-            $this->assertNotContains($perm, $roles['viewer']['permissions']);
+            $this->assertContains($perm, $access->permissionsFor('editor'));
+            $this->assertNotContains($perm, $access->permissionsFor('viewer'));
         }
-        $this->assertContains(WorkspaceAccess::ADMINISTER_VENTURES, $roles['administrator']['permissions']);
-        $this->assertNotContains(WorkspaceAccess::ADMINISTER_VENTURES, $roles['editor']['permissions']);
+        $this->assertContains(WorkspaceAccess::ADMINISTER_VENTURES, $access->permissionsFor('administrator'));
+        $this->assertNotContains(WorkspaceAccess::ADMINISTER_VENTURES, $access->permissionsFor('editor'));
     }
 
     #[Test]

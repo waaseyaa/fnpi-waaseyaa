@@ -4,57 +4,34 @@ declare(strict_types=1);
 
 namespace App\Access;
 
-use Waaseyaa\Access\AccessPolicyInterface;
-use Waaseyaa\Access\AccessResult;
-use Waaseyaa\Access\AccountInterface;
+use Anokii\Access\AbstractEntityAccessPolicy;
 use Waaseyaa\Access\Gate\PolicyAttribute;
-use Waaseyaa\Entity\EntityInterface;
 
 /**
  * Access posture for Document notes (document_note), the discussion thread.
  *
- * A note is part of working on a document, so it shares the Documents
- * permissions: any signed-in account may read; posting a note requires
- * `edit documents` (Editor and Admin); removing one requires
- * `administer documents` (Admin only; not exposed yet). Fails closed.
+ * A note shares the Documents permissions (via the shared Anokii base): any
+ * signed-in account may read; posting a note (create/update) requires
+ * `edit documents`; removing one requires `administer documents`; anonymous and
+ * everything else fails closed.
  *
  * @api
  */
 #[PolicyAttribute(entityType: 'document_note')]
-final class DocumentNoteAccessPolicy implements AccessPolicyInterface
+final class DocumentNoteAccessPolicy extends AbstractEntityAccessPolicy
 {
-    public function appliesTo(string $entityTypeId): bool
+    protected function entityTypeId(): string
     {
-        return $entityTypeId === 'document_note';
+        return 'document_note';
     }
 
-    public function access(EntityInterface $entity, string $operation, AccountInterface $account): AccessResult
+    protected function editPermission(): string
     {
-        if ($operation === 'view') {
-            return $account->isAuthenticated()
-                ? AccessResult::allowed('signed-in workspace users may read notes')
-                : AccessResult::neutral('notes are workspace-only');
-        }
-
-        if ($operation === 'delete') {
-            return $account->hasPermission(WorkspaceAccess::ADMINISTER_DOCUMENTS)
-                ? AccessResult::allowed('administer documents may delete a note')
-                : AccessResult::neutral('deleting a note requires administer documents');
-        }
-
-        return $account->hasPermission(WorkspaceAccess::EDIT_DOCUMENTS)
-            ? AccessResult::allowed('edit documents may post')
-            : AccessResult::neutral('posting a note requires edit documents');
+        return WorkspaceAccess::EDIT_DOCUMENTS;
     }
 
-    public function createAccess(string $entityTypeId, string $bundle, AccountInterface $account): AccessResult
+    protected function administerPermission(): string
     {
-        if (!$this->appliesTo($entityTypeId)) {
-            return AccessResult::neutral();
-        }
-
-        return $account->hasPermission(WorkspaceAccess::EDIT_DOCUMENTS)
-            ? AccessResult::allowed('edit documents may post a note')
-            : AccessResult::neutral('posting a note requires edit documents');
+        return WorkspaceAccess::ADMINISTER_DOCUMENTS;
     }
 }

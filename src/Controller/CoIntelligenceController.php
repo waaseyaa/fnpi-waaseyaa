@@ -11,7 +11,7 @@ use App\CoIntelligence\ConversationRepository;
 use App\CoIntelligence\Passage;
 use App\CoIntelligence\Retriever;
 use App\Support\AnokiiShell;
-use App\Support\Auth;
+use Anokii\Support\Auth;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
