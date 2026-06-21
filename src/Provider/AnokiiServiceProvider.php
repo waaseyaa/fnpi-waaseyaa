@@ -41,18 +41,19 @@ use App\Pages\CloudflareCachePurger;
 use App\Pages\PagesService;
 use App\Pages\PublishedPageRenderer;
 use App\Support\Db;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Waaseyaa\AI\Agent\Provider\AnthropicProvider;
 use Waaseyaa\AI\Agent\Provider\NullLlmProvider;
 use Waaseyaa\AI\Agent\Provider\ProviderInterface;
-use Waaseyaa\CLI\ArgumentDefinition;
-use Waaseyaa\CLI\ArgumentMode;
-use Waaseyaa\CLI\CliIO;
-use Waaseyaa\CLI\CommandDefinition;
-use Waaseyaa\CLI\OptionDefinition;
-use Waaseyaa\CLI\OptionMode;
+use Waaseyaa\CLI\Command\HandlerArgument;
+use Waaseyaa\CLI\Command\HandlerArgumentMode;
+use Waaseyaa\CLI\Command\HandlerCommand;
+use Waaseyaa\CLI\Command\HandlerOption;
+use Waaseyaa\CLI\Command\HandlerOptionMode;
+use Waaseyaa\CLI\Command\SymfonyCommandIO;
 use Waaseyaa\Database\DatabaseInterface;
-use Waaseyaa\Foundation\ServiceProvider\Capability\HasNativeCommandsInterface;
+use Waaseyaa\Foundation\ServiceProvider\Capability\ProvidesConsoleCommandsInterface;
 use Waaseyaa\Foundation\ServiceProvider\Capability\ProvidesRolesInterface;
 use Waaseyaa\Foundation\ServiceProvider\ServiceProvider;
 use Waaseyaa\Routing\RouteBuilder;
@@ -60,19 +61,26 @@ use Waaseyaa\Routing\WaaseyaaRouter;
 use Waaseyaa\SSR\SsrServiceProvider;
 
 /**
- * Wires the authenticated Anokii workspace at /anokii/*: the shell (login,
+ * Wires the authenticated Anokii workspace at /admin/anokii/*: the shell (login,
  * logout, dashboard, settings, set-password) and tool #1 (Identity Workspace).
  *
  * Routes are registered ->allowAll() at the framework layer; each controller
  * enforces the session itself and redirects unauthenticated page requests to
- * /anokii/login (and returns 401 for JSON actions), so the gate's redirect
- * target is exactly /anokii/login. Public marketing routes live in
+ * /admin/anokii/login (and returns 401 for JSON actions), so the gate's redirect
+ * target is exactly /admin/anokii/login. Public marketing routes live in
  * SiteServiceProvider and are untouched.
  */
-final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCommandsInterface, ProvidesRolesInterface
+final class AnokiiServiceProvider extends ServiceProvider implements ProvidesConsoleCommandsInterface, ProvidesRolesInterface
 {
     /** Chat model, matching oiatc's Co-Intelligence (current Claude Sonnet). */
     private const CHAT_MODEL = 'claude-sonnet-4-6';
+
+    /**
+     * Route priority for the workspace. Must beat the admin SPA's GET catch-all
+     * at /admin/{path} (waaseyaa/admin-surface, priority 0) so /admin/anokii/*
+     * resolves to these controllers and not the SPA shell.
+     */
+    private const ROUTE_PRIORITY = 100;
 
     private ?DatabaseInterface $db = null;
 
@@ -186,69 +194,105 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
         // otherwise via VentureAccessPolicy).
         $ventures = new VenturesController($entityTypeManager, new VentureService($entityTypeManager), $access);
 
+        // The workspace lives UNDER /admin/anokii, but the admin SPA
+        // (waaseyaa/admin-surface) owns a GET catch-all at /admin/{path}
+        // (priority 0, registered by the framework before app providers). These
+        // explicit routes must win, so they register at a higher priority —
+        // WaaseyaaRouter::sortRoutesByPriority() (run once at boot) orders
+        // higher-first, and the first UrlMatcher hit wins. Mirrors the
+        // framework's own `->priority()` override pattern.
         $get = static fn(string $name, string $path, callable $c) => $router->addRoute(
             $name,
-            RouteBuilder::create($path)->controller($c)->allowAll()->methods('GET')->build(),
+            RouteBuilder::create($path)->controller($c)->allowAll()->methods('GET')->priority(self::ROUTE_PRIORITY)->build(),
         );
         $post = static fn(string $name, string $path, callable $c) => $router->addRoute(
             $name,
-            RouteBuilder::create($path)->controller($c)->allowAll()->methods('POST')->build(),
+            RouteBuilder::create($path)->controller($c)->allowAll()->methods('POST')->priority(self::ROUTE_PRIORITY)->build(),
         );
 
-        $get('anokii.home', '/anokii', fn(Request $r) => $shell->dashboard($r));
-        $get('anokii.login', '/anokii/login', fn(Request $r) => $shell->loginForm($r));
-        $post('anokii.login.post', '/anokii/login', fn(Request $r) => $shell->loginSubmit($r));
-        $get('anokii.logout', '/anokii/logout', fn(Request $r) => $shell->logout($r));
-        $get('anokii.settings', '/anokii/settings', fn(Request $r) => $shell->settings($r));
-        $post('anokii.settings.post', '/anokii/settings', fn(Request $r) => $shell->settingsSave($r));
-        $get('anokii.setpw', '/anokii/set-password', fn(Request $r) => $shell->setPasswordForm($r));
-        $post('anokii.setpw.post', '/anokii/set-password', fn(Request $r) => $shell->setPasswordSubmit($r));
-        $get('anokii.identity', '/anokii/identity', fn(Request $r) => $identity->index($r));
-        $post('anokii.identity.save', '/anokii/identity/save', fn(Request $r) => $identity->save($r));
-        $get('anokii.identity.history', '/anokii/identity/{pid}/history', fn(Request $r, string $pid) => $identity->history($r, $pid));
-        $post('anokii.identity.translate', '/anokii/identity/translate', fn(Request $r) => $identity->saveTranslation($r));
-        $get('anokii.identity.translation_history', '/anokii/identity/{pid}/{langcode}/history', fn(Request $r, string $pid, string $langcode) => $identity->translationHistory($r, $pid, $langcode));
-        $get('anokii.pages', '/anokii/pages', fn(Request $r) => $pages->index($r));
-        $get('anokii.pages.edit', '/anokii/pages/{id}', fn(Request $r, string $id) => $pages->edit($r, $id));
-        $get('anokii.pages.preview', '/anokii/pages/{id}/preview', fn(Request $r, string $id) => $pages->preview($r, $id));
-        $get('anokii.pages.history', '/anokii/pages/{id}/history', fn(Request $r, string $id) => $pages->history($r, $id));
-        $post('anokii.pages.save', '/anokii/pages/{id}/save', fn(Request $r, string $id) => $pages->save($r, $id));
-        $post('anokii.pages.publish', '/anokii/pages/{id}/publish', fn(Request $r, string $id) => $pages->publish($r, $id));
-        $post('anokii.pages.rollback', '/anokii/pages/{id}/rollback', fn(Request $r, string $id) => $pages->rollback($r, $id));
-        $get('anokii.cointelligence', '/anokii/cointelligence', fn(Request $r) => $cointel->index($r));
-        $post('anokii.cointelligence.send', '/anokii/cointelligence/send', fn(Request $r) => $cointel->send($r));
-        $post('anokii.cointelligence.apply', '/anokii/cointelligence/apply', fn(Request $r) => $cointel->apply($r));
-        $get('anokii.cointelligence.messages', '/anokii/cointelligence/{id}/messages', fn(Request $r, string $id) => $cointel->messages($r, $id));
-        $get('anokii.drive', '/anokii/drive', fn(Request $r) => $drive->index($r));
-        $post('anokii.drive.upload', '/anokii/drive/upload', fn(Request $r) => $drive->upload($r));
-        $get('anokii.drive.file', '/anokii/drive/file/{id}', fn(Request $r, string $id) => $drive->download($r, $id));
-        $post('anokii.drive.delete', '/anokii/drive/delete', fn(Request $r) => $drive->delete($r));
+        $get('anokii.home', '/admin/anokii', fn(Request $r) => $shell->dashboard($r));
+        $get('anokii.login', '/admin/anokii/login', fn(Request $r) => $shell->loginForm($r));
+        $post('anokii.login.post', '/admin/anokii/login', fn(Request $r) => $shell->loginSubmit($r));
+        $get('anokii.logout', '/admin/anokii/logout', fn(Request $r) => $shell->logout($r));
+        $get('anokii.settings', '/admin/anokii/settings', fn(Request $r) => $shell->settings($r));
+        $post('anokii.settings.post', '/admin/anokii/settings', fn(Request $r) => $shell->settingsSave($r));
+        $get('anokii.setpw', '/admin/anokii/set-password', fn(Request $r) => $shell->setPasswordForm($r));
+        $post('anokii.setpw.post', '/admin/anokii/set-password', fn(Request $r) => $shell->setPasswordSubmit($r));
+        $get('anokii.identity', '/admin/anokii/identity', fn(Request $r) => $identity->index($r));
+        $post('anokii.identity.save', '/admin/anokii/identity/save', fn(Request $r) => $identity->save($r));
+        $get('anokii.identity.history', '/admin/anokii/identity/{pid}/history', fn(Request $r, string $pid) => $identity->history($r, $pid));
+        $post('anokii.identity.translate', '/admin/anokii/identity/translate', fn(Request $r) => $identity->saveTranslation($r));
+        $get('anokii.identity.translation_history', '/admin/anokii/identity/{pid}/{langcode}/history', fn(Request $r, string $pid, string $langcode) => $identity->translationHistory($r, $pid, $langcode));
+        $get('anokii.pages', '/admin/anokii/pages', fn(Request $r) => $pages->index($r));
+        $get('anokii.pages.edit', '/admin/anokii/pages/{id}', fn(Request $r, string $id) => $pages->edit($r, $id));
+        $get('anokii.pages.preview', '/admin/anokii/pages/{id}/preview', fn(Request $r, string $id) => $pages->preview($r, $id));
+        $get('anokii.pages.history', '/admin/anokii/pages/{id}/history', fn(Request $r, string $id) => $pages->history($r, $id));
+        $post('anokii.pages.save', '/admin/anokii/pages/{id}/save', fn(Request $r, string $id) => $pages->save($r, $id));
+        $post('anokii.pages.publish', '/admin/anokii/pages/{id}/publish', fn(Request $r, string $id) => $pages->publish($r, $id));
+        $post('anokii.pages.rollback', '/admin/anokii/pages/{id}/rollback', fn(Request $r, string $id) => $pages->rollback($r, $id));
+        $get('anokii.cointelligence', '/admin/anokii/cointelligence', fn(Request $r) => $cointel->index($r));
+        $post('anokii.cointelligence.send', '/admin/anokii/cointelligence/send', fn(Request $r) => $cointel->send($r));
+        $post('anokii.cointelligence.apply', '/admin/anokii/cointelligence/apply', fn(Request $r) => $cointel->apply($r));
+        $get('anokii.cointelligence.messages', '/admin/anokii/cointelligence/{id}/messages', fn(Request $r, string $id) => $cointel->messages($r, $id));
+        $get('anokii.drive', '/admin/anokii/drive', fn(Request $r) => $drive->index($r));
+        $post('anokii.drive.upload', '/admin/anokii/drive/upload', fn(Request $r) => $drive->upload($r));
+        $get('anokii.drive.file', '/admin/anokii/drive/file/{id}', fn(Request $r, string $id) => $drive->download($r, $id));
+        $post('anokii.drive.delete', '/admin/anokii/drive/delete', fn(Request $r) => $drive->delete($r));
         $analytics = new \App\Controller\AnokiiAnalyticsController($entityTypeManager, new \App\Analytics\AnalyticsReport($this->db()));
-        $get('anokii.analytics', '/anokii/analytics', fn(Request $r) => $analytics->index($r));
+        $get('anokii.analytics', '/admin/anokii/analytics', fn(Request $r) => $analytics->index($r));
 
-        $get('anokii.ventures', '/anokii/ventures', fn(Request $r) => $ventures->index($r));
-        $post('anokii.ventures.lane_save', '/anokii/ventures/lane/save', fn(Request $r) => $ventures->saveLane($r));
-        $post('anokii.ventures.fact_save', '/anokii/ventures/fact/save', fn(Request $r) => $ventures->saveFact($r));
-        $get('anokii.ventures.lane_history', '/anokii/ventures/lane/{key}/history', fn(Request $r, string $key) => $ventures->laneHistory($r, $key));
-        $get('anokii.ventures.fact_history', '/anokii/ventures/fact/{key}/history', fn(Request $r, string $key) => $ventures->factHistory($r, $key));
+        $get('anokii.ventures', '/admin/anokii/ventures', fn(Request $r) => $ventures->index($r));
+        $post('anokii.ventures.lane_save', '/admin/anokii/ventures/lane/save', fn(Request $r) => $ventures->saveLane($r));
+        $post('anokii.ventures.fact_save', '/admin/anokii/ventures/fact/save', fn(Request $r) => $ventures->saveFact($r));
+        $get('anokii.ventures.lane_history', '/admin/anokii/ventures/lane/{key}/history', fn(Request $r, string $key) => $ventures->laneHistory($r, $key));
+        $get('anokii.ventures.fact_history', '/admin/anokii/ventures/fact/{key}/history', fn(Request $r, string $key) => $ventures->factHistory($r, $key));
 
         $venture = new \App\Controller\VentureController($entityTypeManager);
-        $get('anokii.venture', '/anokii/venture', fn(Request $r) => $venture->index($r));
+        $get('anokii.venture', '/admin/anokii/venture', fn(Request $r) => $venture->index($r));
 
         $inbox = new \App\Controller\ContactInboxController($entityTypeManager, $access);
-        $get('anokii.inbox', '/anokii/inbox', fn(Request $r) => $inbox->index($r));
-        $post('anokii.inbox.read', '/anokii/inbox/read', fn(Request $r) => $inbox->markAllRead($r));
+        $get('anokii.inbox', '/admin/anokii/inbox', fn(Request $r) => $inbox->index($r));
+        $post('anokii.inbox.read', '/admin/anokii/inbox/read', fn(Request $r) => $inbox->markAllRead($r));
 
-        $get('anokii.documents', '/anokii/documents', fn(Request $r) => $documents->index($r));
-        $post('anokii.documents.create', '/anokii/documents/create', fn(Request $r) => $documents->create($r));
-        $get('anokii.documents.show', '/anokii/documents/{uuid}', fn(Request $r, string $uuid) => $documents->show($r, $uuid));
-        $post('anokii.documents.version', '/anokii/documents/{uuid}/version', fn(Request $r, string $uuid) => $documents->uploadVersion($r, $uuid));
-        $post('anokii.documents.setcurrent', '/anokii/documents/{uuid}/set-current', fn(Request $r, string $uuid) => $documents->setCurrent($r, $uuid));
-        $post('anokii.documents.rollback', '/anokii/documents/{uuid}/rollback', fn(Request $r, string $uuid) => $documents->rollback($r, $uuid));
-        $post('anokii.documents.note', '/anokii/documents/{uuid}/note', fn(Request $r, string $uuid) => $documents->addNote($r, $uuid));
-        $get('anokii.documents.file', '/anokii/documents/{uuid}/file/{vid}/{kind}', fn(Request $r, string $uuid, string $vid, string $kind) => $documents->download($r, $uuid, $vid, $kind));
+        $get('anokii.documents', '/admin/anokii/documents', fn(Request $r) => $documents->index($r));
+        $post('anokii.documents.create', '/admin/anokii/documents/create', fn(Request $r) => $documents->create($r));
+        $get('anokii.documents.show', '/admin/anokii/documents/{uuid}', fn(Request $r, string $uuid) => $documents->show($r, $uuid));
+        $post('anokii.documents.version', '/admin/anokii/documents/{uuid}/version', fn(Request $r, string $uuid) => $documents->uploadVersion($r, $uuid));
+        $post('anokii.documents.setcurrent', '/admin/anokii/documents/{uuid}/set-current', fn(Request $r, string $uuid) => $documents->setCurrent($r, $uuid));
+        $post('anokii.documents.rollback', '/admin/anokii/documents/{uuid}/rollback', fn(Request $r, string $uuid) => $documents->rollback($r, $uuid));
+        $post('anokii.documents.note', '/admin/anokii/documents/{uuid}/note', fn(Request $r, string $uuid) => $documents->addNote($r, $uuid));
+        $get('anokii.documents.file', '/admin/anokii/documents/{uuid}/file/{vid}/{kind}', fn(Request $r, string $uuid, string $vid, string $kind) => $documents->download($r, $uuid, $vid, $kind));
         // Coming-soon placeholder for not-yet-live modules (rooms, ...).
-        $get('anokii.module', '/anokii/m/{module}', fn(Request $r, string $module) => $shell->comingSoon($r, $module));
+        $get('anokii.module', '/admin/anokii/m/{module}', fn(Request $r, string $module) => $shell->comingSoon($r, $module));
+
+        // Legacy redirects: the workspace moved from /anokii/* to /admin/anokii/*
+        // (the admin SPA now owns /admin, and the bare /anokii root is being
+        // freed for a public marketing page). 301 every old SUB-path — login,
+        // set-password, settings, identity*, cointelligence*, drive*, documents*,
+        // pages*, inbox*, venture, ventures*, analytics, m/* — to its new home so
+        // invite links and bookmarks resolve. The catch-all `{rest}` requires at
+        // least one segment (requirement '.+', which also matches slashes), so the
+        // bare /anokii root is intentionally NOT matched here: it 404s until the
+        // marketing page ships. The original query string is preserved so the
+        // one-time set-password ?token=… invite links keep working.
+        $router->addRoute(
+            'anokii.legacy_redirect',
+            RouteBuilder::create('/anokii/{rest}')
+                ->controller(static function (Request $r, string $rest): RedirectResponse {
+                    $target = '/admin/anokii/' . $rest;
+                    $query = $r->getQueryString();
+                    if ($query !== null && $query !== '') {
+                        $target .= '?' . $query;
+                    }
+
+                    return new RedirectResponse($target, 301);
+                })
+                ->allowAll()
+                ->methods('GET')
+                ->requirement('rest', '.+')
+                ->priority(self::ROUTE_PRIORITY)
+                ->build(),
+        );
     }
 
     /**
@@ -264,33 +308,42 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
         yield from new WorkspaceAccess()->roles();
     }
 
-    public function nativeCommands(): iterable
+    public function consoleCommands(): iterable
     {
-        yield new CommandDefinition(
+        yield new HandlerCommand(
             name: 'anokii:invite',
             description: 'Create (if needed) an Anokii account and print a one-time set-password link',
             arguments: [
-                new ArgumentDefinition(
+                new HandlerArgument(
                     name: 'email',
-                    mode: ArgumentMode::Required,
+                    mode: HandlerArgumentMode::Required,
                     description: 'Email address of the account to invite',
                 ),
             ],
             options: [
-                new OptionDefinition(name: 'name', mode: OptionMode::Required, description: 'Display name for a new account'),
-                new OptionDefinition(name: 'base-url', mode: OptionMode::Required, description: 'Base URL for the link (default https://fnprocure.ca)'),
+                new HandlerOption(name: 'name', mode: HandlerOptionMode::Required, description: 'Display name for a new account'),
+                new HandlerOption(name: 'base-url', mode: HandlerOptionMode::Required, description: 'Base URL for the link (default https://fnprocure.ca)'),
             ],
-            handler: [AnokiiInviteHandler::class, 'execute'],
+            handler: function (SymfonyCommandIO $io): int {
+                $etm = $this->entityTypeManager();
+                if ($etm === null) {
+                    $io->error('anokii:invite requires a booted kernel (EntityTypeManager).');
+
+                    return 1;
+                }
+
+                return new AnokiiInviteHandler($etm)->execute($io);
+            },
         );
 
-        yield new CommandDefinition(
+        yield new HandlerCommand(
             name: 'app:ingest-knowledge',
             description: 'Build the Co-Intelligence RAG knowledge base from FNPI docs, the live site copy, and the Identity pillars.',
             options: [
-                new OptionDefinition(name: 'dry-run', mode: OptionMode::None, description: 'Preview extracted chunks without writing.'),
-                new OptionDefinition(name: 'prune', mode: OptionMode::Negatable, description: 'Delete stored chunks no longer present (use --no-prune to keep).', default: true),
+                new HandlerOption(name: 'dry-run', mode: HandlerOptionMode::None, description: 'Preview extracted chunks without writing.'),
+                new HandlerOption(name: 'prune', mode: HandlerOptionMode::Negatable, description: 'Delete stored chunks no longer present (use --no-prune to keep).', default: true),
             ],
-            handler: function (CliIO $io): int {
+            handler: function (SymfonyCommandIO $io): int {
                 $etm = $this->entityTypeManager();
                 if ($etm === null) {
                     $io->error('Knowledge ingest requires a booted kernel (EntityTypeManager).');
@@ -311,17 +364,17 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
             },
         );
 
-        yield new CommandDefinition(
+        yield new HandlerCommand(
             name: 'app:seed-drive',
             description: 'Seed Drive with a directory of images. Bytes go to the sovereign volume via the media layer; one index row per file. Idempotent.',
             options: [
-                new OptionDefinition(name: 'dir', mode: OptionMode::Required, description: 'Directory of images to import (required).'),
-                new OptionDefinition(name: 'folder', mode: OptionMode::Required, description: 'Target folder / tag (default "Global relationships").'),
-                new OptionDefinition(name: 'owner-email', mode: OptionMode::Required, description: 'Attribute uploads to this account when it exists.'),
-                new OptionDefinition(name: 'owner-id', mode: OptionMode::Required, description: 'Fallback owner uid (default 1).'),
-                new OptionDefinition(name: 'owner-label', mode: OptionMode::Required, description: 'Fallback display name (default "Matthew Owl").'),
+                new HandlerOption(name: 'dir', mode: HandlerOptionMode::Required, description: 'Directory of images to import (required).'),
+                new HandlerOption(name: 'folder', mode: HandlerOptionMode::Required, description: 'Target folder / tag (default "Global relationships").'),
+                new HandlerOption(name: 'owner-email', mode: HandlerOptionMode::Required, description: 'Attribute uploads to this account when it exists.'),
+                new HandlerOption(name: 'owner-id', mode: HandlerOptionMode::Required, description: 'Fallback owner uid (default 1).'),
+                new HandlerOption(name: 'owner-label', mode: HandlerOptionMode::Required, description: 'Fallback display name (default "Matthew Owl").'),
             ],
-            handler: function (CliIO $io): int {
+            handler: function (SymfonyCommandIO $io): int {
                 $etm = $this->entityTypeManager();
                 if ($etm === null) {
                     $io->error('Drive seed requires a booted kernel (EntityTypeManager).');
@@ -338,14 +391,14 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
             },
         );
 
-        yield new CommandDefinition(
+        yield new HandlerCommand(
             name: 'app:seed-documents',
             description: 'Seed the CANCOM document (3 versions + opening note) into the entity-native Documents tool. Idempotent.',
             options: [
-                new OptionDefinition(name: 'matthew-email', mode: OptionMode::Required, description: 'Account to attribute Matthew\'s versions to (default matthew@fnprocure.ca).'),
-                new OptionDefinition(name: 'russell-email', mode: OptionMode::Required, description: 'Account to attribute Russell\'s version + note to (default russell@fnprocure.ca).'),
+                new HandlerOption(name: 'matthew-email', mode: HandlerOptionMode::Required, description: 'Account to attribute Matthew\'s versions to (default matthew@fnprocure.ca).'),
+                new HandlerOption(name: 'russell-email', mode: HandlerOptionMode::Required, description: 'Account to attribute Russell\'s version + note to (default russell@fnprocure.ca).'),
             ],
-            handler: function (CliIO $io): int {
+            handler: function (SymfonyCommandIO $io): int {
                 $etm = null;
                 try {
                     $resolved = $this->resolve(\Waaseyaa\Entity\EntityTypeManager::class);
@@ -372,10 +425,10 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
             },
         );
 
-        yield new CommandDefinition(
+        yield new HandlerCommand(
             name: 'app:seed-pages',
             description: 'Seed the five public pages (home, technology, how-it-works, contact, defence) into published `page` entities. Idempotent.',
-            handler: function (CliIO $io): int {
+            handler: function (SymfonyCommandIO $io): int {
                 $etm = $this->entityTypeManager();
                 if ($etm === null) {
                     $io->error('Pages seed requires a booted kernel (EntityTypeManager).');
@@ -403,10 +456,10 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
             },
         );
 
-        yield new CommandDefinition(
+        yield new HandlerCommand(
             name: 'app:purge-cache',
             description: 'Purge the Cloudflare edge cache for the site zone (CLOUDFLARE_PURGE_TOKEN + CLOUDFLARE_ZONE_ID from the container env). No-op with a notice when unconfigured.',
-            handler: static function (CliIO $io): int {
+            handler: static function (SymfonyCommandIO $io): int {
                 $result = new CloudflareCachePurger()->purgeAll();
                 if ($result === null) {
                     $io->writeln('  skip   purge not configured (set CLOUDFLARE_PURGE_TOKEN and CLOUDFLARE_ZONE_ID in fnpi.env); purge manually in the Cloudflare dashboard if needed.');
@@ -424,10 +477,10 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
             },
         );
 
-        yield new CommandDefinition(
+        yield new HandlerCommand(
             name: 'app:migrate-pillars',
             description: 'Migrate the Identity Workspace from the raw pillar table to the entity-native identity_pillar entity, verbatim. One-time and idempotent.',
-            handler: function (CliIO $io): int {
+            handler: function (SymfonyCommandIO $io): int {
                 $etm = $this->entityTypeManager();
                 if ($etm === null) {
                     $io->error('Pillar migration requires a booted kernel (EntityTypeManager).');
@@ -440,10 +493,10 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
             },
         );
 
-        yield new CommandDefinition(
+        yield new HandlerCommand(
             name: 'app:widen-pillars',
             description: 'Migrate identity_pillar to the two-axis (id, langcode) primary key for Anishinaabemowin peers. Preserves English history; idempotent; keeps a backup table.',
-            handler: function (CliIO $io): int {
+            handler: function (SymfonyCommandIO $io): int {
                 $etm = $this->entityTypeManager();
                 if ($etm === null) {
                     $io->error('Widening identity_pillar requires a booted kernel (EntityTypeManager).');
@@ -455,10 +508,10 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
             },
         );
 
-        yield new CommandDefinition(
+        yield new HandlerCommand(
             name: 'app:migrate-drive',
             description: 'Migrate Drive from the raw drive_file table to the entity-native drive_asset entity, verbatim. One-time and idempotent.',
-            handler: function (CliIO $io): int {
+            handler: function (SymfonyCommandIO $io): int {
                 $etm = $this->entityTypeManager();
                 if ($etm === null) {
                     $io->error('Drive migration requires a booted kernel (EntityTypeManager).');
@@ -471,10 +524,10 @@ final class AnokiiServiceProvider extends ServiceProvider implements HasNativeCo
             },
         );
 
-        yield new CommandDefinition(
+        yield new HandlerCommand(
             name: 'app:seed-ventures',
             description: 'Seed the Venture Numbers section (six lanes, gating facts, provenance snapshot) from the checked-in model mirror. Idempotent; never overwrites entered numbers.',
-            handler: function (CliIO $io): int {
+            handler: function (SymfonyCommandIO $io): int {
                 $etm = $this->entityTypeManager();
                 if ($etm === null) {
                     $io->error('Ventures seed requires a booted kernel (EntityTypeManager).');

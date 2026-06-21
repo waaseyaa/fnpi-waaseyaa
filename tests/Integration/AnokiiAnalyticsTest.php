@@ -42,7 +42,7 @@ final class AnokiiAnalyticsTest extends TestCase
         }
         $this->assertNotNull($analytics);
         $this->assertTrue($analytics['live']);
-        $this->assertSame('/anokii/analytics', $analytics['href']);
+        $this->assertSame('/admin/anokii/analytics', $analytics['href']);
     }
 
     #[Test]
@@ -54,7 +54,7 @@ final class AnokiiAnalyticsTest extends TestCase
 
         $response = $controller->index(new Request());
         $this->assertSame(302, $response->getStatusCode());
-        $this->assertSame('/anokii/login', $response->headers->get('Location'));
+        $this->assertSame('/admin/anokii/login', $response->headers->get('Location'));
     }
 
     #[Test]
@@ -87,7 +87,7 @@ final class AnokiiAnalyticsTest extends TestCase
     {
         $router = new WaaseyaaRouter();
         new \App\Provider\AnokiiServiceProvider()->routes($router);
-        $this->assertSame('anokii.analytics', $router->match('/anokii/analytics')['_route'] ?? null);
+        $this->assertSame('anokii.analytics', $router->match('/admin/anokii/analytics')['_route'] ?? null);
 
         $siteRouter = new WaaseyaaRouter();
         new SiteServiceProvider()->routes($siteRouter);

@@ -50,7 +50,7 @@
 {% endblock %}
 
 {% block anokii_content %}
-<a class="dback" href="/anokii/documents"><svg viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>All documents</a>
+<a class="dback" href="/admin/anokii/documents"><svg viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>All documents</a>
 
 <div class="ahead" style="margin-bottom:16px">
   <p class="ey">{{ doc.folder ?: 'Document' }}</p>
@@ -147,10 +147,10 @@
   document.addEventListener('click', function(e){
     var sc=e.target.closest('[data-setcurrent]'), rb=e.target.closest('[data-rollback]');
     if(sc){ if(!confirm('Make this the current version?')) return; toast('Switching version...');
-      postJson('/anokii/documents/'+encodeURIComponent(UUID)+'/set-current',{vid:parseInt(sc.getAttribute('data-setcurrent'),10)})
+      postJson('/admin/anokii/documents/'+encodeURIComponent(UUID)+'/set-current',{vid:parseInt(sc.getAttribute('data-setcurrent'),10)})
         .then(function(r){ if(r.ok){ window.location.reload(); } else { toast(r.error||'Could not switch.'); } }); }
     if(rb){ if(!confirm('Roll back to this version? This records a new version at the top of history.')) return; toast('Rolling back...');
-      postJson('/anokii/documents/'+encodeURIComponent(UUID)+'/rollback',{vid:parseInt(rb.getAttribute('data-rollback'),10)})
+      postJson('/admin/anokii/documents/'+encodeURIComponent(UUID)+'/rollback',{vid:parseInt(rb.getAttribute('data-rollback'),10)})
         .then(function(r){ if(r.ok){ window.location.reload(); } else { toast(r.error||'Could not roll back.'); } }); }
   });
 
@@ -162,7 +162,7 @@
     var label=prompt('Short label for this version (e.g. "Branded draft"):', file.name.replace(/\.[^.]+$/,'')); if(label===null) return;
     var fd=new FormData(); fd.append('file', file); fd.append('version_label', label.trim());
     toast('Uploading '+file.name+' and converting preview...');
-    var xhr=new XMLHttpRequest(); xhr.open('POST','/anokii/documents/'+encodeURIComponent(UUID)+'/version');
+    var xhr=new XMLHttpRequest(); xhr.open('POST','/admin/anokii/documents/'+encodeURIComponent(UUID)+'/version');
     var t=xsrf(); if(t){ xhr.setRequestHeader('X-XSRF-TOKEN', t); }
     xhr.onload=function(){ var r={}; try{ r=JSON.parse(xhr.responseText); }catch(_){}
       if(xhr.status>=200&&xhr.status<300&&r.ok){ window.location.reload(); } else { toast(r.error||'Upload failed.'); } };
@@ -173,7 +173,7 @@
   // Post a note.
   document.getElementById('noteBtn').addEventListener('click', function(){
     var ta=document.getElementById('noteBody'), body=ta.value.trim(); if(!body){ toast('Write a note first.'); return; }
-    postJson('/anokii/documents/'+encodeURIComponent(UUID)+'/note',{body:body}).then(function(r){
+    postJson('/admin/anokii/documents/'+encodeURIComponent(UUID)+'/note',{body:body}).then(function(r){
       if(r.ok&&r.note){ ta.value='';
         var n=r.note, html='<div class="note"><span class="navatar">'+esc(n.author).slice(0,2).toUpperCase()+'</span>'+
           '<div class="nbody"><div class="nh"><b>'+esc(n.author)+'</b><small>'+esc(n.created)+'</small></div><p>'+esc(n.body)+'</p></div></div>';

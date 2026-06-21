@@ -103,7 +103,7 @@
 
   <div class="crail">
     <div class="panel">
-      <a class="newchat" href="/anokii/cointelligence">+ New chat</a>
+      <a class="newchat" href="/admin/anokii/cointelligence">+ New chat</a>
       <h4>Suggested prompts</h4>
       {% for q in suggested %}<button class="sug" data-q="{{ q }}">{{ q }}</button>{% endfor %}
     </div>
@@ -114,7 +114,7 @@
           <p class="rempty">No conversations yet.</p>
         {% else %}
           {% for c in recent %}
-            <a class="rconv{{ active and active.id == c.id ? ' on' : '' }}" href="/anokii/cointelligence?c={{ c.id }}">
+            <a class="rconv{{ active and active.id == c.id ? ' on' : '' }}" href="/admin/anokii/cointelligence?c={{ c.id }}">
               <b>{{ c.title }}</b><small>{{ c.created_by }}</small>
             </a>
           {% endfor %}
@@ -189,7 +189,7 @@
     box.value='';
     var bub=addMsg('ai','CI');
     bub.innerHTML='<span class="working"><span class="wdot"></span>Thinking...</span>';
-    consume('/anokii/cointelligence/send', {question:q, conversation_id:cid}, bub);
+    consume('/admin/anokii/cointelligence/send', {question:q, conversation_id:cid}, bub);
   }
 
   // Drive an SSE stream (send or apply) into a bubble. Handles meta/delta/done,
@@ -253,7 +253,7 @@
     card.classList.add(decision==='approve'?'approved':'rejected');
     var bub=addMsg('ai','CI');
     bub.innerHTML='<span class="working"><span class="wdot"></span>'+(decision==='approve'?'Applying...':'Cancelling...')+'</span>';
-    consume('/anokii/cointelligence/apply', {token:token, decision:decision}, bub);
+    consume('/admin/anokii/cointelligence/apply', {token:token, decision:decision}, bub);
   }
 
   function onMeta(data){
@@ -261,10 +261,10 @@
       var fresh=(cid===0);
       cid=data.conversation_id;
       panel.setAttribute('data-cid',String(cid));
-      try{ history.replaceState(null,'','/anokii/cointelligence?c='+cid); }catch(e){}
+      try{ history.replaceState(null,'','/admin/anokii/cointelligence?c='+cid); }catch(e){}
       if(fresh && recentList){
         var empty=recentList.querySelector('.rempty'); if(empty)empty.remove();
-        var a=document.createElement('a'); a.className='rconv on'; a.href='/anokii/cointelligence?c='+cid;
+        var a=document.createElement('a'); a.className='rconv on'; a.href='/admin/anokii/cointelligence?c='+cid;
         a.innerHTML='<b>'+esc(data.title||'New conversation')+'</b><small>you</small>';
         [].slice.call(recentList.querySelectorAll('.rconv.on')).forEach(function(x){x.classList.remove('on');});
         recentList.insertBefore(a, recentList.firstChild);

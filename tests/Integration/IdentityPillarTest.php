@@ -29,7 +29,7 @@ final class IdentityPillarTest extends TestCase
         $module = Modules::find('identity');
         $this->assertNotNull($module);
         $this->assertTrue($module['live']);
-        $this->assertSame('/anokii/identity', $module['href']);
+        $this->assertSame('/admin/anokii/identity', $module['href']);
     }
 
     #[Test]
@@ -38,8 +38,8 @@ final class IdentityPillarTest extends TestCase
         $router = new WaaseyaaRouter();
         new AnokiiServiceProvider()->routes($router);
 
-        $this->assertSame('anokii.identity', $router->match('/anokii/identity')['_route'] ?? null);
-        $this->assertSame('anokii.identity.history', $router->match('/anokii/identity/purpose/history')['_route'] ?? null);
+        $this->assertSame('anokii.identity', $router->match('/admin/anokii/identity')['_route'] ?? null);
+        $this->assertSame('anokii.identity.history', $router->match('/admin/anokii/identity/purpose/history')['_route'] ?? null);
     }
 
     #[Test]

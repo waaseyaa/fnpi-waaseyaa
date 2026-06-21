@@ -194,7 +194,7 @@
     document.getElementById('dpDate').textContent=d.date+' UTC';
     document.getElementById('dpSize').textContent=d.size;
     document.getElementById('dpVersion').textContent=d.version+(d.version==='1'?' version':' versions');
-    var viewUrl='/anokii/drive/file/'+encodeURIComponent(d.uuid);
+    var viewUrl='/admin/anokii/drive/file/'+encodeURIComponent(d.uuid);
     document.getElementById('dpOpen').href=viewUrl;
     document.getElementById('dpDownload').href=viewUrl+'?dl=1';
     var pv=document.getElementById('dpPreview');
@@ -263,7 +263,7 @@
     document.getElementById('dprogPct').textContent='0%';
     prog.style.display='flex'; empty.style.display='none';
     var xhr=new XMLHttpRequest();
-    xhr.open('POST','/anokii/drive/upload');
+    xhr.open('POST','/admin/anokii/drive/upload');
     var tok=xsrfToken(); if(tok){ xhr.setRequestHeader('X-XSRF-TOKEN', tok); }
     xhr.upload.onprogress=function(e){ if(e.lengthComputable){ var p=Math.round(e.loaded/e.total*94)+4; document.getElementById('dprogBar').style.width=p+'%'; document.getElementById('dprogPct').textContent=p+'%'; } };
     xhr.onload=function(){
@@ -280,7 +280,7 @@
   document.getElementById('dpDelete').addEventListener('click', function(){
     if(!selectedUuid) return;
     if(!confirm('Delete this file? This cannot be undone.')) return;
-    fetch('/anokii/drive/delete',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({uuid:selectedUuid})})
+    fetch('/admin/anokii/drive/delete',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({uuid:selectedUuid})})
       .then(function(r){ return r.json().catch(function(){return {ok:false};}); })
       .then(function(d){
         if(d&&d.ok){ var row=document.querySelector('.drow[data-uuid="'+CSS.escape(selectedUuid)+'"]'); if(row) row.remove(); closePanel(); applyFilter(); toast('File deleted.'); }

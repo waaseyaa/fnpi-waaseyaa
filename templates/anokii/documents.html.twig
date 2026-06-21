@@ -75,7 +75,7 @@
     fd.append('title', document.getElementById('newTitle').value.trim());
     fd.append('folder', document.getElementById('newFolder').value.trim());
     toast('Uploading ' + file.name + '...');
-    var xhr=new XMLHttpRequest(); xhr.open('POST','/anokii/documents/create');
+    var xhr=new XMLHttpRequest(); xhr.open('POST','/admin/anokii/documents/create');
     var t=xsrf(); if(t){ xhr.setRequestHeader('X-XSRF-TOKEN', t); }
     xhr.onload=function(){ var r={}; try{ r=JSON.parse(xhr.responseText); }catch(_){}
       if(xhr.status>=200&&xhr.status<300&&r.ok){ window.location=r.redirect; } else { toast(r.error||'Upload failed.'); } };

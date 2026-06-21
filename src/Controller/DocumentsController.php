@@ -27,7 +27,7 @@ use Waaseyaa\SSR\SsrServiceProvider;
  * Data Rooms two-column layout (preview left; version history and notes right).
  *
  * Routes are registered ->allowAll() and this controller enforces the session:
- * page requests redirect to /anokii/login, JSON/file actions return 401.
+ * page requests redirect to /admin/anokii/login, JSON/file actions return 401.
  */
 final class DocumentsController
 {
@@ -42,7 +42,7 @@ final class DocumentsController
     {
         $user = Auth::currentUser($this->entityTypeManager);
         if ($user === null) {
-            return new RedirectResponse('/anokii/login');
+            return new RedirectResponse('/admin/anokii/login');
         }
         $twig = SsrServiceProvider::getTwigEnvironment();
         if ($twig === null) {
@@ -63,7 +63,7 @@ final class DocumentsController
     {
         $user = Auth::currentUser($this->entityTypeManager);
         if ($user === null) {
-            return new RedirectResponse('/anokii/login');
+            return new RedirectResponse('/admin/anokii/login');
         }
         $twig = SsrServiceProvider::getTwigEnvironment();
         if ($twig === null) {
@@ -129,7 +129,7 @@ final class DocumentsController
             return new JsonResponse(['ok' => false, 'error' => 'Could not create the document.'], 500);
         }
 
-        return new JsonResponse(['ok' => true, 'redirect' => '/anokii/documents/' . $this->uuidOf($doc)]);
+        return new JsonResponse(['ok' => true, 'redirect' => '/admin/anokii/documents/' . $this->uuidOf($doc)]);
     }
 
     /** Upload a new version of an existing document (records a revision). */
@@ -169,7 +169,7 @@ final class DocumentsController
             return new JsonResponse(['ok' => false, 'error' => 'Could not add the version.'], 500);
         }
 
-        return new JsonResponse(['ok' => true, 'redirect' => '/anokii/documents/' . $uuid]);
+        return new JsonResponse(['ok' => true, 'redirect' => '/admin/anokii/documents/' . $uuid]);
     }
 
     public function setCurrent(Request $request, string $uuid): Response
@@ -211,7 +211,7 @@ final class DocumentsController
     {
         $user = Auth::currentUser($this->entityTypeManager);
         if ($user === null) {
-            return new RedirectResponse('/anokii/login');
+            return new RedirectResponse('/admin/anokii/login');
         }
 
         $version = $this->documents->loadVersion($uuid, (int) $vid);
@@ -276,7 +276,7 @@ final class DocumentsController
             return new JsonResponse(['ok' => false, 'error' => 'Unknown document.'], 404);
         }
 
-        return new JsonResponse(['ok' => true, 'redirect' => '/anokii/documents/' . $uuid]);
+        return new JsonResponse(['ok' => true, 'redirect' => '/admin/anokii/documents/' . $uuid]);
     }
 
     /** @return array<string,mixed> */
@@ -294,9 +294,9 @@ final class DocumentsController
             'current_vid' => (int) $doc->getRevisionId(),
             'updated' => $this->stamp($doc),
             'has_preview' => $doc->getPreviewUri() !== '',
-            'href' => '/anokii/documents/' . $uuid,
-            'preview_url' => '/anokii/documents/' . $uuid . '/file/' . (int) $doc->getRevisionId() . '/preview',
-            'source_url' => '/anokii/documents/' . $uuid . '/file/' . (int) $doc->getRevisionId() . '/source?dl=1',
+            'href' => '/admin/anokii/documents/' . $uuid,
+            'preview_url' => '/admin/anokii/documents/' . $uuid . '/file/' . (int) $doc->getRevisionId() . '/preview',
+            'source_url' => '/admin/anokii/documents/' . $uuid . '/file/' . (int) $doc->getRevisionId() . '/source?dl=1',
         ];
     }
 
@@ -314,8 +314,8 @@ final class DocumentsController
             'is_current' => $rev->isCurrentRevision(),
             'filename' => $rev->getSourceFilename(),
             'has_preview' => $rev->getPreviewUri() !== '',
-            'preview_url' => '/anokii/documents/' . $uuid . '/file/' . $vid . '/preview',
-            'source_url' => '/anokii/documents/' . $uuid . '/file/' . $vid . '/source?dl=1',
+            'preview_url' => '/admin/anokii/documents/' . $uuid . '/file/' . $vid . '/preview',
+            'source_url' => '/admin/anokii/documents/' . $uuid . '/file/' . $vid . '/source?dl=1',
         ];
     }
 

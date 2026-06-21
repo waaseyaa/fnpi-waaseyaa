@@ -88,7 +88,7 @@ final class VentureTrackerTest extends TestCase
     {
         $response = new VentureController(null)->index(new Request());
         $this->assertSame(302, $response->getStatusCode());
-        $this->assertSame('/anokii/login', $response->headers->get('Location'));
+        $this->assertSame('/admin/anokii/login', $response->headers->get('Location'));
     }
 
     #[Test]
@@ -102,7 +102,7 @@ final class VentureTrackerTest extends TestCase
         }
         $this->assertNotNull($venture);
         $this->assertTrue($venture['live']);
-        $this->assertSame('/anokii/venture', $venture['href']);
+        $this->assertSame('/admin/anokii/venture', $venture['href']);
     }
 
     #[Test]

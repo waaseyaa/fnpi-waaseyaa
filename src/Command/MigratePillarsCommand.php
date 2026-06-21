@@ -6,7 +6,7 @@ namespace App\Command;
 
 use App\Identity\IdentitySeed;
 use App\Identity\PillarService;
-use Waaseyaa\CLI\CliIO;
+use Waaseyaa\CLI\Command\SymfonyCommandIO;
 use Waaseyaa\Database\DatabaseInterface;
 
 /**
@@ -36,7 +36,7 @@ final class MigratePillarsCommand
         private readonly DatabaseInterface $db,
     ) {}
 
-    public function run(CliIO $io): int
+    public function run(SymfonyCommandIO $io): int
     {
         if ($this->pillars->count() > 0) {
             $io->writeln('  skip   identity_pillar already populated. Nothing to do.');
@@ -52,7 +52,7 @@ final class MigratePillarsCommand
         return $this->seedFresh($io);
     }
 
-    private function migrateLegacy(CliIO $io): int
+    private function migrateLegacy(SymfonyCommandIO $io): int
     {
         $rows = [];
         foreach ($this->db->query('SELECT * FROM ' . self::LEGACY_TABLE . ' ORDER BY sort_order ASC', []) as $row) {
@@ -101,7 +101,7 @@ final class MigratePillarsCommand
         return 0;
     }
 
-    private function seedFresh(CliIO $io): int
+    private function seedFresh(SymfonyCommandIO $io): int
     {
         $seed = IdentitySeed::pillars();
         $io->writeln(sprintf('No legacy table found. Seeding %d pillar(s) from defaults (fresh install).', count($seed)));
@@ -132,7 +132,7 @@ final class MigratePillarsCommand
         return 0;
     }
 
-    private function archiveLegacy(CliIO $io): void
+    private function archiveLegacy(SymfonyCommandIO $io): void
     {
         $schema = $this->db->schema();
         if ($schema->tableExists(self::ARCHIVE_TABLE)) {

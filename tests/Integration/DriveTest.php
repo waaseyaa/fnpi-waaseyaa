@@ -46,7 +46,7 @@ final class DriveTest extends TestCase
         $drive = Modules::find('drive');
         $this->assertNotNull($drive);
         $this->assertTrue($drive['live']);
-        $this->assertSame('/anokii/drive', $drive['href']);
+        $this->assertSame('/admin/anokii/drive', $drive['href']);
     }
 
     #[Test]
@@ -55,8 +55,8 @@ final class DriveTest extends TestCase
         $router = new WaaseyaaRouter();
         new AnokiiServiceProvider()->routes($router);
 
-        $this->assertSame('anokii.drive', $router->match('/anokii/drive')['_route'] ?? null);
-        $this->assertSame('anokii.drive.file', $router->match('/anokii/drive/file/abc')['_route'] ?? null);
+        $this->assertSame('anokii.drive', $router->match('/admin/anokii/drive')['_route'] ?? null);
+        $this->assertSame('anokii.drive.file', $router->match('/admin/anokii/drive/file/abc')['_route'] ?? null);
     }
 
     #[Test]
@@ -165,7 +165,7 @@ final class DriveTest extends TestCase
             'kind' => 'img', 'size_bytes' => 2_201_000, 'size_human' => '2.1 MB', 'is_image' => true,
             'owner_label' => 'Matthew Owl', 'folder' => 'Global relationships',
             'uploaded_at' => '2026-06-07 12:00:00', 'version' => 1,
-            'view_url' => '/anokii/drive/file/abc-uuid', 'download_url' => '/anokii/drive/file/abc-uuid?dl=1',
+            'view_url' => '/admin/anokii/drive/file/abc-uuid', 'download_url' => '/admin/anokii/drive/file/abc-uuid?dl=1',
         ];
 
         $twig = SsrServiceProvider::getTwigEnvironment();

@@ -18,6 +18,7 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Waaseyaa\Database\DatabaseInterface;
 use Waaseyaa\Database\DBALDatabase;
+use Waaseyaa\Routing\Exception\RouteNotFoundException;
 use Waaseyaa\Routing\WaaseyaaRouter;
 use Waaseyaa\SSR\SsrServiceProvider;
 
@@ -50,11 +51,76 @@ final class AnokiiTest extends TestCase
         $router = new WaaseyaaRouter();
         new AnokiiServiceProvider()->routes($router);
 
-        $this->assertSame('anokii.home', $router->match('/anokii')['_route'] ?? null);
-        $this->assertSame('anokii.login', $router->match('/anokii/login')['_route'] ?? null);
-        $this->assertSame('anokii.settings', $router->match('/anokii/settings')['_route'] ?? null);
-        $this->assertSame('anokii.setpw', $router->match('/anokii/set-password')['_route'] ?? null);
-        $this->assertSame('anokii.identity', $router->match('/anokii/identity')['_route'] ?? null);
+        $this->assertSame('anokii.home', $router->match('/admin/anokii')['_route'] ?? null);
+        $this->assertSame('anokii.login', $router->match('/admin/anokii/login')['_route'] ?? null);
+        $this->assertSame('anokii.settings', $router->match('/admin/anokii/settings')['_route'] ?? null);
+        $this->assertSame('anokii.setpw', $router->match('/admin/anokii/set-password')['_route'] ?? null);
+        $this->assertSame('anokii.identity', $router->match('/admin/anokii/identity')['_route'] ?? null);
+    }
+
+    #[Test]
+    public function legacy_anokii_subpaths_301_to_admin_anokii(): void
+    {
+        $router = new WaaseyaaRouter();
+        new AnokiiServiceProvider()->routes($router);
+
+        // Every old sub-path (incl. dynamic, multi-segment, and m/*) 301s to its
+        // /admin/anokii equivalent so invite links and bookmarks resolve.
+        $paths = [
+            '/anokii/login',
+            '/anokii/set-password',
+            '/anokii/settings',
+            '/anokii/identity',
+            '/anokii/cointelligence',
+            '/anokii/drive',
+            '/anokii/documents',
+            '/anokii/pages',
+            '/anokii/inbox',
+            '/anokii/venture',
+            '/anokii/ventures',
+            '/anokii/analytics',
+            '/anokii/m/rooms',
+            '/anokii/documents/abc/file/2/preview',
+        ];
+        foreach ($paths as $old) {
+            $match = $router->match($old);
+            $this->assertSame('anokii.legacy_redirect', $match['_route'] ?? null, $old);
+
+            $response = $match['_controller'](Request::create($old), $match['rest']);
+            $this->assertInstanceOf(RedirectResponse::class, $response, $old);
+            $this->assertSame(301, $response->getStatusCode(), $old);
+            // Old path `/anokii/<sub>` redirects to `/admin` + the same path.
+            $this->assertSame('/admin' . $old, $response->getTargetUrl(), $old);
+        }
+    }
+
+    #[Test]
+    public function legacy_redirect_preserves_query_string(): void
+    {
+        $router = new WaaseyaaRouter();
+        new AnokiiServiceProvider()->routes($router);
+
+        // The one-time set-password ?token=… invite link must survive the 301.
+        $match = $router->match('/anokii/set-password');
+        $response = $match['_controller'](
+            Request::create('/anokii/set-password', 'GET', ['token' => 'abc123']),
+            $match['rest'],
+        );
+        $this->assertSame(301, $response->getStatusCode());
+        $this->assertSame('/admin/anokii/set-password?token=abc123', $response->getTargetUrl());
+    }
+
+    #[Test]
+    public function bare_anokii_root_is_freed_and_does_not_serve_the_workspace(): void
+    {
+        $router = new WaaseyaaRouter();
+        new AnokiiServiceProvider()->routes($router);
+
+        // The bare /anokii root is intentionally unrouted (freed for the upcoming
+        // public marketing page): it neither serves the workspace nor 301s — only
+        // sub-paths redirect. An unmatched path throws (→ 404 at runtime).
+        $this->expectException(RouteNotFoundException::class);
+        $router->match('/anokii');
     }
 
     #[Test]
@@ -65,19 +131,19 @@ final class AnokiiTest extends TestCase
         $shell = new AnokiiController(null, new SetupTokenRepository($this->db()));
         $home = $shell->dashboard(new Request());
         $this->assertInstanceOf(RedirectResponse::class, $home);
-        $this->assertSame('/anokii/login', $home->getTargetUrl());
+        $this->assertSame('/admin/anokii/login', $home->getTargetUrl());
 
         $identity = new IdentityController(null, new PillarService(null), WorkspaceAccess::handler());
         $tool = $identity->index(new Request());
         $this->assertInstanceOf(RedirectResponse::class, $tool);
-        $this->assertSame('/anokii/login', $tool->getTargetUrl());
+        $this->assertSame('/admin/anokii/login', $tool->getTargetUrl());
     }
 
     #[Test]
     public function identity_save_is_401_when_signed_out(): void
     {
         $identity = new IdentityController(null, new PillarService(null), WorkspaceAccess::handler());
-        $request = Request::create('/anokii/identity/save', 'POST', [], [], [], [], (string) json_encode(['pid' => 'purpose', 'status' => 'work']));
+        $request = Request::create('/admin/anokii/identity/save', 'POST', [], [], [], [], (string) json_encode(['pid' => 'purpose', 'status' => 'work']));
         $response = $identity->save($request);
         $this->assertSame(401, $response->getStatusCode());
     }
@@ -146,7 +212,7 @@ final class AnokiiTest extends TestCase
         $this->assertStringContainsString('data-pid="tagline"', $html);
         // The revisionable rebuild surfaces a per-pillar history control.
         $this->assertStringContainsString('class="hbtn"', $html);
-        $this->assertStringContainsString('/anokii/logout', $html);
+        $this->assertStringContainsString('/admin/anokii/logout', $html);
         // Rendered inside the new shell (sidebar + topbar).
         $this->assertStringContainsString('Sovereign workspace', $html);
         $this->assertStringContainsString('Co-Intelligence', $html);
@@ -190,8 +256,8 @@ final class AnokiiTest extends TestCase
         $this->assertStringContainsString('Identity Workspace', $html);
         $this->assertStringContainsString('Co-Intelligence', $html);
         $this->assertStringContainsString('Coming soon', $html);
-        $this->assertStringContainsString('href="/anokii/identity"', $html);
-        $this->assertStringContainsString('href="/anokii/drive"', $html);
+        $this->assertStringContainsString('href="/admin/anokii/identity"', $html);
+        $this->assertStringContainsString('href="/admin/anokii/drive"', $html);
         $this->assertStringNotContainsString('{%', $html);
     }
 
@@ -201,6 +267,6 @@ final class AnokiiTest extends TestCase
         $shell = new AnokiiController(null, new SetupTokenRepository($this->db()));
         $r = $shell->comingSoon(new Request(), 'rooms');
         $this->assertInstanceOf(RedirectResponse::class, $r);
-        $this->assertSame('/anokii/login', $r->getTargetUrl());
+        $this->assertSame('/admin/anokii/login', $r->getTargetUrl());
     }
 }

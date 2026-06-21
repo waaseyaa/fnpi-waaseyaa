@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Command;
 
-use Waaseyaa\CLI\CliIO;
+use Waaseyaa\CLI\Command\SymfonyCommandIO;
 use Waaseyaa\Database\DatabaseInterface;
 use Waaseyaa\Database\DBALDatabase;
 use Waaseyaa\Entity\EntityTypeManager;
@@ -43,7 +43,7 @@ final class WidenPillarsCommand
         private readonly DatabaseInterface $db,
     ) {}
 
-    public function run(CliIO $io): int
+    public function run(SymfonyCommandIO $io): int
     {
         $schema = $this->db->schema();
         if (!$schema->tableExists(self::TABLE)) {

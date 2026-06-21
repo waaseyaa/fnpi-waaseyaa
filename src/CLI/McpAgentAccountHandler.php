@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\CLI;
 
-use Waaseyaa\CLI\CliIO;
+use Waaseyaa\CLI\Command\SymfonyCommandIO;
 use Waaseyaa\Entity\EntityTypeManagerInterface;
 use Waaseyaa\User\User;
 
@@ -41,7 +41,7 @@ final class McpAgentAccountHandler
         private readonly EntityTypeManagerInterface $entityTypeManager,
     ) {}
 
-    public function execute(CliIO $io): int
+    public function execute(SymfonyCommandIO $io): int
     {
         try {
             $storage = $this->entityTypeManager->getStorage('user');

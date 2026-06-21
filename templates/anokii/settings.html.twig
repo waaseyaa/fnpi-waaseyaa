@@ -49,7 +49,7 @@
 <script>
 (function(){
   function post(body){
-    return fetch('/anokii/settings', {method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(body)})
+    return fetch('/admin/anokii/settings', {method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(body)})
       .then(function(r){ return r.json().catch(function(){return {ok:false,error:'Something went wrong.'};}); });
   }
   function show(el, ok, text){ el.className = 'msg ' + (ok?'ok':'bad'); el.textContent = text; }

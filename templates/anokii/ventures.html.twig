@@ -350,7 +350,7 @@
       }
       if(Object.keys(changes).length===0) return;
       saveBtn.disabled=true;
-      post('/anokii/ventures/lane/save',{key:key,changes:changes}).then(function(d){
+      post('/admin/anokii/ventures/lane/save',{key:key,changes:changes}).then(function(d){
         if(!d||!d.ok){ alert((d&&d.error)||'Could not save the lane.'); saveBtn.disabled=false; return; }
         card.querySelectorAll('input[data-field]').forEach(function(inp){
           var v=inp.value.trim().replace(/[, ]/g,'');
@@ -375,7 +375,7 @@
       var key=btn.getAttribute('data-key');
       var next=btn.getAttribute('data-next');
       btn.disabled=true;
-      post('/anokii/ventures/fact/save',{key:key,status:next}).then(function(d){
+      post('/admin/anokii/ventures/fact/save',{key:key,status:next}).then(function(d){
         btn.disabled=false;
         if(!d||!d.ok){ alert((d&&d.error)||'Could not update the gating fact.'); return; }
         var fact=document.getElementById('fact-'+key);
@@ -409,7 +409,7 @@
     var panel=document.querySelector('.lane-hist[data-key="'+key+'"]');
     if(!panel) return Promise.resolve();
     panel.innerHTML='<p class="empty">Loading...</p>';
-    return fetch('/anokii/ventures/lane/'+encodeURIComponent(key)+'/history',{credentials:'same-origin'})
+    return fetch('/admin/anokii/ventures/lane/'+encodeURIComponent(key)+'/history',{credentials:'same-origin'})
       .then(function(r){ return r.json().catch(function(){return {ok:false};}); })
       .then(function(d){ renderHistory(panel, d&&d.ok?d.revisions:[]); });
   }
@@ -417,7 +417,7 @@
     var panel=document.querySelector('.fact-hist[data-key="'+key+'"]');
     if(!panel) return Promise.resolve();
     panel.innerHTML='<p class="empty">Loading...</p>';
-    return fetch('/anokii/ventures/fact/'+encodeURIComponent(key)+'/history',{credentials:'same-origin'})
+    return fetch('/admin/anokii/ventures/fact/'+encodeURIComponent(key)+'/history',{credentials:'same-origin'})
       .then(function(r){ return r.json().catch(function(){return {ok:false};}); })
       .then(function(d){ renderHistory(panel, d&&d.ok?d.revisions:[]); });
   }
@@ -474,7 +474,7 @@
   function addMsg(role){ var m=document.createElement('div'); m.className='imsg '+(role==='user'?'user':'ai'); var a=document.createElement('div'); a.className='av'; a.textContent=role==='user'?'YOU':'CI'; var b=document.createElement('div'); b.className='ibub'; m.appendChild(a); m.appendChild(b); stream.appendChild(m); stream.scrollTop=stream.scrollHeight; return b; }
   function frames(buf,on){ var parts=buf.split('\n\n'); var rest=parts.pop(); parts.forEach(function(bl){ var ev='message',data=''; bl.split('\n').forEach(function(l){ if(l.indexOf('event:')===0)ev=l.slice(6).trim(); else if(l.indexOf('data:')===0)data+=l.slice(5).trim(); }); if(data){ try{ on(ev,JSON.parse(data)); }catch(e){} } }); return rest; }
 
-  function send(q){ q=(q||input.value||'').trim(); if(!q||busy) return; if(chips){ chips.remove(); chips=null; } input.value=''; input.style.height='42px'; addMsg('user').textContent=q; var bub=addMsg('ai'); bub.innerHTML='<span class="iwork"><span class="d"></span>Thinking...</span>'; consume('/anokii/cointelligence/send',{question:q,conversation_id:cid},bub); }
+  function send(q){ q=(q||input.value||'').trim(); if(!q||busy) return; if(chips){ chips.remove(); chips=null; } input.value=''; input.style.height='42px'; addMsg('user').textContent=q; var bub=addMsg('ai'); bub.innerHTML='<span class="iwork"><span class="d"></span>Thinking...</span>'; consume('/admin/anokii/cointelligence/send',{question:q,conversation_id:cid},bub); }
 
   function consume(url,body,bub){
     busy=true; sendBtn.disabled=true; var raw='',proposed=false,started=false;
@@ -503,7 +503,7 @@
     c.querySelector('.no').addEventListener('click',function(){ decide(c,d.token,'reject'); });
     stream.scrollTop=stream.scrollHeight;
   }
-  function decide(c,token,decision){ if(busy) return; [].slice.call(c.querySelectorAll('.ipb')).forEach(function(b){ b.disabled=true; }); var bub=addMsg('ai'); bub.innerHTML='<span class="iwork"><span class="d"></span>'+(decision==='approve'?'Applying...':'Cancelling...')+'</span>'; consume('/anokii/cointelligence/apply',{token:token,decision:decision},bub); }
+  function decide(c,token,decision){ if(busy) return; [].slice.call(c.querySelectorAll('.ipb')).forEach(function(b){ b.disabled=true; }); var bub=addMsg('ai'); bub.innerHTML='<span class="iwork"><span class="d"></span>'+(decision==='approve'?'Applying...':'Cancelling...')+'</span>'; consume('/admin/anokii/cointelligence/apply',{token:token,decision:decision},bub); }
 
   // A proposal that targets a lane (or a gating fact whose lane card is on the
   // page) is previewed as a draft on that card. Anything else falls back to a
@@ -558,7 +558,7 @@
     if(panel){ [].slice.call(panel.querySelectorAll('.ipb')).forEach(function(b){ b.disabled=true; }); }
     if(decision==='reject'){ clearLanePreview(pcard); }
     var bub=addMsg('ai'); bub.innerHTML='<span class="iwork"><span class="d"></span>'+(decision==='approve'?'Applying...':'Cancelling...')+'</span>';
-    consume('/anokii/cointelligence/apply',{token:d.token,decision:decision},bub);
+    consume('/admin/anokii/cointelligence/apply',{token:d.token,decision:decision},bub);
   }
 
   sendBtn.addEventListener('click', function(){ send(); });
@@ -570,7 +570,7 @@
   // follows applying a change. On load, rehydrate prior turns.
   function renderTurn(m){ var bub=addMsg(m.role==='user'?'user':'ai'); if(m.role==='user'){ bub.textContent=m.content; } else { bub.innerHTML=fmt(m.content)||'<p>...</p>'; } return bub; }
   function loadThread(id){
-    fetch('/anokii/cointelligence/'+encodeURIComponent(id)+'/messages',{credentials:'same-origin'})
+    fetch('/admin/anokii/cointelligence/'+encodeURIComponent(id)+'/messages',{credentials:'same-origin'})
       .then(function(r){ return r.ok?r.json():null; })
       .then(function(d){
         if(!d||!d.ok){ forgetCid(); return; }

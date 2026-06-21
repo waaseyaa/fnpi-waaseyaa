@@ -208,9 +208,9 @@ final class PagesToolTest extends TestCase
         $router = new WaaseyaaRouter();
         new AnokiiServiceProvider()->routes($router);
 
-        $this->assertSame('anokii.pages', $router->match('/anokii/pages')['_route'] ?? null);
-        $this->assertSame('anokii.pages.edit', $router->match('/anokii/pages/3')['_route'] ?? null);
-        $this->assertSame('anokii.pages.preview', $router->match('/anokii/pages/3/preview')['_route'] ?? null);
+        $this->assertSame('anokii.pages', $router->match('/admin/anokii/pages')['_route'] ?? null);
+        $this->assertSame('anokii.pages.edit', $router->match('/admin/anokii/pages/3')['_route'] ?? null);
+        $this->assertSame('anokii.pages.preview', $router->match('/admin/anokii/pages/3/preview')['_route'] ?? null);
     }
 
     /** @return array{id:string, path:string, title:string, draft_rev:int, published_rev:?int, has_unpublished_changes:bool, is_live:bool} */

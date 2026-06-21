@@ -187,7 +187,7 @@ final class SiteServiceProvider extends ServiceProvider
             $router->addRoute(
                 'admin.analytics',
                 RouteBuilder::create('/admin/analytics')
-                    ->controller(fn () => new \Symfony\Component\HttpFoundation\RedirectResponse('/anokii/analytics'))
+                    ->controller(fn () => new \Symfony\Component\HttpFoundation\RedirectResponse('/admin/anokii/analytics'))
                     ->allowAll()
                     ->methods('GET')
                     ->priority(10)

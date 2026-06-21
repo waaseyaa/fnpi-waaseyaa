@@ -13,9 +13,10 @@ use App\Mcp\McpToolCatalogue;
 use Waaseyaa\AI\Tools\ToolRegistryInterface;
 use Waaseyaa\Audit\Contract\AuditQueryInterface;
 use Waaseyaa\Audit\Contract\AuditWriterInterface;
-use Waaseyaa\CLI\CommandDefinition;
+use Waaseyaa\CLI\Command\HandlerCommand;
+use Waaseyaa\CLI\Command\SymfonyCommandIO;
 use Waaseyaa\Entity\EntityTypeManagerInterface;
-use Waaseyaa\Foundation\ServiceProvider\Capability\HasNativeCommandsInterface;
+use Waaseyaa\Foundation\ServiceProvider\Capability\ProvidesConsoleCommandsInterface;
 use Waaseyaa\Foundation\ServiceProvider\ServiceProvider;
 use Waaseyaa\Mcp\Admin\RecentInvocationsQueryInterface;
 use Waaseyaa\Mcp\Auth\BearerTokenAuth;
@@ -43,7 +44,7 @@ use Waaseyaa\User\User;
  *    revision-pointer tools, transport dry_run support, and per-invocation
  *    OCAP audit logging.
  */
-final class McpAgentServiceProvider extends ServiceProvider implements HasNativeCommandsInterface
+final class McpAgentServiceProvider extends ServiceProvider implements ProvidesConsoleCommandsInterface
 {
     public const string TOKEN_ENV = 'WAASEYAA_MCP_AGENT_TOKEN';
 
@@ -101,12 +102,17 @@ final class McpAgentServiceProvider extends ServiceProvider implements HasNative
         );
     }
 
-    public function nativeCommands(): iterable
+    public function consoleCommands(): iterable
     {
-        yield new CommandDefinition(
+        yield new HandlerCommand(
             name: 'mcp:agent-account',
             description: 'Ensure the MCP agent service account exists with exactly the agreed capability set',
-            handler: [McpAgentAccountHandler::class, 'execute'],
+            handler: function (SymfonyCommandIO $io): int {
+                $entityTypeManager = $this->resolve(EntityTypeManagerInterface::class);
+                \assert($entityTypeManager instanceof EntityTypeManagerInterface);
+
+                return new McpAgentAccountHandler($entityTypeManager)->execute($io);
+            },
         );
     }
 

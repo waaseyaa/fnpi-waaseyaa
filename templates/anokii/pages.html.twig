@@ -65,9 +65,9 @@
 {% if editing %}
   <div class="pwrap" id="peditor" data-id="{{ page.id }}" data-draft="{{ page.draft_rev }}" data-published="{{ page.published_rev is null ? '' : page.published_rev }}">
     <div class="pbar">
-      <a class="back" href="/anokii/pages">&larr; All pages</a>
+      <a class="back" href="/admin/anokii/pages">&larr; All pages</a>
       <span class="psaved" id="psaved"></span>
-      <a class="pbtn" id="ppreview" href="/anokii/pages/{{ page.id }}/preview" target="_blank" rel="noopener">Preview draft</a>
+      <a class="pbtn" id="ppreview" href="/admin/anokii/pages/{{ page.id }}/preview" target="_blank" rel="noopener">Preview draft</a>
       <button type="button" class="pbtn" id="phistbtn" aria-expanded="false">History</button>
       <button type="button" class="pbtn" id="psave">Save draft</button>
       <button type="button" class="pbtn primary" id="ppublish">Publish</button>
@@ -148,7 +148,7 @@
 
     document.getElementById('psave').addEventListener('click',function(){
       var btn=this; btn.disabled=true;
-      fetch('/anokii/pages/'+encodeURIComponent(id)+'/save',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(collect())})
+      fetch('/admin/anokii/pages/'+encodeURIComponent(id)+'/save',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(collect())})
         .then(function(r){ return r.json().catch(function(){return {ok:false};}); })
         .then(function(d){ btn.disabled=false;
           if(!d||!d.ok){ flash((d&&d.error)||'Save failed'); return; }
@@ -157,7 +157,7 @@
     });
     document.getElementById('ppublish').addEventListener('click',function(){
       var btn=this; btn.disabled=true;
-      fetch('/anokii/pages/'+encodeURIComponent(id)+'/publish',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:'{}'})
+      fetch('/admin/anokii/pages/'+encodeURIComponent(id)+'/publish',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:'{}'})
         .then(function(r){ return r.json().catch(function(){return {ok:false};}); })
         .then(function(d){ btn.disabled=false;
           if(!d||!d.ok){ flash((d&&d.error)||'Publish failed'); return; }
@@ -166,7 +166,7 @@
     });
 
     function rollback(rev){
-      fetch('/anokii/pages/'+encodeURIComponent(id)+'/rollback',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({rev:rev})})
+      fetch('/admin/anokii/pages/'+encodeURIComponent(id)+'/rollback',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({rev:rev})})
         .then(function(r){ return r.json().catch(function(){return {ok:false};}); })
         .then(function(d){ if(!d||!d.ok){ flash((d&&d.error)||'Rollback failed'); return; } flash('Rolled live view back to rev '+d.published_rev); loadHistory(); });
     }
@@ -184,7 +184,7 @@
     }
     function loadHistory(){
       var panel=document.getElementById('phist');
-      return fetch('/anokii/pages/'+encodeURIComponent(id)+'/history',{credentials:'same-origin'})
+      return fetch('/admin/anokii/pages/'+encodeURIComponent(id)+'/history',{credentials:'same-origin'})
         .then(function(r){ return r.json().catch(function(){return {ok:false};}); })
         .then(function(d){ renderHistory(panel, d&&d.ok?d.revisions:[]); });
     }
@@ -212,7 +212,7 @@
             <span class="pstate live"><span class="dot"></span>Live &middot; rev {{ p.published_rev }}</span>
           {% endif %}
         </td>
-        <td style="text-align:right"><a class="pedit" href="/anokii/pages/{{ p.id }}">Edit</a></td>
+        <td style="text-align:right"><a class="pedit" href="/admin/anokii/pages/{{ p.id }}">Edit</a></td>
       </tr>
     {% else %}
       <tr><td colspan="4" style="color:var(--muted)">No pages yet. Seed them with <code>app:seed-pages</code>.</td></tr>

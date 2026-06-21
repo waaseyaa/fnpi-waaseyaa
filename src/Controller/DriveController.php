@@ -28,7 +28,7 @@ use Waaseyaa\SSR\SsrServiceProvider;
  * the same single source of truth as Identity and Documents.
  *
  * Routes are registered ->allowAll() and this controller enforces the session:
- * page requests redirect to /anokii/login, JSON/file actions return 401, and
+ * page requests redirect to /admin/anokii/login, JSON/file actions return 401, and
  * writes the account is not permitted return 403.
  */
 final class DriveController
@@ -44,7 +44,7 @@ final class DriveController
     {
         $user = Auth::currentUser($this->entityTypeManager);
         if ($user === null) {
-            return new RedirectResponse('/anokii/login');
+            return new RedirectResponse('/admin/anokii/login');
         }
 
         $twig = SsrServiceProvider::getTwigEnvironment();
@@ -122,7 +122,7 @@ final class DriveController
     {
         $user = Auth::currentUser($this->entityTypeManager);
         if ($user === null) {
-            return new RedirectResponse('/anokii/login');
+            return new RedirectResponse('/admin/anokii/login');
         }
 
         $file = $this->files->findByUuid($id);
@@ -199,8 +199,8 @@ final class DriveController
             // Drive files carry one revision today; the count surfaces in the UI
             // as the version label.
             'version' => 1,
-            'view_url' => '/anokii/drive/file/' . $uuid,
-            'download_url' => '/anokii/drive/file/' . $uuid . '?dl=1',
+            'view_url' => '/admin/anokii/drive/file/' . $uuid,
+            'download_url' => '/admin/anokii/drive/file/' . $uuid . '?dl=1',
         ];
     }
 }

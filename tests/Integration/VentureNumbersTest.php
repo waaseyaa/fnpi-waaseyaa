@@ -242,14 +242,14 @@ final class VentureNumbersTest extends TestCase
         $router = new WaaseyaaRouter();
         new AnokiiServiceProvider()->routes($router);
 
-        $this->assertSame('anokii.ventures', $router->match('/anokii/ventures')['_route'] ?? null);
-        $this->assertSame('anokii.ventures.lane_history', $router->match('/anokii/ventures/lane/technology/history')['_route'] ?? null);
-        $this->assertSame('anokii.ventures.fact_history', $router->match('/anokii/ventures/fact/faraday-test-data/history')['_route'] ?? null);
+        $this->assertSame('anokii.ventures', $router->match('/admin/anokii/ventures')['_route'] ?? null);
+        $this->assertSame('anokii.ventures.lane_history', $router->match('/admin/anokii/ventures/lane/technology/history')['_route'] ?? null);
+        $this->assertSame('anokii.ventures.fact_history', $router->match('/admin/anokii/ventures/fact/faraday-test-data/history')['_route'] ?? null);
 
         // The save endpoints are POST-only; match() runs in a GET context, so
         // "method not allowed" (rather than "no such route") proves they are
         // registered on the path with the right method restriction.
-        foreach (['/anokii/ventures/lane/save', '/anokii/ventures/fact/save'] as $postPath) {
+        foreach (['/admin/anokii/ventures/lane/save', '/admin/anokii/ventures/fact/save'] as $postPath) {
             try {
                 $router->match($postPath);
                 $this->fail($postPath . ' should be POST-only');
@@ -266,12 +266,12 @@ final class VentureNumbersTest extends TestCase
 
         $index = $controller->index(new Request());
         $this->assertInstanceOf(RedirectResponse::class, $index);
-        $this->assertSame('/anokii/login', $index->getTargetUrl());
+        $this->assertSame('/admin/anokii/login', $index->getTargetUrl());
 
-        $save = $controller->saveLane(Request::create('/anokii/ventures/lane/save', 'POST', [], [], [], [], (string) json_encode(['key' => 'technology', 'changes' => ['y1_likely' => 1]])));
+        $save = $controller->saveLane(Request::create('/admin/anokii/ventures/lane/save', 'POST', [], [], [], [], (string) json_encode(['key' => 'technology', 'changes' => ['y1_likely' => 1]])));
         $this->assertSame(401, $save->getStatusCode());
 
-        $fact = $controller->saveFact(Request::create('/anokii/ventures/fact/save', 'POST', [], [], [], [], (string) json_encode(['key' => 'faraday-test-data', 'status' => 'confirmed'])));
+        $fact = $controller->saveFact(Request::create('/admin/anokii/ventures/fact/save', 'POST', [], [], [], [], (string) json_encode(['key' => 'faraday-test-data', 'status' => 'confirmed'])));
         $this->assertSame(401, $fact->getStatusCode());
     }
 
@@ -281,7 +281,7 @@ final class VentureNumbersTest extends TestCase
         $module = Modules::find('ventures');
         $this->assertNotNull($module);
         $this->assertTrue($module['live']);
-        $this->assertSame('/anokii/ventures', $module['href']);
+        $this->assertSame('/admin/anokii/ventures', $module['href']);
         $this->assertTrue($module['tile']);
     }
 

@@ -29,7 +29,7 @@ final class DocumentsTest extends TestCase
         $module = Modules::find('documents');
         $this->assertNotNull($module);
         $this->assertTrue($module['live']);
-        $this->assertSame('/anokii/documents', $module['href']);
+        $this->assertSame('/admin/anokii/documents', $module['href']);
         $this->assertSame('', $module['badge']);
         $this->assertTrue($module['tile']);
     }
@@ -40,9 +40,9 @@ final class DocumentsTest extends TestCase
         $router = new WaaseyaaRouter();
         new AnokiiServiceProvider()->routes($router);
 
-        $this->assertSame('anokii.documents', $router->match('/anokii/documents')['_route'] ?? null);
-        $this->assertSame('anokii.documents.show', $router->match('/anokii/documents/abc-uuid')['_route'] ?? null);
-        $this->assertSame('anokii.documents.file', $router->match('/anokii/documents/abc/file/2/preview')['_route'] ?? null);
+        $this->assertSame('anokii.documents', $router->match('/admin/anokii/documents')['_route'] ?? null);
+        $this->assertSame('anokii.documents.show', $router->match('/admin/anokii/documents/abc-uuid')['_route'] ?? null);
+        $this->assertSame('anokii.documents.file', $router->match('/admin/anokii/documents/abc/file/2/preview')['_route'] ?? null);
     }
 
     #[Test]

@@ -9,7 +9,7 @@ use App\CoIntelligence\DocChunkRepository;
 use App\CoIntelligence\KnowledgeChunker;
 use App\Identity\PillarService;
 use App\Pages\PublishedPageRenderer;
-use Waaseyaa\CLI\CliIO;
+use Waaseyaa\CLI\Command\SymfonyCommandIO;
 
 /**
  * `vendor/bin/waaseyaa app:ingest-knowledge [--dry-run] [--no-prune]` — build
@@ -61,7 +61,7 @@ final class IngestKnowledgeCommand
         private readonly KnowledgeChunker $chunker = new KnowledgeChunker(),
     ) {}
 
-    public function run(CliIO $io): int
+    public function run(SymfonyCommandIO $io): int
     {
         $dryRun = (bool) $io->option('dry-run');
         $pruneOption = $io->option('prune');
@@ -108,7 +108,7 @@ final class IngestKnowledgeCommand
     /**
      * @return array{0: list<ChunkData>, 1: int, 2: list<string>}
      */
-    private function collect(CliIO $io): array
+    private function collect(SymfonyCommandIO $io): array
     {
         $chunks = [];
         $sources = 0;
@@ -188,7 +188,7 @@ final class IngestKnowledgeCommand
                 continue;
             }
             $heading = $pillar->getTitle();
-            foreach ($this->chunker->chunkText($text, '/anokii/identity', 'Identity Workspace: ' . $heading, $heading) as $c) {
+            foreach ($this->chunker->chunkText($text, '/admin/anokii/identity', 'Identity Workspace: ' . $heading, $heading) as $c) {
                 $chunks[] = $c;
             }
 
@@ -206,7 +206,7 @@ final class IngestKnowledgeCommand
                     continue;
                 }
                 $ojHeading = $endonym . ': ' . $translation->getTitle();
-                foreach ($this->chunker->chunkText($ojText, '/anokii/identity', 'Identity Workspace (' . $endonym . '): ' . $heading, $ojHeading) as $c) {
+                foreach ($this->chunker->chunkText($ojText, '/admin/anokii/identity', 'Identity Workspace (' . $endonym . '): ' . $heading, $ojHeading) as $c) {
                     $chunks[] = $c;
                 }
             }

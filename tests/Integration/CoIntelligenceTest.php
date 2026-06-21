@@ -53,8 +53,8 @@ final class CoIntelligenceTest extends TestCase
         $router = new WaaseyaaRouter();
         new AnokiiServiceProvider()->routes($router);
 
-        $this->assertSame('anokii.cointelligence', $router->match('/anokii/cointelligence')['_route'] ?? null);
-        $this->assertSame('anokii.cointelligence.messages', $router->match('/anokii/cointelligence/7/messages')['_route'] ?? null);
+        $this->assertSame('anokii.cointelligence', $router->match('/admin/anokii/cointelligence')['_route'] ?? null);
+        $this->assertSame('anokii.cointelligence.messages', $router->match('/admin/anokii/cointelligence/7/messages')['_route'] ?? null);
     }
 
     #[Test]
@@ -73,14 +73,14 @@ final class CoIntelligenceTest extends TestCase
         $response = $controller->index(new Request());
 
         $this->assertInstanceOf(RedirectResponse::class, $response);
-        $this->assertSame('/anokii/login', $response->getTargetUrl());
+        $this->assertSame('/admin/anokii/login', $response->getTargetUrl());
     }
 
     #[Test]
     public function send_is_401_when_signed_out(): void
     {
         $controller = $this->controller(false);
-        $request = Request::create('/anokii/cointelligence/send', 'POST', [], [], [], [], (string) json_encode(['question' => 'What are the lanes?']));
+        $request = Request::create('/admin/anokii/cointelligence/send', 'POST', [], [], [], [], (string) json_encode(['question' => 'What are the lanes?']));
         $response = $controller->send($request);
 
         $this->assertSame(401, $response->getStatusCode());
@@ -191,7 +191,7 @@ final class CoIntelligenceTest extends TestCase
         $ai = Modules::find('ai');
         $this->assertNotNull($ai);
         $this->assertTrue($ai['live']);
-        $this->assertSame('/anokii/cointelligence', $ai['href']);
+        $this->assertSame('/admin/anokii/cointelligence', $ai['href']);
         $this->assertSame('', $ai['badge']);
     }
 

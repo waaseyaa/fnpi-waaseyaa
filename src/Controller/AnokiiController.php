@@ -23,7 +23,7 @@ use Waaseyaa\Entity\EntityTypeManager;
  * split, the session helpers (currentUser), and the Twig-render / JSON-decode
  * helpers all come from the base. This controller owns only the FNPI-specific
  * handler bodies and the token set-password flow. The gate redirects
- * unauthenticated page requests to /anokii/login and returns 401 for JSON
+ * unauthenticated page requests to /admin/anokii/login and returns 401 for JSON
  * actions.
  */
 final class AnokiiController extends DashboardGate
@@ -37,7 +37,7 @@ final class AnokiiController extends DashboardGate
 
     protected function loginPath(): string
     {
-        return '/anokii/login';
+        return '/admin/anokii/login';
     }
 
     // --- shell pages -------------------------------------------------------
@@ -60,7 +60,7 @@ final class AnokiiController extends DashboardGate
         }
         $m = Modules::find($module);
         if ($m === null || $m['live'] === true) {
-            return new RedirectResponse('/anokii');
+            return new RedirectResponse('/admin/anokii');
         }
 
         return $this->render('anokii/coming-soon.html.twig', AnokiiShell::context($user, $module) + ['module' => $m]);
@@ -124,7 +124,7 @@ final class AnokiiController extends DashboardGate
     public function loginForm(Request $request): Response
     {
         if ($this->currentUser() !== null) {
-            return new RedirectResponse('/anokii');
+            return new RedirectResponse('/admin/anokii');
         }
 
         return $this->render('anokii/login.html.twig', ['bare' => true]);
@@ -141,14 +141,14 @@ final class AnokiiController extends DashboardGate
             return new JsonResponse(['ok' => false, 'error' => 'Wrong email or password.'], 401);
         }
 
-        return new JsonResponse(['ok' => true, 'redirect' => '/anokii']);
+        return new JsonResponse(['ok' => true, 'redirect' => '/admin/anokii']);
     }
 
     public function logout(Request $request): Response
     {
         Auth::logout();
 
-        return new RedirectResponse('/anokii/login');
+        return new RedirectResponse('/admin/anokii/login');
     }
 
     // --- token set-password flow ------------------------------------------
@@ -189,6 +189,6 @@ final class AnokiiController extends DashboardGate
         $this->entityTypeManager?->getStorage('user')->save($user->setRawPassword($password));
         $this->tokens->consume($token);
 
-        return new JsonResponse(['ok' => true, 'redirect' => '/anokii/login']);
+        return new JsonResponse(['ok' => true, 'redirect' => '/admin/anokii/login']);
     }
 }

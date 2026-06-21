@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Command;
 
 use App\Documents\DocumentService;
-use Waaseyaa\CLI\CliIO;
+use Waaseyaa\CLI\Command\SymfonyCommandIO;
 use Waaseyaa\Entity\EntityTypeManagerInterface;
 use Waaseyaa\User\User;
 
@@ -48,7 +48,7 @@ final class SeedDocumentsCommand
         private readonly string $seedDir,
     ) {}
 
-    public function run(CliIO $io): int
+    public function run(SymfonyCommandIO $io): int
     {
         if (!is_dir($this->seedDir)) {
             $io->error('Seed directory not found: ' . $this->seedDir);
@@ -142,7 +142,7 @@ final class SeedDocumentsCommand
     /**
      * @return array{0:int,1:string}
      */
-    private function resolveUser(CliIO $io, string $email, string $fallbackLabel): array
+    private function resolveUser(SymfonyCommandIO $io, string $email, string $fallbackLabel): array
     {
         $email = strtolower(trim($email));
         if ($email !== '' && $this->entityTypeManager !== null) {

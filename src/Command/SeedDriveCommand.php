@@ -7,7 +7,7 @@ namespace App\Command;
 use App\Drive\DriveFileService;
 use App\Drive\DriveStorage;
 use App\Drive\FileTypes;
-use Waaseyaa\CLI\CliIO;
+use Waaseyaa\CLI\Command\SymfonyCommandIO;
 use Waaseyaa\Entity\EntityTypeManagerInterface;
 use Waaseyaa\User\User;
 
@@ -30,7 +30,7 @@ final class SeedDriveCommand
         private readonly ?EntityTypeManagerInterface $entityTypeManager,
     ) {}
 
-    public function run(CliIO $io): int
+    public function run(SymfonyCommandIO $io): int
     {
         $dir = rtrim((string) ($io->option('dir') ?? ''), '/\\');
         if ($dir === '' || !is_dir($dir)) {
@@ -129,7 +129,7 @@ final class SeedDriveCommand
      *
      * @return array{0:int,1:string}
      */
-    private function resolveOwner(CliIO $io): array
+    private function resolveOwner(SymfonyCommandIO $io): array
     {
         $ownerId = (int) ($io->option('owner-id') ?? 1);
         $ownerLabel = trim((string) ($io->option('owner-label') ?? '')) ?: 'Matthew Owl';

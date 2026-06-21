@@ -44,12 +44,12 @@
   f.addEventListener('submit', function(e){
     e.preventDefault();
     err.classList.remove('show');
-    fetch('/anokii/login', {
+    fetch('/admin/anokii/login', {
       method:'POST', headers:{'Content-Type':'application/json'}, credentials:'same-origin',
       body: JSON.stringify({email: document.getElementById('email').value, password: document.getElementById('password').value})
     }).then(function(r){ return r.json().catch(function(){return {ok:false,error:'Something went wrong.'};}); })
       .then(function(d){
-        if(d && d.ok){ window.location = d.redirect || '/anokii'; }
+        if(d && d.ok){ window.location = d.redirect || '/admin/anokii'; }
         else { err.textContent = (d && d.error) || 'Wrong email or password.'; err.classList.add('show'); }
       }).catch(function(){ err.textContent='Network error. Try again.'; err.classList.add('show'); });
   });

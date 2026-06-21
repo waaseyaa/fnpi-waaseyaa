@@ -25,7 +25,7 @@ use Waaseyaa\SSR\SsrServiceProvider;
  * is read-only here (the chat agent will CRUD it next).
  *
  * Routes are registered ->allowAll() and this controller enforces the session:
- * page requests redirect to /anokii/login, JSON actions return 401.
+ * page requests redirect to /admin/anokii/login, JSON actions return 401.
  */
 final class IdentityController
 {
@@ -39,7 +39,7 @@ final class IdentityController
     {
         $user = Auth::currentUser($this->entityTypeManager);
         if ($user === null) {
-            return new RedirectResponse('/anokii/login');
+            return new RedirectResponse('/admin/anokii/login');
         }
 
         $twig = SsrServiceProvider::getTwigEnvironment();

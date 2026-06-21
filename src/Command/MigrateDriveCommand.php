@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Command;
 
 use App\Drive\DriveFileService;
-use Waaseyaa\CLI\CliIO;
+use Waaseyaa\CLI\Command\SymfonyCommandIO;
 use Waaseyaa\Database\DatabaseInterface;
 
 /**
@@ -35,7 +35,7 @@ final class MigrateDriveCommand
         private readonly DatabaseInterface $db,
     ) {}
 
-    public function run(CliIO $io): int
+    public function run(SymfonyCommandIO $io): int
     {
         if ($this->files->count() > 0) {
             $io->writeln('  skip   drive_asset already populated. Nothing to do.');
@@ -93,7 +93,7 @@ final class MigrateDriveCommand
         return 0;
     }
 
-    private function archiveLegacy(CliIO $io): void
+    private function archiveLegacy(SymfonyCommandIO $io): void
     {
         $schema = $this->db->schema();
         if ($schema->tableExists(self::ARCHIVE_TABLE)) {

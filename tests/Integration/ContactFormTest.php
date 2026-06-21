@@ -238,7 +238,7 @@ final class ContactFormTest extends TestCase
         $controller = new \App\Controller\ContactInboxController(null, WorkspaceAccess::handler());
         $response = $controller->index(new Request());
         $this->assertSame(302, $response->getStatusCode());
-        $this->assertSame('/anokii/login', $response->headers->get('Location'));
+        $this->assertSame('/admin/anokii/login', $response->headers->get('Location'));
 
         $json = $controller->markAllRead(new Request());
         $this->assertSame(401, $json->getStatusCode());
@@ -255,7 +255,7 @@ final class ContactFormTest extends TestCase
         }
         $this->assertNotNull($inbox);
         $this->assertTrue($inbox['live']);
-        $this->assertSame('/anokii/inbox', $inbox['href']);
+        $this->assertSame('/admin/anokii/inbox', $inbox['href']);
     }
 
     /** @param list<string> $permissions */

@@ -28,7 +28,7 @@ use Waaseyaa\SSR\SsrServiceProvider;
  * VentureAccessPolicy requires `view ventures` (Forbidden otherwise), so a
  * signed-in account without it gets a 403 here and no rows anywhere else.
  * Routes are registered ->allowAll(); this controller enforces the session
- * (page requests redirect to /anokii/login, JSON actions return 401).
+ * (page requests redirect to /admin/anokii/login, JSON actions return 401).
  */
 final class VenturesController
 {
@@ -42,7 +42,7 @@ final class VenturesController
     {
         $user = Auth::currentUser($this->entityTypeManager);
         if ($user === null) {
-            return new RedirectResponse('/anokii/login');
+            return new RedirectResponse('/admin/anokii/login');
         }
         if (!$this->access->check(new VentureLane(), 'view', $user)->isAllowed()) {
             return new Response('Venture numbers are staff-only.', 403, ['Content-Type' => 'text/plain; charset=UTF-8']);

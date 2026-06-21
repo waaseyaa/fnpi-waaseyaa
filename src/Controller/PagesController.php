@@ -22,7 +22,7 @@ use Waaseyaa\SSR\SsrServiceProvider;
  * previews a draft through the real block renderer, and publishes / rolls back
  * the live view via the framework's published-revision pointer.
  *
- * Gating mirrors the other tools: page (GET) requests redirect to /anokii/login
+ * Gating mirrors the other tools: page (GET) requests redirect to /admin/anokii/login
  * when signed out; JSON actions return 401. Saving a draft requires `edit
  * pages`; publish / rollback require `publish pages` — both enforced through the
  * shared AccessPolicy (the single source of truth).
@@ -39,7 +39,7 @@ final class PagesController
     {
         $user = Auth::currentUser($this->entityTypeManager);
         if ($user === null) {
-            return new RedirectResponse('/anokii/login');
+            return new RedirectResponse('/admin/anokii/login');
         }
 
         $twig = SsrServiceProvider::getTwigEnvironment();
@@ -59,12 +59,12 @@ final class PagesController
     {
         $user = Auth::currentUser($this->entityTypeManager);
         if ($user === null) {
-            return new RedirectResponse('/anokii/login');
+            return new RedirectResponse('/admin/anokii/login');
         }
 
         $page = $this->pages->find($id);
         if ($page === null) {
-            return new RedirectResponse('/anokii/pages');
+            return new RedirectResponse('/admin/anokii/pages');
         }
 
         $twig = SsrServiceProvider::getTwigEnvironment();
@@ -181,7 +181,7 @@ final class PagesController
     {
         $user = Auth::currentUser($this->entityTypeManager);
         if ($user === null) {
-            return new RedirectResponse('/anokii/login');
+            return new RedirectResponse('/admin/anokii/login');
         }
 
         $page = $this->pages->find($id);

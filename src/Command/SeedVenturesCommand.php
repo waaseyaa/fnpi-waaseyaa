@@ -6,7 +6,7 @@ namespace App\Command;
 
 use App\Venture\VentureSeed;
 use App\Venture\VentureService;
-use Waaseyaa\CLI\CliIO;
+use Waaseyaa\CLI\Command\SymfonyCommandIO;
 
 /**
  * Seed the Venture Numbers section: six lanes, their gating facts, and the
@@ -26,7 +26,7 @@ final class SeedVenturesCommand
 
     public function __construct(private readonly VentureService $ventures) {}
 
-    public function run(CliIO $io): int
+    public function run(SymfonyCommandIO $io): int
     {
         $created = 0;
 

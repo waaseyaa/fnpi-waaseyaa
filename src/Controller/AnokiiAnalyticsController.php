@@ -32,7 +32,7 @@ final class AnokiiAnalyticsController
     {
         $user = Auth::currentUser($this->entityTypeManager);
         if ($user === null) {
-            return new RedirectResponse('/anokii/login');
+            return new RedirectResponse('/admin/anokii/login');
         }
 
         $twig = SsrServiceProvider::getTwigEnvironment();

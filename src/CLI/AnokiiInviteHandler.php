@@ -7,7 +7,7 @@ namespace App\CLI;
 use App\Auth\SetupTokenRepository;
 use App\Auth\SetupTokenSchema;
 use App\Support\Db;
-use Waaseyaa\CLI\CliIO;
+use Waaseyaa\CLI\Command\SymfonyCommandIO;
 use Waaseyaa\Entity\EntityTypeManagerInterface;
 use Waaseyaa\User\User;
 
@@ -25,7 +25,7 @@ final class AnokiiInviteHandler
         private readonly EntityTypeManagerInterface $entityTypeManager,
     ) {}
 
-    public function execute(CliIO $io): int
+    public function execute(SymfonyCommandIO $io): int
     {
         $email = strtolower(trim((string) $io->argument('email')));
         if ($email === '' || !str_contains($email, '@')) {
@@ -60,7 +60,7 @@ final class AnokiiInviteHandler
 
         $io->writeln('');
         $io->writeln('Set-password link (one-time, give this to the account holder):');
-        $io->writeln(sprintf('%s/anokii/set-password?token=%s', $baseUrl, $token));
+        $io->writeln(sprintf('%s/admin/anokii/set-password?token=%s', $baseUrl, $token));
 
         return 0;
     }

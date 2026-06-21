@@ -15,7 +15,11 @@ use App\Tests\Support\SeededPages;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\EventDispatcher\EventDispatcher;
-use Waaseyaa\CLI\CliIO;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Input\InputDefinition;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\NullOutput;
+use Waaseyaa\CLI\Command\SymfonyCommandIO;
 use Waaseyaa\Database\DBALDatabase;
 use Waaseyaa\Entity\EntityType;
 use Waaseyaa\Entity\EntityTypeManager;
@@ -212,55 +216,14 @@ final class IngestKnowledgeTest extends TestCase
         return $etm;
     }
 
-    /** A silent CliIO: real options for a non-dry-run, pruning ingest. */
-    private function io(): CliIO
+    /** A silent IO: real options for a non-dry-run, pruning ingest. */
+    private function io(): SymfonyCommandIO
     {
-        return new class implements CliIO {
-            public function write(string $text): void {}
+        $definition = new InputDefinition([
+            new InputOption('dry-run', null, InputOption::VALUE_NONE),
+            new InputOption('prune', null, InputOption::VALUE_NEGATABLE, '', true),
+        ]);
 
-            public function writeln(string $text = ''): void {}
-
-            public function argument(string $name): string|int|float|bool|array|null
-            {
-                return null;
-            }
-
-            public function option(string $name): string|int|float|bool|array|null
-            {
-                return $name === 'prune' ? true : null;
-            }
-
-            public function arguments(): array
-            {
-                return [];
-            }
-
-            public function options(): array
-            {
-                return ['prune' => true];
-            }
-
-            public function error(string $line): void {}
-
-            public function ask(string $question, ?string $default = null): ?string
-            {
-                return $default;
-            }
-
-            public function confirm(string $question, bool $default = false): bool
-            {
-                return $default;
-            }
-
-            public function isVerbose(): bool
-            {
-                return false;
-            }
-
-            public function isInteractive(): bool
-            {
-                return false;
-            }
-        };
+        return new SymfonyCommandIO(new ArrayInput([], $definition), new NullOutput());
     }
 }
