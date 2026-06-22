@@ -1,20 +1,55 @@
-{% extends "base.html.twig" %}
+{#
+  FNPI Anokii shell, sourced from the canonical package shell.
+
+  Extends the package _shell (via the @anokiipkg namespace registered on the SSR
+  Twig in AnokiiServiceProvider) and fills its block slots with FNPI's exact
+  markup so the workspace is byte-identical to the previous forked shell:
+    - brand   : the wolf + Anokii wordmark
+    - nav     : FNPI's own .anavlink markup (data-label/data-soon search hooks)
+    - userchip: empty (FNPI's user-chip lives in the top bar, not the sidebar)
+    - topbar  : search + notification bell + user-chip + sign-out
+    - sidebar_footer: the sovereignty tagline
+    - main_footer   : the footer bar
+    - shell_styles  : FNPI's brand tokens + admin CSS (only the package-rendered
+                      scaffold wrappers re-targeted to .anokii-app/-side/-brand/
+                      -nav/-main/-content; everything FNPI renders keeps its
+                      original classes)
+    - head_extra    : Anton/Oswald fonts + the markdown renderer
+
+  Tool templates extend THIS and keep filling {% block anokii_content %} /
+  {% block anokii_styles %}, so no per-page block-name churn.
+#}
+{% extends "@anokiipkg/_shell.html.twig" %}
 
 {% block title %}Anokii · FNPI{% endblock %}
-{% block description %}FNPI's private Anokii workspace.{% endblock %}
-{% block robots %}noindex,nofollow{% endblock %}
 
-{% block head_styles %}
+{% block head_extra %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="/js/anokii-md.js"></script>
+{% endblock %}
+
+{% block shell_styles %}
+  /* FNPI brand tokens (from base.html.twig; the package shell does not extend it). */
+  :root{ --ink:#0c0d0e; --black:#111315; --white:#ffffff; --bg:#f3f2ee; --grey:#e4e3e0;
+    --cyan:#1fb6d6; --cyan2:#13869f; --muted:#5c6166; --line:#e2e0da; --dark:#0a0e12; }
+  body{ background:var(--bg); color:var(--ink); font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  a{ color:inherit; text-decoration:none; }
+
+  /* FNPI admin shell. Scaffold wrappers re-targeted to the package classes:
+     .aapp->.anokii-app, .aside->.anokii-side, .abrand->.anokii-brand,
+     .anav->.anokii-nav, .amain->.anokii-main, .acontent->.anokii-content.
+     All FNPI-rendered markup keeps its original classes. */
   html,body{background:var(--bg)}
-  .aapp{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
-  /* sidebar (FNPI dark) */
-  .aside{background:#0a0e12;color:#fff;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;border-right:1px solid #1b2a30}
-  .abrand{display:flex;align-items:center;gap:11px;padding:18px 16px 14px;border-bottom:1px solid #1b2a30}
-  .abrand .lg{width:38px;height:38px;border-radius:9px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;flex:0 0 auto}
-  .abrand .lg img{width:100%;height:100%;object-fit:contain;padding:3px}
-  .abrand .anm{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.03em;font-size:19px;color:#fff;line-height:1}
-  .abrand .asub{font-size:11px;color:#7fb8c6;font-family:"Oswald",sans-serif;letter-spacing:.02em;margin-top:4px;line-height:1.35}
-  .anav{padding:8px 10px;flex:1;overflow:auto}
+  .anokii-app{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+  .anokii-side{background:#0a0e12;color:#fff;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;border-right:1px solid #1b2a30}
+  .anokii-brand{display:flex;align-items:center;gap:11px;padding:18px 16px 14px;border-bottom:1px solid #1b2a30}
+  .anokii-brand .lg{width:38px;height:38px;border-radius:9px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;flex:0 0 auto}
+  .anokii-brand .lg img{width:100%;height:100%;object-fit:contain;padding:3px}
+  .anokii-brand .anm{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.03em;font-size:19px;color:#fff;line-height:1}
+  .anokii-brand .asub{font-size:11px;color:#7fb8c6;font-family:"Oswald",sans-serif;letter-spacing:.02em;margin-top:4px;line-height:1.35}
+  .anokii-nav{padding:8px 10px;flex:1;overflow:auto}
   .agroup{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#5c6b72;font-family:"Oswald",sans-serif;font-weight:600;padding:14px 12px 6px}
   .anavlink{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:9px;color:#aebbc2;font-size:14.5px;margin:2px 0;font-family:"Oswald",sans-serif;letter-spacing:.01em;transition:background .12s,color .12s}
   .anavlink svg{width:18px;height:18px;flex:0 0 auto;opacity:.9}
@@ -24,8 +59,7 @@
   .anavlink .abadge{margin-left:auto;font-size:10px;font-weight:700;border-radius:20px;padding:2px 7px;letter-spacing:.06em;text-transform:uppercase;font-family:"Oswald",sans-serif;background:#26323a;color:#7fd6e8}
   .atag{font-size:12px;color:#8b969c;padding:14px 16px;border-top:1px solid #1b2a30;line-height:1.5;font-family:"Oswald",sans-serif}
   .atag b{color:#fff;font-weight:600}
-  /* main + topbar */
-  .amain{display:flex;flex-direction:column;min-width:0}
+  .anokii-main{display:flex;flex-direction:column;min-width:0}
   .atop{display:flex;align-items:center;gap:16px;padding:11px 24px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:30}
   .asearch{flex:1;max-width:520px;position:relative}
   .asearch input{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:9px;padding:9px 12px 9px 36px;font:inherit;font-size:14.5px;outline:none;color:var(--ink)}
@@ -54,18 +88,15 @@
   .auser{display:flex;align-items:center;gap:10px;padding:4px 9px 4px 4px;border-radius:30px;border:1px solid var(--line);background:#fff}
   .aavatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--cyan2),var(--cyan));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;font-family:"Oswald",sans-serif;flex:0 0 auto}
   .auinfo{line-height:1.2} .auinfo b{font-size:14px;color:var(--ink);font-weight:600} .auinfo small{display:block;color:var(--muted);font-size:12px}
-  .acontent{padding:26px;flex:1;min-width:0}
+  .anokii-content{padding:26px;flex:1;min-width:0}
   .afoot{padding:13px 24px;border-top:1px solid var(--line);background:#fff;color:var(--muted);font-size:13px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .afoot .lk{width:14px;height:14px;color:var(--cyan2);flex:0 0 auto}
   .afoot .amig{margin-left:auto;font-family:"Oswald",sans-serif;color:var(--cyan2)}
-  /* page head reused by tools */
   .ahead{margin:0 0 18px}
   .ahead .ey{font-family:"Oswald",sans-serif;font-size:12.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--cyan2);margin:0 0 6px}
   .ahead h1{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.01em;font-size:34px;margin:0;color:var(--ink)}
   .ahead p.sub{color:var(--muted);margin:8px 0 0;max-width:72ch;font-size:15px;line-height:1.6}
-  @media(max-width:880px){.aapp{grid-template-columns:1fr}.aside{position:static;height:auto}.asub{display:none}}
-  /* Shared markdown rendering for chat replies (Co-Intelligence + Identity).
-     Output of /js/anokii-md.js is wrapped in .amd; these style its blocks. */
+  @media(max-width:880px){.anokii-app{grid-template-columns:1fr}.anokii-side{position:static;height:auto}.asub{display:none}}
   .amd>*:first-child{margin-top:0} .amd>*:last-child{margin-bottom:0}
   .amd p{margin:0 0 9px}
   .amd ul,.amd ol{margin:7px 0;padding-left:20px} .amd li{margin:3px 0}
@@ -75,13 +106,11 @@
   .amd hr{border:0;border-top:1px solid var(--line);margin:13px 0}
   .amd code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;background:#f1f3f4;border:1px solid var(--line);border-radius:4px;padding:1px 5px}
   .amd a{color:var(--cyan2);text-decoration:underline} .amd strong{font-weight:700}
-  /* tables: a clean bordered card, header in the Oswald label style */
   .amd .amt{border-collapse:separate;border-spacing:0;width:100%;margin:9px 0;font-size:13.5px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
   .amd .amt th,.amd .amt td{text-align:left;padding:7px 11px;border-bottom:1px solid var(--line);vertical-align:top}
   .amd .amt th{background:var(--bg);font-family:"Oswald",sans-serif;font-weight:600;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
   .amd .amt tbody tr:last-child td{border-bottom:none}
   .amd .amt tbody tr:hover{background:#fafbfb}
-  /* pillar-status cells render as pills matching the Identity rail */
   .amd .stp{display:inline-block;font-family:"Oswald",sans-serif;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;border-radius:20px;padding:2px 9px;line-height:1.6}
   .amd .stp-defined{background:var(--green-soft,#e4f7ee);color:var(--green,#138a55)}
   .amd .stp-draft{background:var(--amber-soft,#fff3df);color:var(--amber,#a96a00)}
@@ -90,71 +119,65 @@
   {% block anokii_styles %}{% endblock %}
 {% endblock %}
 
-{% block topnav %}{% endblock %}
-{% block sitefooter %}{% endblock %}
+{% block brand %}<span class="lg"><img src="/img/fnpi-wolf.png" alt="FNPI"></span><span><span class="anm">Anokii</span><br><span class="asub">Sovereign workspace &middot; First Nations Procurement Inc.</span></span>{% endblock %}
 
-{% block content %}
-<script src="/js/anokii-md.js"></script>
-<div class="aapp">
-  <aside class="aside">
-    <a class="abrand" href="/admin/anokii" style="text-decoration:none">
-      <span class="lg"><img src="/img/fnpi-wolf.png" alt="FNPI"></span>
-      <span><span class="anm">Anokii</span><br><span class="asub">Sovereign workspace · First Nations Procurement Inc.</span></span>
+{% block nav %}
+  {% set grp = '' %}
+  {% for m in modules %}
+    {% if m.group != grp %}<div class="agroup">{{ m.group }}</div>{% set grp = m.group %}{% endif %}
+    <a class="anavlink{{ nav_active == m.id ? ' on' : '' }}" href="{{ m.href }}" data-label="{{ m.label }}" data-soon="{{ m.live ? '0' : '1' }}">
+      <svg viewBox="0 0 24 24">{{ m.icon|raw }}</svg><span>{{ m.label }}</span>
+      {% if m.badge %}<span class="abadge">{{ m.badge }}</span>{% endif %}
     </a>
-    <nav class="anav">
-      {% set grp = '' %}
-      {% for m in modules %}
-        {% if m.group != grp %}<div class="agroup">{{ m.group }}</div>{% set grp = m.group %}{% endif %}
-        <a class="anavlink{{ nav_active == m.id ? ' on' : '' }}" href="{{ m.href }}" data-label="{{ m.label }}" data-soon="{{ m.live ? '0' : '1' }}">
-          <svg viewBox="0 0 24 24">{{ m.icon|raw }}</svg><span>{{ m.label }}</span>
-          {% if m.badge %}<span class="abadge">{{ m.badge }}</span>{% endif %}
-        </a>
-      {% endfor %}
-    </nav>
-    <div class="atag">One platform the Nation owns and controls. <b>Sovereign by design, hosted in Canada.</b></div>
-  </aside>
+  {% endfor %}
+{% endblock %}
 
-  <div class="amain">
-    <header class="atop">
-      <div class="asearch">
-        <svg class="si" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        <input id="anokiiSearch" placeholder="Search Anokii modules&hellip;" autocomplete="off">
-        <div class="asr-box" id="anokiiSearchResults"></div>
-      </div>
-      <div class="aspacer"></div>
-      <div class="abell-wrap">
-        <button class="aiconbtn" id="anokiiBell" title="Notifications" type="button">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 19a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-          <span class="abell-count">2</span>
-        </button>
-        <div class="apop" id="anokiiPop">
-          <div class="pvh">Notifications</div>
-          <div class="nrow"><span class="nic"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17l-1.9-5.1L4.5 10l5.6-1.4L12 3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></span><span class="ntext"><b>Welcome to Anokii</b><small>FNPI's sovereign workspace is live.</small></span></div>
-          <div class="nrow"><span class="nic"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="9" r="3" stroke="currentColor" stroke-width="1.6"/><path d="M5 20c1-3 4-4.5 7-4.5s6 1.5 7 4.5" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="ntext"><b>Identity Workspace is ready</b><small>Settle FNPI's brand pillars together.</small></span></div>
-        </div>
-      </div>
-      <div class="auser" title="Signed in">
-        <div class="aavatar">{{ user_initials }}</div>
-        <div class="auinfo"><b>{{ user_label }}</b><small>{{ user_role }}</small></div>
-      </div>
-      <a class="aiconbtn" href="/admin/anokii/logout" title="Sign out" style="text-decoration:none">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M14 7V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M10 12h10m0 0-3-3m3 3-3 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </a>
-    </header>
+{% block userchip %}{% endblock %}
 
-    <main class="acontent">{% block anokii_content %}{% endblock %}</main>
+{% block sidebar_footer %}<div class="atag">One platform the Nation owns and controls. <b>Sovereign by design, hosted in Canada.</b></div>{% endblock %}
 
-    <footer class="afoot">
-      <svg class="lk" viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="1.7"/></svg>
-      <span>FNPI's own Anokii on the Waaseyaa platform · Sovereign at rest · Hosted in Canada</span>
-      <span class="amig">Anokii · Anishinaabemowin for "she/he works"</span>
-    </footer>
+{% block topbar %}
+<header class="atop">
+  <div class="asearch">
+    <svg class="si" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    <input id="anokiiSearch" placeholder="Search Anokii modules&hellip;" autocomplete="off">
+    <div class="asr-box" id="anokiiSearchResults"></div>
   </div>
-</div>
+  <div class="aspacer"></div>
+  <div class="abell-wrap">
+    <button class="aiconbtn" id="anokiiBell" title="Notifications" type="button">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 19a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      <span class="abell-count">2</span>
+    </button>
+    <div class="apop" id="anokiiPop">
+      <div class="pvh">Notifications</div>
+      <div class="nrow"><span class="nic"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17l-1.9-5.1L4.5 10l5.6-1.4L12 3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></span><span class="ntext"><b>Welcome to Anokii</b><small>FNPI's sovereign workspace is live.</small></span></div>
+      <div class="nrow"><span class="nic"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="9" r="3" stroke="currentColor" stroke-width="1.6"/><path d="M5 20c1-3 4-4.5 7-4.5s6 1.5 7 4.5" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="ntext"><b>Identity Workspace is ready</b><small>Settle FNPI's brand pillars together.</small></span></div>
+    </div>
+  </div>
+  <div class="auser" title="Signed in">
+    <div class="aavatar">{{ user_initials }}</div>
+    <div class="auinfo"><b>{{ user_label }}</b><small>{{ user_role }}</small></div>
+  </div>
+  <a class="aiconbtn" href="/admin/anokii/logout" title="Sign out" style="text-decoration:none">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M14 7V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M10 12h10m0 0-3-3m3 3-3 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </a>
+</header>
+{% endblock %}
 
+{% block main_footer %}
+<footer class="afoot">
+  <svg class="lk" viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="1.7"/></svg>
+  <span>FNPI's own Anokii on the Waaseyaa platform &middot; Sovereign at rest &middot; Hosted in Canada</span>
+  <span class="amig">Anokii &middot; Anishinaabemowin for "she/he works"</span>
+</footer>
+{% endblock %}
+
+{% block content %}{% block anokii_content %}{% endblock %}{% endblock %}
+
+{% block page_scripts %}
 <script>
 (function(){
-  // Search: client-side filter over the sidebar module links.
   var input=document.getElementById('anokiiSearch'), box=document.getElementById('anokiiSearchResults');
   var links=[].slice.call(document.querySelectorAll('.anavlink'));
   var index=links.map(function(a){ return {label:a.getAttribute('data-label')||a.textContent.trim(), href:a.getAttribute('href'), soon:a.getAttribute('data-soon')==='1', icon:(a.querySelector('svg')||{}).outerHTML||''}; });
@@ -168,10 +191,8 @@
     box.classList.add('open');
   }
   if(input){ input.addEventListener('input',function(){ render(input.value); }); }
-  // Bell popover toggle.
   var bell=document.getElementById('anokiiBell'), pop=document.getElementById('anokiiPop');
   if(bell){ bell.addEventListener('click',function(e){ e.stopPropagation(); pop.classList.toggle('open'); }); }
-  // Outside click closes both.
   document.addEventListener('click',function(e){
     if(!e.target.closest('.asearch')){ box.classList.remove('open'); }
     if(!e.target.closest('.abell-wrap')){ pop.classList.remove('open'); }

@@ -106,6 +106,40 @@ final class AnokiiServiceProvider extends ServiceProvider implements ProvidesCon
         } catch (\Throwable) {
             // best effort; the tool surfaces an empty state rather than 500ing
         }
+
+        $this->registerPackageTemplates();
+    }
+
+    /**
+     * Make the shared Anokii package templates resolvable on the SSR Twig
+     * environment (its loader is a ChainLoader of FilesystemLoaders, scanning the
+     * app's own templates only). Registers the package dir both unprefixed (so
+     * `anokii/...` package templates resolve after the app's own) and under the
+     * `@anokiipkg` namespace (so `_fnpi_base` can extend `@anokiipkg/_shell.html.twig`
+     * unambiguously, even while the forked anokii/_shell.html.twig still exists).
+     * One spot; covers every tool controller (they all render via this shared env).
+     */
+    private function registerPackageTemplates(): void
+    {
+        try {
+            $twig = \Waaseyaa\SSR\SsrServiceProvider::getTwigEnvironment();
+            if ($twig === null) {
+                return;
+            }
+            $pkg = \Anokii\Admin\AdminTemplates::path();
+            $loader = $twig->getLoader();
+            if ($loader instanceof \Twig\Loader\ChainLoader) {
+                $fs = new \Twig\Loader\FilesystemLoader();
+                $fs->addPath($pkg);
+                $fs->addPath($pkg . '/anokii', 'anokiipkg');
+                $loader->addLoader($fs);
+            } elseif ($loader instanceof \Twig\Loader\FilesystemLoader) {
+                $loader->addPath($pkg);
+                $loader->addPath($pkg . '/anokii', 'anokiipkg');
+            }
+        } catch (\Throwable) {
+            // best effort; if the SSR env is not up yet the page falls back as before
+        }
     }
 
     public function routes(WaaseyaaRouter $router, ?\Waaseyaa\Entity\EntityTypeManager $entityTypeManager = null): void
