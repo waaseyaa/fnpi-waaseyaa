@@ -6,7 +6,7 @@ namespace App\Tests\Integration;
 
 use App\Analytics\AnalyticsReport;
 use App\Analytics\AnalyticsSchema;
-use App\Anokii\Modules;
+use App\Support\AnokiiShell;
 use App\Controller\AnokiiAnalyticsController;
 use App\Provider\SiteServiceProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -35,7 +35,7 @@ final class AnokiiAnalyticsTest extends TestCase
     public function the_analytics_module_is_live_in_the_workspace_nav(): void
     {
         $analytics = null;
-        foreach (Modules::all() as $module) {
+        foreach (AnokiiShell::modules() as $module) {
             if ($module['id'] === 'analytics') {
                 $analytics = $module;
             }

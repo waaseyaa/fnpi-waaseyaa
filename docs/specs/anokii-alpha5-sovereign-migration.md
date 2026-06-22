@@ -62,6 +62,8 @@ behavior/look/data-preserving migration needs the package generalized first.
 Keep fnpi's existing gate (`AnokiiController` + DashboardGate, allowAll + priority 100,
 controller-enforced). The package-canonical login controller is a separate later chip.
 
+> **Phase 3 shipped (alpha.7).** The alpha.5 gate params alone reproduce only the *gate ratio*, not fnpi's passages (the package scorer matched whole tokens; fnpi matched word prefixes, with a different min-length and stopword list). So alpha.7 added a pluggable `ScorerInterface` and ported fnpi's exact algorithm as `PrefixScorer`; fnpi runs `GraphRetriever(flat, 0.45, 0.0, PrefixScorer)` over the migrated `doc_chunk` entity and returns byte-identical passages (verified, 11/11 sample questions).
+
 ## Parity gate (hard; all must hold before deploy)
 - `/admin/anokii` still login-gated at priority 100.
 - Workspace chat answers grounded; conversations persist.

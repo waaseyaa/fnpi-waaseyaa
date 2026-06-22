@@ -8,9 +8,9 @@ use App\CoIntelligence\AgentConversation;
 use App\CoIntelligence\AgentProposalRepository;
 use App\CoIntelligence\ChatPromptBuilder;
 use App\CoIntelligence\ConversationRepository;
-use App\CoIntelligence\Passage;
-use App\CoIntelligence\Retriever;
 use App\Support\AnokiiShell;
+use Anokii\CoIntelligence\Passage;
+use Anokii\CoIntelligence\RetrieverInterface;
 use Anokii\Support\Auth;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -46,7 +46,7 @@ final class CoIntelligenceController
 
     public function __construct(
         private readonly ?EntityTypeManager $entityTypeManager,
-        private readonly Retriever $retriever,
+        private readonly RetrieverInterface $retriever,
         private readonly ChatPromptBuilder $prompts,
         private readonly ConversationRepository $conversations,
         private readonly ProviderInterface $provider,
@@ -122,7 +122,9 @@ final class CoIntelligenceController
             return $this->streamFixed($conversationId, $title, $message);
         }
 
-        $passages = $this->retriever->retrieve($question, self::TOP_K);
+        // FNPI is a single flat vantage (no community graph), so the vantage is
+        // empty: the package retriever runs in flat mode over all chunks.
+        $passages = $this->retriever->retrieve($question, '', self::TOP_K);
 
         // Agentic mode (gated by flag): Co-Intelligence can both answer and
         // propose changes to the workspace. Off by default, so the live chat is

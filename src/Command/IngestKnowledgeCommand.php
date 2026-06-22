@@ -4,19 +4,20 @@ declare(strict_types=1);
 
 namespace App\Command;
 
+use Anokii\Entity\DocChunk;
 use App\CoIntelligence\ChunkData;
-use App\CoIntelligence\DocChunkRepository;
 use App\CoIntelligence\KnowledgeChunker;
 use App\Identity\PillarService;
 use App\Pages\PublishedPageRenderer;
 use Waaseyaa\CLI\Command\SymfonyCommandIO;
+use Waaseyaa\Entity\Repository\EntityRepositoryInterface;
 
 /**
  * `vendor/bin/waaseyaa app:ingest-knowledge [--dry-run] [--no-prune]` — build
  * the Co-Intelligence RAG knowledge base. Mirrors oiatc's app:ingest-docs:
  * extract heading-delimited passages from FNPI's own sources and upsert them
- * into anokii_doc_chunk, keyed by a stable chunk_key, so a re-run converges the
- * index to the current corpus. No embeddings are produced.
+ * into the package-canonical doc_chunk entity, keyed by a stable chunk_key, so a
+ * re-run converges the index to the current corpus. No embeddings are produced.
  *
  * Three sources:
  *   1. The bundled FNPI documents in resources/knowledge/ (markdown).
@@ -54,7 +55,7 @@ final class IngestKnowledgeCommand
     ];
 
     public function __construct(
-        private readonly DocChunkRepository $chunks,
+        private readonly EntityRepositoryInterface $chunks,
         private readonly PillarService $pillars,
         private readonly PublishedPageRenderer $pages,
         private readonly string $knowledgeDir,
@@ -93,9 +94,9 @@ final class IngestKnowledgeCommand
             return 0;
         }
 
-        $result = $this->chunks->sync($chunks, $prune);
+        $result = $this->syncChunks($chunks, $prune);
         $io->writeln(sprintf(
-            'anokii_doc_chunk sync: %d created, %d updated, %d deleted (%d total).',
+            'doc_chunk sync: %d created, %d updated, %d deleted (%d total).',
             $result['created'],
             $result['updated'],
             $result['deleted'],
@@ -103,6 +104,68 @@ final class IngestKnowledgeCommand
         ));
 
         return 0;
+    }
+
+    /**
+     * Upsert chunks into the doc_chunk entity by stable chunk_key, and
+     * (optionally) prune entity chunks not seen this run, so the corpus converges
+     * to the current sources. entity_type/entity_id stay empty (FNPI is a single
+     * flat vantage). Mirrors the raw-table sync the retired DocChunkRepository did,
+     * now through the package entity the shared retriever reads.
+     *
+     * @param list<ChunkData> $chunks
+     *
+     * @return array{created: int, updated: int, deleted: int, total: int}
+     */
+    private function syncChunks(array $chunks, bool $prune): array
+    {
+        $byKey = [];
+        foreach ($this->chunks->findBy([]) as $existing) {
+            if ($existing instanceof DocChunk) {
+                $byKey[$existing->getChunkKey()] = $existing;
+            }
+        }
+
+        $seen = [];
+        $created = 0;
+        $updated = 0;
+        foreach ($chunks as $c) {
+            $seen[$c->chunkKey] = true;
+            $existing = $byKey[$c->chunkKey] ?? null;
+            if ($existing instanceof DocChunk) {
+                $existing->set('source_url', $c->sourceUrl);
+                $existing->set('title', $c->title);
+                $existing->set('heading', $c->heading);
+                $existing->set('text', $c->text);
+                $existing->set('entity_type', '');
+                $existing->set('entity_id', '');
+                $this->chunks->save($existing);
+                $updated++;
+                continue;
+            }
+            $this->chunks->save(DocChunk::make([
+                'chunk_key' => $c->chunkKey,
+                'source_url' => $c->sourceUrl,
+                'title' => $c->title,
+                'heading' => $c->heading,
+                'text' => $c->text,
+                'entity_type' => '',
+                'entity_id' => '',
+            ]));
+            $created++;
+        }
+
+        $deleted = 0;
+        if ($prune) {
+            foreach ($byKey as $key => $existing) {
+                if (!isset($seen[$key])) {
+                    $this->chunks->delete($existing);
+                    $deleted++;
+                }
+            }
+        }
+
+        return ['created' => $created, 'updated' => $updated, 'deleted' => $deleted, 'total' => count($chunks)];
     }
 
     /**

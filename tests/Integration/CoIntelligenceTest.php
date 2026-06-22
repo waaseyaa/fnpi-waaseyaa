@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration;
 
-use App\Anokii\Modules;
 use App\CoIntelligence\ChatPromptBuilder;
 use App\CoIntelligence\ChatSchema;
 use App\CoIntelligence\ChunkData;
 use App\CoIntelligence\ConversationRepository;
-use App\CoIntelligence\DocChunkRepository;
 use App\CoIntelligence\KnowledgeChunker;
-use App\CoIntelligence\Passage;
-use App\CoIntelligence\Retriever;
 use App\Controller\CoIntelligenceController;
 use App\Provider\AnokiiServiceProvider;
+use App\Support\AnokiiShell;
+use Anokii\CoIntelligence\GraphRetriever;
+use Anokii\CoIntelligence\Passage;
+use Anokii\CoIntelligence\PrefixScorer;
+use Anokii\CoIntelligence\TopicVocabulary;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -37,6 +38,10 @@ final class CoIntelligenceTest extends TestCase
         $provider = new SsrServiceProvider();
         $provider->setKernelContext(dirname(__DIR__, 2), [], []);
         $provider->boot();
+
+        // Make the shared package templates (and the @anokiipkg namespace
+        // _fnpi_base extends) resolvable, exactly as the runtime provider does.
+        \App\Tests\Support\ShellTemplates::register();
     }
 
     private function db(): DatabaseInterface
@@ -84,21 +89,6 @@ final class CoIntelligenceTest extends TestCase
         $response = $controller->send($request);
 
         $this->assertSame(401, $response->getStatusCode());
-    }
-
-    #[Test]
-    public function retriever_finds_the_relevant_chunk(): void
-    {
-        $db = $this->db();
-        new DocChunkRepository($db)->sync([
-            new ChunkData('k1', 'knowledge/tech-lane-summary', 'FNPI Tech Lane Summary', 'Three lanes', 'FNPI operates across three lanes: procurement qualification, shippable products, and AI technology.'),
-            new ChunkData('k2', 'knowledge/unrelated', 'Unrelated Doc', 'Weather', 'Completely unrelated content about weather, gardening, and rainfall this spring.'),
-        ]);
-
-        $passages = new Retriever($db)->retrieve('summarize the three lanes', 6);
-
-        $this->assertNotEmpty($passages);
-        $this->assertSame('FNPI Tech Lane Summary', $passages[0]->title);
     }
 
     #[Test]
@@ -188,7 +178,7 @@ final class CoIntelligenceTest extends TestCase
     #[Test]
     public function cointelligence_module_is_live(): void
     {
-        $ai = Modules::find('ai');
+        $ai = AnokiiShell::find('ai');
         $this->assertNotNull($ai);
         $this->assertTrue($ai['live']);
         $this->assertSame('/admin/anokii/cointelligence', $ai['href']);
@@ -199,9 +189,13 @@ final class CoIntelligenceTest extends TestCase
     {
         $db = $this->db();
 
+        // Retrieval is the shared package engine in FNPI's flat, word-prefix mode
+        // (the signed-out tests below never call it; it is only constructed).
+        $retriever = new GraphRetriever($db, new TopicVocabulary(), 0.45, 0.0, true, new PrefixScorer());
+
         return new CoIntelligenceController(
             null,
-            new Retriever($db),
+            $retriever,
             new ChatPromptBuilder(),
             new ConversationRepository($db),
             new NullLlmProvider(),
@@ -214,7 +208,7 @@ final class CoIntelligenceTest extends TestCase
     {
         return [
             'nav_active' => $active,
-            'modules' => Modules::all(),
+            'modules' => AnokiiShell::modules(),
             'user_label' => 'Russell',
             'user_role' => 'Editor',
             'user_initials' => 'RU',

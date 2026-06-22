@@ -248,7 +248,7 @@ final class ContactFormTest extends TestCase
     public function the_inbox_module_is_live_in_the_workspace_nav(): void
     {
         $inbox = null;
-        foreach (\App\Anokii\Modules::all() as $module) {
+        foreach (\App\Support\AnokiiShell::modules() as $module) {
             if ($module['id'] === 'inbox') {
                 $inbox = $module;
             }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration;
 
-use App\Anokii\Modules;
+use App\Support\AnokiiShell;
 use App\Entity\DriveFile;
 use App\Provider\AnokiiServiceProvider;
 use App\Drive\DriveStorage;
@@ -30,6 +30,7 @@ final class DriveTest extends TestCase
         $provider = new SsrServiceProvider();
         $provider->setKernelContext(dirname(__DIR__, 2), [], []);
         $provider->boot();
+        \App\Tests\Support\ShellTemplates::register();
     }
 
     private function tempDir(): string
@@ -43,7 +44,7 @@ final class DriveTest extends TestCase
     #[Test]
     public function drive_is_live_in_the_registry(): void
     {
-        $drive = Modules::find('drive');
+        $drive = AnokiiShell::find('drive');
         $this->assertNotNull($drive);
         $this->assertTrue($drive['live']);
         $this->assertSame('/admin/anokii/drive', $drive['href']);
@@ -171,7 +172,7 @@ final class DriveTest extends TestCase
         $twig = SsrServiceProvider::getTwigEnvironment();
         $html = $twig->render('anokii/drive.html.twig', [
             'nav_active' => 'drive',
-            'modules' => Modules::all(),
+            'modules' => AnokiiShell::modules(),
             'user_label' => 'Russell',
             'user_role' => 'Editor',
             'user_initials' => 'RU',

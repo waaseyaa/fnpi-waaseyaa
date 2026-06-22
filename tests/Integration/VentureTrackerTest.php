@@ -31,6 +31,7 @@ final class VentureTrackerTest extends TestCase
         $provider = new SsrServiceProvider();
         $provider->setKernelContext(dirname(__DIR__, 2), [], []);
         $provider->boot();
+        \App\Tests\Support\ShellTemplates::register();
         $twig = SsrServiceProvider::getTwigEnvironment();
         self::assertNotNull($twig);
         self::$twig = $twig;
@@ -95,7 +96,7 @@ final class VentureTrackerTest extends TestCase
     public function the_tracker_module_is_live_in_the_workspace_nav(): void
     {
         $venture = null;
-        foreach (\App\Anokii\Modules::all() as $module) {
+        foreach (\App\Support\AnokiiShell::modules() as $module) {
             if ($module['id'] === 'venture') {
                 $venture = $module;
             }
@@ -109,7 +110,7 @@ final class VentureTrackerTest extends TestCase
     public function the_template_renders_cards_with_status_dots_and_who_notes(): void
     {
         $html = self::$twig->render('anokii/venture.html.twig', [
-            'nav_active' => 'venture', 'modules' => \App\Anokii\Modules::all(),
+            'nav_active' => 'venture', 'modules' => \App\Support\AnokiiShell::modules(),
             'user_label' => 'Russell', 'user_role' => 'Editor', 'user_initials' => 'R',
             'threads' => [
                 ['title' => 'Copy refresh', 'next' => 'Ship it.', 'sort_order' => 1, 'items' => [

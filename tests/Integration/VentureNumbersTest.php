@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Integration;
 
 use App\Access\WorkspaceAccess;
-use App\Anokii\Modules;
+use App\Support\AnokiiShell;
 use App\Controller\VenturesController;
 use App\Entity\GatingFact;
 use App\Entity\VentureLane;
@@ -37,6 +37,7 @@ final class VentureNumbersTest extends TestCase
         $provider = new SsrServiceProvider();
         $provider->setKernelContext(dirname(__DIR__, 2), [], []);
         $provider->boot();
+        \App\Tests\Support\ShellTemplates::register();
     }
 
     /** A controllable account for policy assertions (WorkspaceAccessTest pattern). */
@@ -278,7 +279,7 @@ final class VentureNumbersTest extends TestCase
     #[Test]
     public function ventures_module_is_live_in_the_shell(): void
     {
-        $module = Modules::find('ventures');
+        $module = AnokiiShell::find('ventures');
         $this->assertNotNull($module);
         $this->assertTrue($module['live']);
         $this->assertSame('/admin/anokii/ventures', $module['href']);
@@ -355,7 +356,7 @@ final class VentureNumbersTest extends TestCase
     {
         return [
             'nav_active' => $active,
-            'modules' => Modules::all(),
+            'modules' => AnokiiShell::modules(),
             'user_label' => 'Russell',
             'user_role' => 'Editor',
             'user_initials' => 'RU',

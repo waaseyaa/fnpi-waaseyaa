@@ -35,6 +35,7 @@ final class AnokiiTest extends TestCase
         $provider = new SsrServiceProvider();
         $provider->setKernelContext(dirname(__DIR__, 2), [], []);
         $provider->boot();
+        \App\Tests\Support\ShellTemplates::register();
     }
 
     private function db(): DatabaseInterface
@@ -225,7 +226,7 @@ final class AnokiiTest extends TestCase
     {
         return [
             'nav_active' => $active,
-            'modules' => \App\Anokii\Modules::all(),
+            'modules' => \App\Support\AnokiiShell::modules(),
             'user_label' => 'Russell',
             'user_role' => 'Editor',
             'user_initials' => 'RU',
@@ -235,15 +236,15 @@ final class AnokiiTest extends TestCase
     #[Test]
     public function modules_define_live_and_soon_set(): void
     {
-        $ids = array_column(\App\Anokii\Modules::all(), 'id');
+        $ids = array_column(\App\Support\AnokiiShell::modules(), 'id');
         foreach (['home', 'identity', 'drive', 'ai', 'rooms', 'workspaces', 'portal', 'vault', 'governance', 'settings'] as $id) {
             $this->assertContains($id, $ids);
         }
-        $this->assertTrue(\App\Anokii\Modules::find('identity')['live']);
-        $this->assertTrue(\App\Anokii\Modules::find('home')['live']);
-        $this->assertTrue(\App\Anokii\Modules::find('drive')['live']);
-        $this->assertFalse(\App\Anokii\Modules::find('governance')['live']);
-        $this->assertNull(\App\Anokii\Modules::find('nope'));
+        $this->assertTrue(\App\Support\AnokiiShell::find('identity')['live']);
+        $this->assertTrue(\App\Support\AnokiiShell::find('home')['live']);
+        $this->assertTrue(\App\Support\AnokiiShell::find('drive')['live']);
+        $this->assertFalse(\App\Support\AnokiiShell::find('governance')['live']);
+        $this->assertNull(\App\Support\AnokiiShell::find('nope'));
     }
 
     #[Test]

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration;
 
-use App\Anokii\Modules;
+use App\Support\AnokiiShell;
 use App\Entity\Pillar;
 use App\Provider\AnokiiServiceProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -26,7 +26,7 @@ final class IdentityPillarTest extends TestCase
     #[Test]
     public function identity_is_live_in_the_registry(): void
     {
-        $module = Modules::find('identity');
+        $module = AnokiiShell::find('identity');
         $this->assertNotNull($module);
         $this->assertTrue($module['live']);
         $this->assertSame('/admin/anokii/identity', $module['href']);

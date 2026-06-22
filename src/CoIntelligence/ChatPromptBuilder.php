@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\CoIntelligence;
 
+use Anokii\CoIntelligence\Passage;
+
 /**
  * Builds the grounded, cited system prompt and the user message for FNPI's
  * Co-Intelligence chat. Pure and deterministic so the prompt contract can be

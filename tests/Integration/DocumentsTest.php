@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration;
 
-use App\Anokii\Modules;
+use App\Support\AnokiiShell;
 use App\Entity\Document;
 use App\Entity\DocumentNote;
 use App\Provider\AnokiiServiceProvider;
@@ -26,7 +26,7 @@ final class DocumentsTest extends TestCase
     #[Test]
     public function documents_is_live_in_the_registry(): void
     {
-        $module = Modules::find('documents');
+        $module = AnokiiShell::find('documents');
         $this->assertNotNull($module);
         $this->assertTrue($module['live']);
         $this->assertSame('/admin/anokii/documents', $module['href']);

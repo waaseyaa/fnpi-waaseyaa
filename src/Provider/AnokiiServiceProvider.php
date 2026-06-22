@@ -14,9 +14,10 @@ use App\CoIntelligence\AgentTools;
 use App\CoIntelligence\ChatPromptBuilder;
 use App\CoIntelligence\ChatSchema;
 use App\CoIntelligence\ConversationRepository;
-use App\CoIntelligence\DocChunkRepository;
-use App\CoIntelligence\Retriever;
 use App\Command\IngestKnowledgeCommand;
+use Anokii\CoIntelligence\GraphRetriever;
+use Anokii\CoIntelligence\PrefixScorer;
+use Anokii\CoIntelligence\TopicVocabulary;
 use App\Command\MigrateDriveCommand;
 use App\Command\MigratePillarsCommand;
 use App\Command\WidenPillarsCommand;
@@ -84,7 +85,18 @@ final class AnokiiServiceProvider extends ServiceProvider implements ProvidesCon
 
     private ?DatabaseInterface $db = null;
 
-    public function register(): void {}
+    public function register(): void
+    {
+        // The RAG corpus is the package-canonical `doc_chunk` entity (the shared
+        // Anokii\CoIntelligence\GraphRetriever reads it). A package entity is not
+        // auto-discovered from the app's src/, so register it explicitly from its
+        // attribute metadata. db:init --sync-schema then materializes its table,
+        // and app:migrate-doc-chunks fills it from the legacy raw table. The other
+        // graph entities (place/community/service/project) are intentionally NOT
+        // registered: FNPI is a single flat vantage, so the retriever runs in flat
+        // mode and those tables stay absent (its scope resolution no-ops on them).
+        $this->entityType(\Waaseyaa\Entity\EntityType::fromClass(\Anokii\Entity\DocChunk::class));
+    }
 
     public function boot(): void
     {
@@ -174,9 +186,24 @@ final class AnokiiServiceProvider extends ServiceProvider implements ProvidesCon
             ? new AgentConversation($provider, new AgentTools($entityTypeManager), $proposals, $conversations, $prompts)
             : null;
 
+        // Retrieval is the shared package engine (Anokii\CoIntelligence), pointed
+        // at FNPI's behaviour: flat single-vantage (no community graph), FNPI's
+        // exact relevance gate (within 0.45 of the top score, no floor), and the
+        // word-prefix scorer ported from FNPI's own retriever. This returns
+        // byte-identical passages to the retired App\CoIntelligence\Retriever over
+        // the migrated doc_chunk corpus (verified by the phase-3 parity harness).
+        $retriever = new GraphRetriever(
+            $this->db(),
+            new TopicVocabulary(),
+            0.45,
+            0.0,
+            true,
+            new PrefixScorer(),
+        );
+
         $cointel = new CoIntelligenceController(
             $entityTypeManager,
-            new Retriever($this->db()),
+            $retriever,
             $prompts,
             $conversations,
             $provider,
@@ -388,13 +415,36 @@ final class AnokiiServiceProvider extends ServiceProvider implements ProvidesCon
                 new ChatSchema($db)->ensure();
                 $twig = SsrServiceProvider::createTwigEnvironment($this->projectRoot, $this->config);
                 $command = new IngestKnowledgeCommand(
-                    new DocChunkRepository($db),
+                    $etm->getRepository('doc_chunk'),
                     new PillarService($etm),
                     new PublishedPageRenderer($etm->getRepository('page'), $twig),
                     $this->projectRoot . '/resources/knowledge',
                 );
 
                 return $command->run($io);
+            },
+        );
+
+        yield new HandlerCommand(
+            name: 'app:migrate-doc-chunks',
+            description: 'Migrate the Co-Intelligence RAG corpus from the raw anokii_doc_chunk table into the package doc_chunk entity. Idempotent, non-destructive (raw table left in place), row-count verified.',
+            options: [
+                new HandlerOption(name: 'dry-run', mode: HandlerOptionMode::None, description: 'Report counts without writing.'),
+                new HandlerOption(name: 'force', mode: HandlerOptionMode::None, description: 'Skip the pre-migration snapshot check (the deploy snapshots first).'),
+            ],
+            handler: function (SymfonyCommandIO $io): int {
+                $etm = $this->entityTypeManager();
+                if ($etm === null) {
+                    $io->error('doc_chunk migration requires a booted kernel (EntityTypeManager).');
+
+                    return 1;
+                }
+
+                return new \App\Command\MigrateDocChunksCommand(
+                    $etm->getRepository('doc_chunk'),
+                    $this->db(),
+                    \App\Support\Db::path(),
+                )->run($io);
             },
         );
 

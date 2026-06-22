@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration;
 
-use App\CoIntelligence\ChatSchema;
-use App\CoIntelligence\DocChunkRepository;
+use Anokii\Entity\DocChunk;
 use App\Command\IngestKnowledgeCommand;
 use App\Entity\Page;
 use App\Entity\Pillar;
@@ -20,6 +19,7 @@ use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\NullOutput;
 use Waaseyaa\CLI\Command\SymfonyCommandIO;
+use Waaseyaa\Database\DatabaseInterface;
 use Waaseyaa\Database\DBALDatabase;
 use Waaseyaa\Entity\EntityType;
 use Waaseyaa\Entity\EntityTypeManager;
@@ -42,7 +42,7 @@ use Waaseyaa\SSR\SsrServiceProvider;
 final class IngestKnowledgeTest extends TestCase
 {
     private EntityRepositoryInterface $pages;
-    private DocChunkRepository $chunks;
+    private EntityRepositoryInterface $chunks;
     private IngestKnowledgeCommand $command;
 
     public static function setUpBeforeClass(): void
@@ -59,9 +59,7 @@ final class IngestKnowledgeTest extends TestCase
 
         $this->pages = SeededPages::repository();
 
-        $db = DBALDatabase::createSqlite();
-        new ChatSchema($db)->ensure();
-        $this->chunks = new DocChunkRepository($db);
+        $this->chunks = $this->docChunkRepository(DBALDatabase::createSqlite());
 
         // An empty knowledge dir: the bundled-docs source contributes nothing,
         // keeping the assertions focused on the page-entity source. An empty
@@ -80,7 +78,7 @@ final class IngestKnowledgeTest extends TestCase
         $exit = $this->command->run($this->io());
         $this->assertSame(0, $exit);
 
-        $rows = $this->chunks->all();
+        $rows = $this->rows();
         $bySource = [];
         foreach ($rows as $row) {
             $bySource[$row['source_url']][] = $row;
@@ -127,7 +125,7 @@ final class IngestKnowledgeTest extends TestCase
         $exit = $this->command->run($this->io());
         $this->assertSame(0, $exit);
 
-        $all = $this->corpus($this->chunks->all());
+        $all = $this->corpus($this->rows());
         $this->assertStringNotContainsString('UNPUBLISHED SENTINEL COPY', $all, 'Draft copy must never reach the RAG index.');
         $this->assertStringContainsString('Sourcing Solutions', $all, 'The published hero copy is what gets indexed.');
     }
@@ -137,7 +135,7 @@ final class IngestKnowledgeTest extends TestCase
     {
         // A healthy ingest first, so the index holds the live page knowledge.
         $this->assertSame(0, $this->command->run($this->io()));
-        $before = $this->chunks->all();
+        $before = $this->rows();
         $this->assertNotEmpty($before);
 
         // The same chunk store, but a fresh page database where nothing is
@@ -153,7 +151,7 @@ final class IngestKnowledgeTest extends TestCase
         );
 
         $this->assertSame(1, $broken->run($this->io()));
-        $this->assertSame($before, $this->chunks->all(), 'An ingest with missing published pages must not touch the index.');
+        $this->assertSame($before, $this->rows(), 'An ingest with missing published pages must not touch the index.');
     }
 
     #[Test]
@@ -161,7 +159,7 @@ final class IngestKnowledgeTest extends TestCase
     {
         $this->command->run($this->io());
 
-        foreach ($this->chunks->all() as $row) {
+        foreach ($this->rows() as $row) {
             $this->assertStringNotContainsString('blk:', $row['heading'] . ' ' . $row['text'], 'The <!-- blk:type --> structure markers are not copy.');
         }
     }
@@ -174,6 +172,50 @@ final class IngestKnowledgeTest extends TestCase
     private function corpus(array $rows): string
     {
         return implode("\n", array_merge(array_column($rows, 'heading'), array_column($rows, 'text')));
+    }
+
+    /**
+     * The stored doc_chunk entities as plain rows (chunk_key-sorted for stable
+     * comparison), the shape the assertions read.
+     *
+     * @return list<array{chunk_key:string,source_url:string,title:string,heading:string,text:string}>
+     */
+    private function rows(): array
+    {
+        $out = [];
+        foreach ($this->chunks->findBy([]) as $c) {
+            if ($c instanceof DocChunk) {
+                $out[] = [
+                    'chunk_key' => $c->getChunkKey(),
+                    'source_url' => $c->getSourceUrl(),
+                    'title' => $c->getTitle(),
+                    'heading' => $c->getHeading(),
+                    'text' => $c->getText(),
+                ];
+            }
+        }
+        usort($out, static fn(array $a, array $b): int => strcmp($a['chunk_key'], $b['chunk_key']));
+
+        return $out;
+    }
+
+    /**
+     * A doc_chunk entity repository over an in-memory SQLite, the package entity
+     * the ingest now writes (replacing the retired raw DocChunkRepository).
+     */
+    private function docChunkRepository(DatabaseInterface $db): EntityRepositoryInterface
+    {
+        $entityType = EntityType::fromClass(DocChunk::class);
+        new SqlSchemaHandler($entityType, $db)->ensureTable();
+        $resolver = new SingleConnectionResolver($db);
+
+        return new EntityRepository(
+            $entityType,
+            new SqlStorageDriver($resolver),
+            new EventDispatcher(),
+            null,
+            $db,
+        );
     }
 
     private function emptyPillarManager(): EntityTypeManager
