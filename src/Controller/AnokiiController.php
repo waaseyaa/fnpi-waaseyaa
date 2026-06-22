@@ -6,7 +6,6 @@ namespace App\Controller;
 
 use Anokii\Dashboard\DashboardGate;
 use Anokii\Support\Auth;
-use App\Anokii\Modules;
 use App\Auth\SetupTokenRepository;
 use App\Support\AnokiiShell;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -58,7 +57,7 @@ final class AnokiiController extends DashboardGate
         if ($user === null) {
             return new RedirectResponse($this->loginPath());
         }
-        $m = Modules::find($module);
+        $m = AnokiiShell::find($module);
         if ($m === null || $m['live'] === true) {
             return new RedirectResponse('/admin/anokii');
         }
