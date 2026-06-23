@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration;
 
+use Anokii\Auth\SetupTokenRepository;
+use Anokii\Auth\SetupTokenSchema;
 use App\Access\WorkspaceAccess;
-use App\Auth\SetupTokenRepository;
-use App\Auth\SetupTokenSchema;
 use App\Controller\AnokiiController;
 use App\Controller\IdentityController;
 use App\Identity\IdentitySeed;
@@ -129,7 +129,7 @@ final class AnokiiTest extends TestCase
     {
         // No EntityTypeManager => no current user => signed out, and the
         // controller redirects before the service is ever touched.
-        $shell = new AnokiiController(null, new SetupTokenRepository($this->db()));
+        $shell = new AnokiiController(null);
         $home = $shell->dashboard(new Request());
         $this->assertInstanceOf(RedirectResponse::class, $home);
         $this->assertSame('/admin/anokii/login', $home->getTargetUrl());
@@ -265,7 +265,7 @@ final class AnokiiTest extends TestCase
     #[Test]
     public function coming_soon_redirects_to_login_when_signed_out(): void
     {
-        $shell = new AnokiiController(null, new SetupTokenRepository($this->db()));
+        $shell = new AnokiiController(null);
         $r = $shell->comingSoon(new Request(), 'rooms');
         $this->assertInstanceOf(RedirectResponse::class, $r);
         $this->assertSame('/admin/anokii/login', $r->getTargetUrl());

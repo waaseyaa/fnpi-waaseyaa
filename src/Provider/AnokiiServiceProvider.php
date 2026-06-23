@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace App\Provider;
 
 use App\Access\WorkspaceAccess;
-use App\Auth\SetupTokenRepository;
-use App\Auth\SetupTokenSchema;
-use App\CLI\AnokiiInviteHandler;
+use Anokii\Admin\InviteHandler;
+use Anokii\Auth\SetupTokenRepository;
+use Anokii\Auth\SetupTokenSchema;
+use Anokii\Dashboard\WorkspaceLoginController;
 use App\CoIntelligence\AgentConversation;
 use App\CoIntelligence\AgentProposalRepository;
 use App\CoIntelligence\AgentTools;
@@ -161,7 +162,17 @@ final class AnokiiServiceProvider extends ServiceProvider implements ProvidesCon
         // (and the agent tools will consult in a later increment).
         $access = WorkspaceAccess::handler();
 
-        $shell = new AnokiiController($entityTypeManager, new SetupTokenRepository($this->db()));
+        $shell = new AnokiiController($entityTypeManager);
+        // Login + one-time set-password surface from the shared package, keeping
+        // FNPI's paths and its branded login / set-password templates.
+        $login = new WorkspaceLoginController(
+            $entityTypeManager,
+            new SetupTokenRepository($this->db()),
+            '/admin/anokii/login',
+            '/admin/anokii',
+            'anokii/login.html.twig',
+            'anokii/set-password.html.twig',
+        );
         $identity = new IdentityController($entityTypeManager, new PillarService($entityTypeManager), $access);
 
         // Co-Intelligence (tool #2): construct the model provider directly from the
@@ -272,13 +283,13 @@ final class AnokiiServiceProvider extends ServiceProvider implements ProvidesCon
         );
 
         $get('anokii.home', '/admin/anokii', fn(Request $r) => $shell->dashboard($r));
-        $get('anokii.login', '/admin/anokii/login', fn(Request $r) => $shell->loginForm($r));
-        $post('anokii.login.post', '/admin/anokii/login', fn(Request $r) => $shell->loginSubmit($r));
-        $get('anokii.logout', '/admin/anokii/logout', fn(Request $r) => $shell->logout($r));
+        $get('anokii.login', '/admin/anokii/login', fn(Request $r) => $login->loginForm($r));
+        $post('anokii.login.post', '/admin/anokii/login', fn(Request $r) => $login->loginSubmit($r));
+        $get('anokii.logout', '/admin/anokii/logout', fn(Request $r) => $login->logout($r));
         $get('anokii.settings', '/admin/anokii/settings', fn(Request $r) => $shell->settings($r));
         $post('anokii.settings.post', '/admin/anokii/settings', fn(Request $r) => $shell->settingsSave($r));
-        $get('anokii.setpw', '/admin/anokii/set-password', fn(Request $r) => $shell->setPasswordForm($r));
-        $post('anokii.setpw.post', '/admin/anokii/set-password', fn(Request $r) => $shell->setPasswordSubmit($r));
+        $get('anokii.setpw', '/admin/anokii/set-password', fn(Request $r) => $login->setPasswordForm($r));
+        $post('anokii.setpw.post', '/admin/anokii/set-password', fn(Request $r) => $login->setPasswordSubmit($r));
         $get('anokii.identity', '/admin/anokii/identity', fn(Request $r) => $identity->index($r));
         $post('anokii.identity.save', '/admin/anokii/identity/save', fn(Request $r) => $identity->save($r));
         $get('anokii.identity.history', '/admin/anokii/identity/{pid}/history', fn(Request $r, string $pid) => $identity->history($r, $pid));
@@ -393,7 +404,12 @@ final class AnokiiServiceProvider extends ServiceProvider implements ProvidesCon
                     return 1;
                 }
 
-                return new AnokiiInviteHandler($etm)->execute($io);
+                return new InviteHandler(
+                    $etm,
+                    new SetupTokenRepository($this->db()),
+                    'https://fnprocure.ca',
+                    '/admin/anokii/set-password',
+                )->run($io);
             },
         );
 
