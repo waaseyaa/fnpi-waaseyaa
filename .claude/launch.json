@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "fnpi",
+      "runtimeExecutable": "php",
+      "runtimeArgs": ["-S", "localhost:8095", "-t", "public"],
+      "port": 8095
+    }
+  ]
+}

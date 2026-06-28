@@ -72,7 +72,7 @@ use Waaseyaa\SSR\SsrServiceProvider;
  * target is exactly /admin/anokii/login. Public marketing routes live in
  * SiteServiceProvider and are untouched.
  */
-final class AnokiiServiceProvider extends ServiceProvider implements ProvidesConsoleCommandsInterface, ProvidesRolesInterface
+final class AnokiiServiceProvider extends ServiceProvider implements ProvidesConsoleCommandsInterface
 {
     /** Chat model, matching oiatc's Co-Intelligence (current Claude Sonnet). */
     private const CHAT_MODEL = 'claude-sonnet-4-6';
@@ -162,103 +162,10 @@ final class AnokiiServiceProvider extends ServiceProvider implements ProvidesCon
         // (and the agent tools will consult in a later increment).
         $access = WorkspaceAccess::handler();
 
-        $shell = new AnokiiController($entityTypeManager);
-        // Login + one-time set-password surface from the shared package, keeping
-        // FNPI's paths and its branded login / set-password templates.
-        $login = new WorkspaceLoginController(
-            $entityTypeManager,
-            new SetupTokenRepository($this->db()),
-            '/admin/anokii/login',
-            '/admin/anokii',
-            'anokii/login.html.twig',
-            'anokii/set-password.html.twig',
-        );
-        $identity = new IdentityController($entityTypeManager, new PillarService($entityTypeManager), $access);
-
-        // Co-Intelligence (tool #2): construct the model provider directly from the
-        // server-side key (mirrors oiatc; resolve() at route-build can hand back an
-        // ephemeral binding). NullLlmProvider keeps the page working when no key is
-        // set, with the controller reporting "not configured" instead of erroring.
-        $anthropicKey = getenv('ANTHROPIC_API_KEY') ?: '';
-        $configured = $anthropicKey !== '';
-        $provider = $configured
-            ? new AnthropicProvider($anthropicKey, self::CHAT_MODEL)
-            : new NullLlmProvider();
-        $prompts = new ChatPromptBuilder();
-        $conversations = new ConversationRepository($this->db());
-        $proposals = new AgentProposalRepository($this->db());
-
-        // Agentic mode (confirm-before-apply CRUD over the workspace): only when
-        // a model is configured AND the flag is set. Off by default, so the live
-        // chat stays read-only grounded RAG until explicitly enabled. The agent
-        // tools consult WorkspaceAccess (the same policies as the UI).
-        $agentEnabled = $this->agentToolsEnabled();
-        $agent = ($configured && $agentEnabled)
-            ? new AgentConversation($provider, new AgentTools($entityTypeManager), $proposals, $conversations, $prompts)
-            : null;
-
-        // Retrieval is the shared package engine (Anokii\CoIntelligence), pointed
-        // at FNPI's behaviour: flat single-vantage (no community graph), FNPI's
-        // exact relevance gate (within 0.45 of the top score, no floor), and the
-        // word-prefix scorer ported from FNPI's own retriever. This returns
-        // byte-identical passages to the retired App\CoIntelligence\Retriever over
-        // the migrated doc_chunk corpus (verified by the phase-3 parity harness).
-        $retriever = new GraphRetriever(
-            $this->db(),
-            new TopicVocabulary(),
-            0.45,
-            0.0,
-            true,
-            new PrefixScorer(),
-        );
-
-        $cointel = new CoIntelligenceController(
-            $entityTypeManager,
-            $retriever,
-            $prompts,
-            $conversations,
-            $provider,
-            $configured,
-            $agent,
-            $proposals,
-            $agentEnabled,
-        );
-
-        // Drive (tool #3): entity-native file storage. Bytes go to the sovereign
-        // volume via the media layer; the revisionable `drive_asset` entity
-        // carries metadata + attribution and falls under the same AccessPolicy.
-        $drive = new DriveController(
-            $entityTypeManager,
-            new DriveFileService($entityTypeManager),
-            new DriveStorage(
-                $this->filesDir(),
-                $this->allowedUploadMimeTypes(),
-                $this->uploadMaxBytes(),
-            ),
-            $access,
-        );
-
-        // Documents (tool #4): the first entity-native tool. Bytes go to the
-        // sovereign volume via the media layer; the revisionable `document`
-        // entity carries each version as a revision; Gotenberg converts uploaded
-        // .docx to a .pdf preview (lean image, conversion out of process).
-        $docStorage = new DocumentStorage(
-            $this->filesDir(),
-            ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
-            $this->uploadMaxBytes(),
-        );
-        $documents = new DocumentsController(
-            $entityTypeManager,
-            new DocumentService($entityTypeManager, $docStorage, new GotenbergClient($this->gotenbergUrl())),
-            $docStorage,
-            $access,
-        );
-
-        // Pages (tool #5): the workspace editor for the public marketing `page`
-        // entities. Draft/preview/publish/rollback over the revision +
-        // published-pointer model; gated by the same AccessPolicy (edit pages /
-        // publish pages).
-        $pages = new PagesController($entityTypeManager, new PagesService($entityTypeManager, new CloudflareCachePurger()), $access);
+        // The shell, login, and the generic workspace tools (Identity, Documents,
+        // Drive, Pages, Inbox, Analytics, Co-Intelligence) are now provided by the
+        // anokii distribution (Anokii\Provider\WorkspaceServiceProvider). Only
+        // FNPI's bespoke Venture surfaces remain app-provided below.
 
         // Venture Numbers (staff-only): the revenue model mirrored as
         // revisionable entities, chat-first beside Co-Intelligence. The first
@@ -282,37 +189,6 @@ final class AnokiiServiceProvider extends ServiceProvider implements ProvidesCon
             RouteBuilder::create($path)->controller($c)->allowAll()->methods('POST')->priority(self::ROUTE_PRIORITY)->build(),
         );
 
-        $get('anokii.home', '/admin/anokii', fn(Request $r) => $shell->dashboard($r));
-        $get('anokii.login', '/admin/anokii/login', fn(Request $r) => $login->loginForm($r));
-        $post('anokii.login.post', '/admin/anokii/login', fn(Request $r) => $login->loginSubmit($r));
-        $get('anokii.logout', '/admin/anokii/logout', fn(Request $r) => $login->logout($r));
-        $get('anokii.settings', '/admin/anokii/settings', fn(Request $r) => $shell->settings($r));
-        $post('anokii.settings.post', '/admin/anokii/settings', fn(Request $r) => $shell->settingsSave($r));
-        $get('anokii.setpw', '/admin/anokii/set-password', fn(Request $r) => $login->setPasswordForm($r));
-        $post('anokii.setpw.post', '/admin/anokii/set-password', fn(Request $r) => $login->setPasswordSubmit($r));
-        $get('anokii.identity', '/admin/anokii/identity', fn(Request $r) => $identity->index($r));
-        $post('anokii.identity.save', '/admin/anokii/identity/save', fn(Request $r) => $identity->save($r));
-        $get('anokii.identity.history', '/admin/anokii/identity/{pid}/history', fn(Request $r, string $pid) => $identity->history($r, $pid));
-        $post('anokii.identity.translate', '/admin/anokii/identity/translate', fn(Request $r) => $identity->saveTranslation($r));
-        $get('anokii.identity.translation_history', '/admin/anokii/identity/{pid}/{langcode}/history', fn(Request $r, string $pid, string $langcode) => $identity->translationHistory($r, $pid, $langcode));
-        $get('anokii.pages', '/admin/anokii/pages', fn(Request $r) => $pages->index($r));
-        $get('anokii.pages.edit', '/admin/anokii/pages/{id}', fn(Request $r, string $id) => $pages->edit($r, $id));
-        $get('anokii.pages.preview', '/admin/anokii/pages/{id}/preview', fn(Request $r, string $id) => $pages->preview($r, $id));
-        $get('anokii.pages.history', '/admin/anokii/pages/{id}/history', fn(Request $r, string $id) => $pages->history($r, $id));
-        $post('anokii.pages.save', '/admin/anokii/pages/{id}/save', fn(Request $r, string $id) => $pages->save($r, $id));
-        $post('anokii.pages.publish', '/admin/anokii/pages/{id}/publish', fn(Request $r, string $id) => $pages->publish($r, $id));
-        $post('anokii.pages.rollback', '/admin/anokii/pages/{id}/rollback', fn(Request $r, string $id) => $pages->rollback($r, $id));
-        $get('anokii.cointelligence', '/admin/anokii/cointelligence', fn(Request $r) => $cointel->index($r));
-        $post('anokii.cointelligence.send', '/admin/anokii/cointelligence/send', fn(Request $r) => $cointel->send($r));
-        $post('anokii.cointelligence.apply', '/admin/anokii/cointelligence/apply', fn(Request $r) => $cointel->apply($r));
-        $get('anokii.cointelligence.messages', '/admin/anokii/cointelligence/{id}/messages', fn(Request $r, string $id) => $cointel->messages($r, $id));
-        $get('anokii.drive', '/admin/anokii/drive', fn(Request $r) => $drive->index($r));
-        $post('anokii.drive.upload', '/admin/anokii/drive/upload', fn(Request $r) => $drive->upload($r));
-        $get('anokii.drive.file', '/admin/anokii/drive/file/{id}', fn(Request $r, string $id) => $drive->download($r, $id));
-        $post('anokii.drive.delete', '/admin/anokii/drive/delete', fn(Request $r) => $drive->delete($r));
-        $analytics = new \App\Controller\AnokiiAnalyticsController($entityTypeManager, new \App\Analytics\AnalyticsReport($this->db()));
-        $get('anokii.analytics', '/admin/anokii/analytics', fn(Request $r) => $analytics->index($r));
-
         $get('anokii.ventures', '/admin/anokii/ventures', fn(Request $r) => $ventures->index($r));
         $post('anokii.ventures.lane_save', '/admin/anokii/ventures/lane/save', fn(Request $r) => $ventures->saveLane($r));
         $post('anokii.ventures.fact_save', '/admin/anokii/ventures/fact/save', fn(Request $r) => $ventures->saveFact($r));
@@ -321,21 +197,6 @@ final class AnokiiServiceProvider extends ServiceProvider implements ProvidesCon
 
         $venture = new \App\Controller\VentureController($entityTypeManager);
         $get('anokii.venture', '/admin/anokii/venture', fn(Request $r) => $venture->index($r));
-
-        $inbox = new \App\Controller\ContactInboxController($entityTypeManager, $access);
-        $get('anokii.inbox', '/admin/anokii/inbox', fn(Request $r) => $inbox->index($r));
-        $post('anokii.inbox.read', '/admin/anokii/inbox/read', fn(Request $r) => $inbox->markAllRead($r));
-
-        $get('anokii.documents', '/admin/anokii/documents', fn(Request $r) => $documents->index($r));
-        $post('anokii.documents.create', '/admin/anokii/documents/create', fn(Request $r) => $documents->create($r));
-        $get('anokii.documents.show', '/admin/anokii/documents/{uuid}', fn(Request $r, string $uuid) => $documents->show($r, $uuid));
-        $post('anokii.documents.version', '/admin/anokii/documents/{uuid}/version', fn(Request $r, string $uuid) => $documents->uploadVersion($r, $uuid));
-        $post('anokii.documents.setcurrent', '/admin/anokii/documents/{uuid}/set-current', fn(Request $r, string $uuid) => $documents->setCurrent($r, $uuid));
-        $post('anokii.documents.rollback', '/admin/anokii/documents/{uuid}/rollback', fn(Request $r, string $uuid) => $documents->rollback($r, $uuid));
-        $post('anokii.documents.note', '/admin/anokii/documents/{uuid}/note', fn(Request $r, string $uuid) => $documents->addNote($r, $uuid));
-        $get('anokii.documents.file', '/admin/anokii/documents/{uuid}/file/{vid}/{kind}', fn(Request $r, string $uuid, string $vid, string $kind) => $documents->download($r, $uuid, $vid, $kind));
-        // Coming-soon placeholder for not-yet-live modules (rooms, ...).
-        $get('anokii.module', '/admin/anokii/m/{module}', fn(Request $r, string $module) => $shell->comingSoon($r, $module));
 
         // Legacy redirects: the workspace moved from /anokii/* to /admin/anokii/*
         // (the admin SPA now owns /admin, and the bare /anokii root is being
@@ -365,19 +226,6 @@ final class AnokiiServiceProvider extends ServiceProvider implements ProvidesCon
                 ->priority(self::ROUTE_PRIORITY)
                 ->build(),
         );
-    }
-
-    /**
-     * Contribute the FNPI workspace roles to the framework RoleRepository so the
-     * framework user:assign-role command can resolve them and stamp their
-     * permissions. Delegates to the WorkspaceAccess role model (the single
-     * source of truth). Replaces the bespoke app:assign-role command.
-     *
-     * @return iterable<\Waaseyaa\User\Role>
-     */
-    public function roles(): iterable
-    {
-        yield from new WorkspaceAccess()->roles();
     }
 
     public function consoleCommands(): iterable
